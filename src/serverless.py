@@ -15,7 +15,9 @@ class App:
         :param module:
         :return:
         """
-        return module.replace(".", "/")  # This may break in certain scenarios need to test it. For example if your
+        return module.replace(
+            ".", "/"
+        )  # This may break in certain scenarios need to test it. For example if your
         # serverless framework is not at the root of you project.
 
     def func(self, **kwargs):
@@ -27,16 +29,18 @@ class App:
         """
 
         def decorator(handler):
-            self.functions.append({
-                "function_name": handler.__name__,
-                "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
-                "url": kwargs.get("url")
-            })
+    self.functions.append(
+        {
+            "function_name": handler.__name__,
+            "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
+            "url": kwargs.get("url"),
+        }
+    )
 
-            def _inner(*args, **kwargs):
-                return handler(args, kwargs)
+    def _inner(*args, **kwargs):
+        return handler(args, kwargs)
 
-            return _inner
+    return _inner
 
         return decorator
 
@@ -51,41 +55,22 @@ class App:
                 "scwToken": "${env:SCW_SECRET_KEY}",
                 "scwProject": "${env:SCW_DEFAULT_PROJECT_ID}",
                 "scwRegion": "${env:SCW_REGION}",
-                "env": {
-                    "test": "test"
-                }
+                "env": {"test": "test"},
             },
-            "plugins": [
-                "serverless-scaleway-functions"
-            ],
-            "package": {
-                "patterns": [
-                    "!node_modules/**",
-                    "!.gitignore",
-                    "!.git/**"
-                ]
-            },
-            "functions": {}
+            "plugins": ["serverless-scaleway-functions"],
+            "package": {"patterns": ["!node_modules/**", "!.gitignore", "!.git/**"]},
+            "functions": {},
         }
 
         functions = {}
         for func in self.functions:
             functions[func["function_name"]] = {
-                "handler": func["handler"],
-                "env": {
-                    "local": "local"
-                },
-                "events": [
-                    {
-                        "http": {
-                            "path": func["url"],
-                            "method": "get"
-                        }
-                    }
-                ]
-            }
+    "handler": func["handler"],
+    "env": {"local": "local"},
+    "events": [{"http": {"path": func["url"], "method": "get"}}],
+}
 
         config["functions"] = functions
 
-        with open('serverless.yml', 'w') as file:
-            yaml.dump(config, file)
+        with open("serverless.yml", "w") as file:
+    yaml.dump(config, file)
