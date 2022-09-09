@@ -73,4 +73,4 @@ class App:
         config["functions"] = functions
 
         with open("serverless.yml", "w") as file:
-    yaml.dump(config, file)
+            yaml.dump(config, file)
