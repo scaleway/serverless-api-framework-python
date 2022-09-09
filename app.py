@@ -1,21 +1,14 @@
-class App:
-    def func(self, **kwargs):
-        def decorator(handler):
-            def _inner():
-                print(kwargs)
-                return handler()
+from serverless import App
 
-            return _inner
-
-        return decorator
-
-
-app = App()
+app = App("helloworld")
 
 
 @app.func(url="/")
-def hello_world():
+def hello_world(event: dict, context: dict):
+    """handle a request to the function
+        Args:
+            event (dict): request params
+            context (dict): function call metadata
+    """
+
     return "Hello World!"
-
-
-print(hello_world())
