@@ -8,11 +8,28 @@ class App:
         self.functions = []
         self.service_name = service_name
 
+    def module_to_path(self, module: str):
+        """
+        Replace dots by slash in the module name
+
+        :param module:
+        :return:
+        """
+        return module.replace(".", "/")  # This may break in certain scenarios need to test it. For example if your
+        # serverless framework is not at the root of you project.
+
     def func(self, **kwargs):
+        """
+        @func decorator
+
+        :param kwargs:
+        :return:
+        """
+
         def decorator(handler):
             self.functions.append({
                 "function_name": handler.__name__,
-                "handler": f"{handler.__module__}.{handler.__name__}",
+                "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
                 "url": kwargs.get("url")
             })
 
@@ -23,21 +40,17 @@ class App:
 
         return decorator
 
-    def get_functions(self):
-        return self.functions
-
-    def write_yaml(self):
-        with open('test.yaml', 'w') as file:
-            yaml.dump(self.functions, file)
-
     def write_serverless_framework_yaml(self):
-        version = f"{sys.version_info.major}{sys.version_info.minor}"
+        version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
         config = {
             "service": self.service_name,
             "configValidationMode": "off",
             "provider": {
                 "name": "scaleway",
                 "runtime": f"python{version}",
+                "scwToken": "${env:SCW_SECRET_KEY}",
+                "scwProject": "${env:SCW_DEFAULT_PROJECT_ID}",
+                "scwRegion": "${env:SCW_REGION}",
                 "env": {
                     "test": "test"
                 }
@@ -62,7 +75,15 @@ class App:
                 "handler": func["handler"],
                 "env": {
                     "local": "local"
-                }
+                },
+                "events": [
+                    {
+                        "http": {
+                            "path": func["url"],
+                            "method": "get"
+                        }
+                    }
+                ]
             }
 
         config["functions"] = functions
