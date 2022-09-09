@@ -1,8 +1,3 @@
-import sys
-
-import yaml
-
-
 class App:
     def __init__(self, service_name):
         self.functions = []
@@ -32,6 +27,8 @@ class App:
             self.functions.append(
                 {
                     "function_name": handler.__name__,
+                    # FIXME: Using the function name may result in some function not being save if their name is
+                    #  duplicated.
                     "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
                     "url": kwargs.get("url"),
                 }
@@ -43,34 +40,3 @@ class App:
             return _inner
 
         return decorator
-
-    def write_serverless_framework_yaml(self):
-        version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
-        config = {
-            "service": self.service_name,
-            "configValidationMode": "off",
-            "provider": {
-                "name": "scaleway",
-                "runtime": f"python{version}",
-                "scwToken": "${env:SCW_SECRET_KEY}",
-                "scwProject": "${env:SCW_DEFAULT_PROJECT_ID}",
-                "scwRegion": "${env:SCW_REGION}",
-                "env": {"test": "test"},
-            },
-            "plugins": ["serverless-scaleway-functions"],
-            "package": {"patterns": ["!node_modules/**", "!.gitignore", "!.git/**"]},
-            "functions": {},
-        }
-
-        functions = {}
-        for func in self.functions:
-            functions[func["function_name"]] = {
-                "handler": func["handler"],
-                "env": {"local": "local"},
-                "events": [{"http": {"path": func["url"], "method": "get"}}],
-            }
-
-        config["functions"] = functions
-
-        with open("serverless.yml", "w") as file:
-            yaml.dump(config, file)

@@ -1,5 +1,6 @@
 import click
 
+from src.config.generators.serverlessframework import ServerlessFrameworkGenerator
 from tests.app import app
 
 
@@ -19,7 +20,9 @@ def cli():
 def generate(target):
     click.echo(f"Generating configuration for target: {target}")
 
-    app.write_serverless_framework_yaml()
+    if target == "serverless":
+        serverless_framework_generator = ServerlessFrameworkGenerator(app)
+        serverless_framework_generator.write("./")
 
     click.echo(click.style("Done!", fg="green"))
 
