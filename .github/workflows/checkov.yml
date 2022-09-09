@@ -1,11 +1,9 @@
 name: Checkov
-on:
-  push:
-    branches:
-      - master
+
+on: [push]
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
