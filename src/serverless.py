@@ -70,7 +70,6 @@ class App:
 
         functions = {}
         for func in self.functions:
-            print(func)
             functions[func["function_name"]] = {
                 "handler": func["handler"],
                 "env": {

@@ -128,7 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# PyCharm Project configuration files
+# PyCharm Project config files
 .idea
 *.iml
 

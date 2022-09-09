@@ -1,4 +1,4 @@
-from serverless import App
+from src.serverless import App
 
 app = App("helloworld")
 
