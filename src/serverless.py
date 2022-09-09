@@ -29,18 +29,18 @@ class App:
         """
 
         def decorator(handler):
-    self.functions.append(
-        {
-            "function_name": handler.__name__,
-            "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
-            "url": kwargs.get("url"),
-        }
-    )
+            self.functions.append(
+                {
+                    "function_name": handler.__name__,
+                    "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
+                    "url": kwargs.get("url"),
+                }
+            )
 
-    def _inner(*args, **kwargs):
-        return handler(args, kwargs)
+            def _inner(*args, **kwargs):
+                return handler(args, kwargs)
 
-    return _inner
+            return _inner
 
         return decorator
 
@@ -65,10 +65,10 @@ class App:
         functions = {}
         for func in self.functions:
             functions[func["function_name"]] = {
-    "handler": func["handler"],
-    "env": {"local": "local"},
-    "events": [{"http": {"path": func["url"], "method": "get"}}],
-}
+                "handler": func["handler"],
+                "env": {"local": "local"},
+                "events": [{"http": {"path": func["url"], "method": "get"}}],
+            }
 
         config["functions"] = functions
 
