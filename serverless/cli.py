@@ -6,7 +6,9 @@ import traceback
 import click
 
 from serverless.app import Serverless
-from serverless.config.generators.serverlessframework import ServerlessFrameworkGenerator
+from serverless.config.generators.serverlessframework import (
+    ServerlessFrameworkGenerator,
+)
 
 
 @click.group()
