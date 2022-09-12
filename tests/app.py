@@ -1,9 +1,14 @@
-from src.serverless import App
+import os.path
+import sys
 
-serverlessApp = App("helloworld")
+sys.path.insert(0, os.path.abspath("../serverless"))
+
+from app import Serverless # I don't know why but I can't import Serverless otherwise...
+
+app = Serverless("helloworld")
 
 
-@serverlessApp.func(url="/")
+@app.func(url="/")
 def hello_world(event: dict, context: dict):
     """handle a request to the function
     Args:

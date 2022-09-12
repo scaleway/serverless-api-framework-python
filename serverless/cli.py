@@ -4,8 +4,8 @@ import os.path
 
 import click
 
-from src.config.generators.serverlessframework import ServerlessFrameworkGenerator
-from src.serverless import App
+from app import Serverless
+from config.generators.serverlessframework import ServerlessFrameworkGenerator
 
 
 @click.group()
@@ -40,7 +40,9 @@ def cli():
     help="Select where to save the generated configuration file",
 )
 def generate(file, target, save):
-    if not os.path.exists(file):
+    abs_file = os.path.abspath(file)
+
+    if not os.path.exists(abs_file):
         click.echo(
             click.style(
                 "The provided file doesn't seem to exist. Please provide a valid python file with -f.",
@@ -50,24 +52,28 @@ def generate(file, target, save):
         )
         raise FileNotFoundError
 
-    module_name = os.path.basename(file)
-    module_name = module_name.split(".")[0]
+    module_name = (
+        abs_file.replace(os.path.abspath("./"), "").split(".")[0].replace("/", ".")
+    )[
+        1:
+    ]  # This is more a "temporary hack" than a real solution.
 
-    spec = importlib.util.spec_from_file_location(module_name, file)
+    # Importing user's app
+    spec = importlib.util.spec_from_file_location(module_name, abs_file)
     user_app = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(user_app)
 
     app_instance = None
 
     for member in inspect.getmembers(user_app):
-        if type(member[1]) == App:
+        if type(member[1]) == Serverless:
             # Ok. Found the variable now, need to use it
             app_instance = member[1]
 
-    if app_instance is None:
+    if app_instance is None:  # No variable with type "Serverless" found
         click.echo(
             click.style(
-                "Unable to locate an instance of serverless App in the provided file.",
+                "Unable to locate an instance of serverless Serverless in the provided file.",
                 fg="red",
             ),
             err=True,

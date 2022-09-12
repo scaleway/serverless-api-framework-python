@@ -1,4 +1,4 @@
-class App:
+class Serverless:
     def __init__(self, service_name):
         self.functions = []
         self.service_name = service_name
