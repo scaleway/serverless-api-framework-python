@@ -1,9 +1,4 @@
-import os.path
-import sys
-
-sys.path.insert(0, os.path.abspath("../serverless"))
-
-from app import Serverless # I don't know why but I can't import Serverless otherwise...
+from serverless.app import Serverless
 
 app = Serverless("helloworld")
 

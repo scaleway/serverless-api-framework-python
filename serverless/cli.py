@@ -1,11 +1,12 @@
 import importlib.util
 import inspect
 import os.path
+import traceback
 
 import click
 
-from app import Serverless
-from config.generators.serverlessframework import ServerlessFrameworkGenerator
+from serverless.app import Serverless
+from serverless.config.generators.serverlessframework import ServerlessFrameworkGenerator
 
 
 @click.group()
@@ -91,5 +92,9 @@ def generate(file, target, save):
     )
 
 
-if __name__ == "__main__":
-    cli()
+def main():
+    try:
+        return cli()
+    except Exception:
+        click.echo(traceback.format_exc(), err=True)
+        return 2
