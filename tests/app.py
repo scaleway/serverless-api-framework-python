@@ -12,4 +12,3 @@ def hello_world(event: dict, context: dict):
     """
 
     return "Hello World!"
-
