@@ -1,9 +1,9 @@
 from src.serverless import App
 
-app = App("helloworld")
+serverlessApp = App("helloworld")
 
 
-@app.func(url="/")
+@serverlessApp.func(url="/")
 def hello_world(event: dict, context: dict):
     """handle a request to the function
     Args:
@@ -12,3 +12,4 @@ def hello_world(event: dict, context: dict):
     """
 
     return "Hello World!"
+
