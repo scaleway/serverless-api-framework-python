@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Node Modules for Serverless Framework
+node_modules
+package-lock.json
+package.json
+
+# Test yaml files
+serverless.yml
+
+# Serverless Framework files
+.serverless
