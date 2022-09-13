@@ -38,7 +38,10 @@ class ServerlessFrameworkGenerator:
 
         for k, v in args.items():
             if k in allowed_args:
-                config[self.to_camel_case(k)] = v
+                if k == "custom_domains":
+                    config[k] = v
+                else:
+                    config[self.to_camel_case(k)] = v
 
     def write(self, path):
         version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
