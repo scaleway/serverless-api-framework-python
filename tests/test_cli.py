@@ -13,7 +13,6 @@ def init_runner(args: list):
 def test_cli_generate_no_args():
     """
     Test the generate command with no args (other than the file selector)
-
     :return:
     """
     result = init_runner(["generate", "-f", "./dev/app.py"])
@@ -24,7 +23,6 @@ def test_cli_generate_no_args():
 def test_cli_generate_target_serverless():
     """
     Test the generate command targeting the serverless framework
-
     :return:
     """
     result = init_runner(["generate", "-f", "./dev/app.py", "-t", "serverless"])
@@ -36,7 +34,6 @@ def test_cli_generate_target_serverless():
 def test_cli_generate_save_destination():
     """
     Test the generate command with a specific save folder path
-
     :return:
     """
     result = init_runner(["generate", "-f", "./dev/app.py", "-s", "./test"])

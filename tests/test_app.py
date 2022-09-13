@@ -11,7 +11,6 @@ def test_function_export():
     """
     Test if annotation are correctly exported and stored in the functions list.
     This test use the file dev/app.py
-    
     :return:
     """
     assert len(app.functions) == 1
