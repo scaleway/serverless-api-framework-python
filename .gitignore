@@ -140,3 +140,6 @@ package.json
 # Test yaml files
 *.yaml
 *.yml
+
+# Serverless Framework files
+.serverless

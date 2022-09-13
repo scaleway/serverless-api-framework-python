@@ -1,7 +1,9 @@
 class Serverless:
-    def __init__(self, service_name):
+    def __init__(self, service_name: str, env: dict = None, secret: dict = None):
         self.functions = []
         self.service_name = service_name
+        self.env = env
+        self.secret = secret
 
     def module_to_path(self, module: str):
         """
@@ -30,7 +32,7 @@ class Serverless:
                     # FIXME: Using the function name may result in some function not being save if their name is
                     #  duplicated.
                     "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
-                    "url": kwargs.get("url"),
+                    "args": kwargs,
                 }
             )
 

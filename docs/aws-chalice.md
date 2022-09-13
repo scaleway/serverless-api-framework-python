@@ -54,7 +54,6 @@ The only values provided to the function are path parameters
 You can return a Response object everything else is serialized to json. (Maybe we want a default behavior for non
 objects/list ?)
 
-
  ```python
  @app.route(
   '/resource uri', # Resource route
