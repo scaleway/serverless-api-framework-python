@@ -31,30 +31,22 @@ class TerraformGenerator:
             self.instance.service_name: {
                 "name": f"{self.instance.service_name}-function-namespace",
                 "description": f"{self.instance.service_name} function namespace",
-                "environment_variables": {"key1": "value1"},
             }
         }
 
-        # config_to_read = config_path
-        #
-        # # If there is no serverless.yml file existing. Use the one in the templates folder
-        # if not os.path.exists(config_path):
-        #     config_to_read = os.path.join(
-        #         os.path.dirname(__file__), "..", "templates", "serverless.yml"
-        #     )
-        #
-        # # Open and read the configuration file
-        # with open(config_to_read, "r") as file:
-        #     config = yaml.safe_load(file)
-        #
-        # config["service"] = self.instance.service_name  # Update the service name
-        # config["provider"]["runtime"] = f"python{version}"  # Update the runtime
-        #
-        # if self.instance.env is not None:
-        #     config["provider"]["env"] = self.instance.env
-        # if self.instance.secret is not None:
-        #     config["provider"]["secret"] = self.instance.secret
-        #
+        if self.instance.env is not None:
+            config["resource"]["scaleway_function_namespace"][
+                self.instance.service_name
+            ]["environment_variables"] = self.instance.env
+
+        config["resource"]["scaleway_function"] = {}
+
+        for func in self.instance.functions:  # Iterate over the functions
+            pass
+
+        with open(config_path, "w") as file:
+            json.dump(config, file, indent=2)
+
         # for func in self.instance.functions:  # Iterate over the functions
         #     if (
         #             func["function_name"] in config["functions"]

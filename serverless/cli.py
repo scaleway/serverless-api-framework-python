@@ -9,6 +9,7 @@ from serverless.app import Serverless
 from serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
+from serverless.config.generators.terraform import TerraformGenerator
 
 
 @click.group()
@@ -88,6 +89,9 @@ def generate(file, target, save):
     if target == "serverless":
         serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
         serverless_framework_generator.write(save)
+    elif target == "terraform":
+        terraform_generator = TerraformGenerator(app_instance)
+        terraform_generator.write(save)
 
     click.echo(
         click.style(f"Done! Generated configuration file saved in {save}", fg="green")
