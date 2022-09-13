@@ -23,7 +23,7 @@ def cli():
     "-t",
     "target",
     default="serverless",
-    type=click.Choice(["serverless"], case_sensitive=False),
+    type=click.Choice(["serverless", "terraform"], case_sensitive=False),
     show_default=True,
     help="Select the configuration type to generate",
 )

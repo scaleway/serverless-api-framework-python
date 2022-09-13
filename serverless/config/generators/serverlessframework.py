@@ -27,7 +27,6 @@ class ServerlessFrameworkGenerator:
                 "secret",
                 "min_scale",
                 "max_scale",
-                "max_concurrency",
                 "memory_limit",
                 "timeout",
                 "custom_domains",
