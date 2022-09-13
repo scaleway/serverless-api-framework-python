@@ -128,18 +128,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# PyCharm Project config files
-.idea
-*.iml
-
 # Node Modules for Serverless Framework
 node_modules
 package-lock.json
 package.json
 
 # Test yaml files
-*.yaml
-*.yml
+serverless.yml
 
 # Serverless Framework files
 .serverless
