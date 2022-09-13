@@ -30,7 +30,7 @@ def cli():
     "--file",
     "-f",
     "file",
-    default="./tests/app.py",
+    default="app.py",
     show_default=True,
     help="Select the file containing your functions handlers",
 )
@@ -84,6 +84,9 @@ def generate(file, target, save):
         raise ImportError
 
     click.echo(f"Generating configuration for target: {target}")
+
+    if not os.path.exists(save):
+        os.mkdir(save)
 
     if target == "serverless":
         serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
