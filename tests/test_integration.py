@@ -30,28 +30,32 @@ def delete_project(project_id):
 def test_integration_serverless_framework():
     project_id = create_project()
 
-    # TODO: Run the command line
+    try:
+        # Run the command line
+        which = subprocess.run(["which", "srvlss"], capture_output=True)
 
-    ret = subprocess.run(
-        [
-            "../venv/bin/srvlss",
-            "generate",
-            "-t",
-            "serverless",
-            "-f",
-            "./dev/app.py",
-            "-s",
-            "./test",
-        ],
-        env={
-            "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
-            "SCW_DEFAULT_PROJECT_ID": project_id,
-            "SCW_REGION": "fr-par",
-        },
-        # shell=True,
-    )
+        ret = subprocess.run(
+            [
+                str(which.stdout.decode("UTF-8")).strip(),
+                "generate",
+                "-t",
+                "serverless",
+                "-f",
+                "./dev/app.py",
+                "-s",
+                "./test",
+            ],
+            env={
+                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
+                "SCW_DEFAULT_PROJECT_ID": project_id,
+                "SCW_REGION": "fr-par",
+            },
+            capture_output=True,
+        )
 
-    assert ret.returncode == 0
-    # TODO: Run the serverless Framework
+        assert ret.returncode == 0
+        assert "Done" in str(ret.stdout.decode("UTF-8")).strip()
 
-    delete_project(project_id)
+        # TODO: Run the serverless Framework
+    finally:
+        delete_project(project_id)
