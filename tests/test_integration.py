@@ -1,7 +1,11 @@
 import os
+import re
 import subprocess
+import time
 
 import requests
+
+REGION = "fr-par"
 
 
 def create_project():
@@ -19,12 +23,42 @@ def create_project():
     return req.json()["id"]
 
 
-def delete_project(project_id):
+def delete_project(project_id, retries: int = 0):
     req = requests.delete(
         f"https://api.scaleway.com/account/v2/projects/{project_id}",
         headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
     )
+
+    if req.status_code == 400 and retries <= 3:
+        time.sleep(42)
+        return delete_project(project_id, retries + 1)
+
     req.raise_for_status()
+
+
+def cleanup(project_id):
+    namespaces = requests.get(
+        f"https://api.scaleway.com/functions/v1beta1/regions/{REGION}/namespaces?project_id={project_id}",
+        headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
+    )  # List namespaces
+    namespaces.raise_for_status()
+    for namespace in namespaces.json()["namespaces"]:
+        delete_namespace = requests.delete(
+            f"https://api.scaleway.com/functions/v1beta1/regions/{REGION}/namespaces/{namespace['id']}",
+            headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
+        )  # Delete namespace
+        delete_namespace.raise_for_status()
+    registries = requests.get(
+        f"https://api.scaleay.com/registry/v1/regions/{REGION}/namespaces?project_id={project_id}",
+        headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
+    )  # List containers registries
+    registries.raise_for_status()
+    for registry in registries.json()["namespaces"]:
+        delete_registry = requests.delete(
+            f"https://api.scaleway.com/registry/v1/regions/{REGION}/namespaces/{registry['id']}",
+            headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
+        )  # Delete container registry
+        delete_registry.raise_for_status()
 
 
 def test_integration_serverless_framework():
@@ -43,12 +77,12 @@ def test_integration_serverless_framework():
                 "-f",
                 "./dev/app.py",
                 "-s",
-                "./test",
+                "../",
             ],
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
                 "SCW_DEFAULT_PROJECT_ID": project_id,
-                "SCW_REGION": "fr-par",
+                "SCW_REGION": REGION,
             },
             capture_output=True,
         )
@@ -56,6 +90,35 @@ def test_integration_serverless_framework():
         assert ret.returncode == 0
         assert "Done" in str(ret.stdout.decode("UTF-8")).strip()
 
-        # TODO: Run the serverless Framework
+        # Run the serverless Framework
+        serverless = subprocess.run(
+            ["serverless", "deploy"],
+            env={
+                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
+                "SCW_DEFAULT_PROJECT_ID": project_id,
+                "SCW_REGION": REGION,
+            },
+            capture_output=True,
+        )
+
+        print(serverless)
+
+        assert serverless.returncode == 0
+        assert (
+            "Function hello-world has been deployed"
+            in str(serverless.stderr.decode("UTF-8")).strip()
+        )
+
+        output = str(serverless.stderr.decode("UTF-8")).strip()
+        pattern = re.compile(
+            "(Function [a-z0-9-]+ has been deployed to: (https:\/\/.+))"
+        )
+        groups = re.search(pattern, output).groups()
+
+        # Call the actual function
+        req = requests.get(groups[1])
+        req.raise_for_status()
+
     finally:
+        cleanup(project_id)
         delete_project(project_id)
