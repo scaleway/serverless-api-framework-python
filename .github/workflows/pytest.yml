@@ -29,6 +29,7 @@ jobs:
           pip install --editable .
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
           npm install -g serverless serverless-scaleway-functions
+          ln -s "$(which nodejs)" /usr/local/bin/node
       - name: Test with pytest
         working-directory: tests
         run: pytest

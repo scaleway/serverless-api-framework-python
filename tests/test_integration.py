@@ -116,8 +116,7 @@ def test_integration_serverless_framework():
                 "SCW_REGION": REGION,
             },
             capture_output=True,
-            cwd="../",
-            shell=True
+            cwd="../"
         )
 
         assert serverless.returncode == 0
