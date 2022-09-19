@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: Setup node 18
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v1
         with:
           node-version: 18
       - name: Install dependencies
@@ -29,7 +29,6 @@ jobs:
           pip install --editable .
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
           npm install -g serverless serverless-scaleway-functions
-          ln -s "$(which node)" /usr/local/bin/node
       - name: Test with pytest
         working-directory: tests
         run: pytest
