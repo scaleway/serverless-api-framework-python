@@ -5,7 +5,7 @@ Serverless API Project is a python framework that let you write serverless apps 
 You can create a simple function:
 
 ```python
-from scw_serverless import Serverless
+from scw_serverless.app import Serverless
 
 app = Serverless("my_service_name")
 
@@ -31,8 +31,12 @@ python3 -m venv venv310
 
 Install `serverless-api-project`
 ```shell
-python -m pip install scw_serverless-api-project
+python -m pip install scw-serverless-api-project
 ```
 
 You can then now, create a python file and start coding using the example above.
 
+When you are ready, you can generate a `serverless.yml` configuration file using:
+```shell
+srvlss generate --file app.py
+```
