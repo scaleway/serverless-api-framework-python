@@ -13,7 +13,7 @@ class _Function:
 
         self.args: dict[str, Any] = args
 
-    def _add_args(self, config):
+    def _get_args_dict(self) -> dict[str, Any]:
         allowed_args = (
             [  # List of allowed args in serverless framework function configuration
                 "env",
@@ -28,16 +28,17 @@ class _Function:
                 "description",
             ]
         )
+        config = {}
         for k, v in self.args.items():
             if k in allowed_args:
                 if k == "custom_domains":
                     config[k] = v
                 else:
                     config[utils.to_camel_case(k)] = v
+        return config
 
-    def add_func_to_config(self, config: dict[str, Any]) -> None:
-        config["functions"] |= {self.name: {"handler": self.handler_path}}
-        self._add_args(config["functions"][self.name])
+    def get_config(self) -> dict[str, Any]:
+        return {"handler": self.handler_path} | self._get_args_dict()
 
 
 class _ScheduledFunction(_Function):
@@ -52,17 +53,16 @@ class _ScheduledFunction(_Function):
         self.inputs = inputs
         self.schedule = schedule
 
-    def _add_schedule(self, config: dict[str, Any]) -> None:
-        if "events" not in config["functions"][self.name]:
-            config["functions"][self.name]["events"] = []
+    def _get_schedule_config(self) -> dict[str, Any]:
         schedule_config = {"rate": self.schedule.as_expression()}
         if self.inputs is not None:
             schedule_config["input"] = self.inputs
-        config["functions"][self.name]["events"].append({"schedule": schedule_config})
+        return {"schedule": schedule_config}
 
-    def add_func_to_config(self, config: dict[str, Any]) -> None:
-        super().add_func_to_config(config)
-        self._add_schedule(config)
+    def get_config(self) -> dict[str, Any]:
+        config = super().get_config()
+        config["events"] = [self._get_schedule_config()]
+        return config
 
 
 class Serverless:
@@ -90,7 +90,9 @@ class Serverless:
 
         return decorator
 
-    def schedule(self, schedule: Cron, inputs: Optional[dict[str, Any]] = None, **kwargs):
+    def schedule(
+        self, schedule: Cron, inputs: Optional[dict[str, Any]] = None, **kwargs
+    ):
         def decorator(handler):
             self.functions.append(_ScheduledFunction(schedule, inputs, handler, kwargs))
 

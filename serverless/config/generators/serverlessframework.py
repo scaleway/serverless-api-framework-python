@@ -41,7 +41,10 @@ class ServerlessFrameworkGenerator:
             config["provider"]["secret"] = self.instance.secret
 
         for func in self.instance.functions:  # Iterate over the functions
-            func.add_func_to_config(config)
+            if func.name in config["functions"]:
+                config["functions"][func.name] |= func.get_config()
+            else:
+                config["functions"][func.name] = func.get_config()
 
         functions = [fun.name for fun in self.instance.functions]
         config["functions"] = {
