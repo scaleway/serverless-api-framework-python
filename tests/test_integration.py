@@ -119,7 +119,6 @@ def test_integration_serverless_framework():
             },
             capture_output=True,
             cwd="../",
-            shell=True,
         )
 
         assert serverless.returncode == 0
