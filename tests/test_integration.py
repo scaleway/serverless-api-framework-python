@@ -124,7 +124,7 @@ def test_integration_serverless_framework():
 
         output = str(serverless.stderr.decode("UTF-8")).strip()
         pattern = re.compile(
-            "(Function [a-z0-9-]+ has been deployed to: (https:\/\/.+))"
+            "(Function [a-z0-9-]+ has been deployed to: (https://.+))"
         )
         groups = re.search(pattern, output).groups()
 
