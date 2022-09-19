@@ -102,9 +102,12 @@ def test_integration_serverless_framework():
         assert "Done" in str(ret.stdout.decode("UTF-8")).strip()
 
         # Run the serverless Framework
+
+        serverless_which = subprocess.run(["which", "serverless"], capture_output=True)
+
         serverless = subprocess.run(
             [
-                "serverless",
+                str(serverless_which.stdout.decode("UTF-8")).strip(),
                 "deploy",
             ],
             env={
@@ -123,9 +126,7 @@ def test_integration_serverless_framework():
         )
 
         output = str(serverless.stderr.decode("UTF-8")).strip()
-        pattern = re.compile(
-            "(Function [a-z0-9-]+ has been deployed to: (https://.+))"
-        )
+        pattern = re.compile("(Function [a-z0-9-]+ has been deployed to: (https://.+))")
         groups = re.search(pattern, output).groups()
 
         # Call the actual function
