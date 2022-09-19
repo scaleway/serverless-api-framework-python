@@ -138,3 +138,6 @@ serverless.yml
 
 # Serverless Framework files
 .serverless
+
+# Additional dependencies
+package

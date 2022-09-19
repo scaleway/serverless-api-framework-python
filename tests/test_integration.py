@@ -48,8 +48,9 @@ def cleanup(project_id):
             headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
         )  # Delete namespace
         delete_namespace.raise_for_status()
+    time.sleep(60)  # wait for resource deletion
     registries = requests.get(
-        f"https://api.scaleay.com/registry/v1/regions/{REGION}/namespaces?project_id={project_id}",
+        f"https://api.scaleway.com/registry/v1/regions/{REGION}/namespaces?project_id={project_id}",
         headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
     )  # List containers registries
     registries.raise_for_status()
@@ -59,6 +60,17 @@ def cleanup(project_id):
             headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
         )  # Delete container registry
         delete_registry.raise_for_status()
+
+
+def call_function(url: str, retries: int = 0):
+    try:
+        req = requests.get(url)  # Call the request
+        req.raise_for_status()
+    except ConnectionError:
+        if retries <= 3:
+            time.sleep(42)
+            return call_function(url, retries + 1)  # retry calling the function
+        raise ConnectionError  # Already retried without success abort.
 
 
 def test_integration_serverless_framework():
@@ -75,9 +87,7 @@ def test_integration_serverless_framework():
                 "-t",
                 "serverless",
                 "-f",
-                "./dev/app.py",
-                "-s",
-                "../",
+                "tests/dev/app.py",
             ],
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
@@ -85,6 +95,7 @@ def test_integration_serverless_framework():
                 "SCW_REGION": REGION,
             },
             capture_output=True,
+            cwd="../",
         )
 
         assert ret.returncode == 0
@@ -92,16 +103,18 @@ def test_integration_serverless_framework():
 
         # Run the serverless Framework
         serverless = subprocess.run(
-            ["serverless", "deploy"],
+            [
+                "serverless",
+                "deploy",
+            ],
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
                 "SCW_DEFAULT_PROJECT_ID": project_id,
                 "SCW_REGION": REGION,
             },
             capture_output=True,
+            cwd="../",
         )
-
-        print(serverless)
 
         assert serverless.returncode == 0
         assert (
@@ -116,8 +129,7 @@ def test_integration_serverless_framework():
         groups = re.search(pattern, output).groups()
 
         # Call the actual function
-        req = requests.get(groups[1])
-        req.raise_for_status()
+        call_function(groups[1])
 
     finally:
         cleanup(project_id)
