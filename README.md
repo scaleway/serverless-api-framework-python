@@ -1,4 +1,4 @@
-# serverless-api-project
+# Scaleway Serverless Python API
 
 Serverless API Project is a python framework that let you write serverless apps in python.
 
