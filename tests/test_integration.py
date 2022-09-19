@@ -104,9 +104,11 @@ def test_integration_serverless_framework():
         # Run the serverless Framework
 
         serverless_which = subprocess.run(["which", "serverless"], capture_output=True)
+        node_which = subprocess.run(["which", "node"], capture_output=True)
 
         serverless = subprocess.run(
             [
+                str(node_which.stdout.decode("UTF-8")).strip(),
                 str(serverless_which.stdout.decode("UTF-8")).strip(),
                 "deploy",
             ],
