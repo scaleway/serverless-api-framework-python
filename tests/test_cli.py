@@ -2,7 +2,7 @@ import os.path
 
 from click.testing import CliRunner
 
-from serverless.cli import cli
+from scw_serverless.cli import cli
 
 
 def init_runner(args: list):

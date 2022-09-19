@@ -5,8 +5,8 @@ import traceback
 
 import click
 
-from serverless.app import Serverless
-from serverless.config.generators.serverlessframework import (
+from scw_serverless.app import Serverless
+from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
 
@@ -76,7 +76,7 @@ def generate(file, target, save):
     if app_instance is None:  # No variable with type "Serverless" found
         click.echo(
             click.style(
-                "Unable to locate an instance of serverless Serverless in the provided file.",
+                "Unable to locate an instance of serverless App in the provided file.",
                 fg="red",
             ),
             err=True,

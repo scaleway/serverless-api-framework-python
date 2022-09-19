@@ -1,5 +1,5 @@
 from dev.app import app
-from serverless.app import Serverless
+from scw_serverless.app import Serverless
 
 
 def test_module_to_path():

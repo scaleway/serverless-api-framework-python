@@ -1,4 +1,4 @@
-from serverless.app import Serverless
+from scw_serverless.app import Serverless
 
 app = Serverless("helloworld", env={"key1": "value1"}, secret={"key2": "value2"})
 
