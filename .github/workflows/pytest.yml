@@ -20,10 +20,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
+      - name: actions/setup-node@v3
+        with:
+          node-version: 16
       - name: Install dependencies
         run: |
           pip install --editable .
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          npm install -g serverless
       - name: Test with pytest
         working-directory: tests
         run: pytest
