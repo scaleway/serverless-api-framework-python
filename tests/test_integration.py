@@ -105,6 +105,8 @@ def test_integration_serverless_framework():
 
         serverless_which = subprocess.run(["which", "serverless"], capture_output=True)
 
+        subprocess.run("echo $PATH", shell=True)
+
         serverless = subprocess.run(
             [
                 str(serverless_which.stdout.decode("UTF-8")).strip(),
