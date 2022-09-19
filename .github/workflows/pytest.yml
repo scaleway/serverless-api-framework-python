@@ -33,6 +33,7 @@ jobs:
         working-directory: tests
         run: |
           whereis serverless node
+          echo $PATH
           pytest
         env:
           SCW_ORG_ID: ${{ secrets.SCW_ORG_ID }}
