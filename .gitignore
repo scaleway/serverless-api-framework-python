@@ -141,3 +141,6 @@ serverless.yml
 
 # Additional dependencies
 package
+
+# Deployment folder
+.scw

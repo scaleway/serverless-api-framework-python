@@ -8,9 +8,9 @@ class Api:
         self.secret_key = secret_key
         self.region = region
 
-    def list_namespaces(self):
+    def list_namespaces(self, project_id):
         req = requests.get(
-            f"{API_BASE}/regions/{self.region}/namespaces",
+            f"{API_BASE}/regions/{self.region}/namespaces?project_id={project_id}",
             headers={"X-Auth-Token": self.secret_key},
         )
 
@@ -40,7 +40,28 @@ class Api:
         )
 
         if req.status_code != 200:
-            return []
+            return None
+
+        return req.json()
+
+    def update_namespace(
+        self,
+        env: dict = None,
+        description: str = None,
+        secrets: dict = None,
+    ):
+        req = requests.patch(
+            f"{API_BASE}/regions/{self.region}/namespaces",
+            headers={"X-Auth-Token": self.secret_key},
+            json={
+                "environment_variables": env,
+                "description": description,
+                "secret_environment_variables": self.to_secret_list(secrets),
+            },
+        )
+
+        if req.status_code != 200:
+            return None
 
         return req.json()
 
@@ -88,7 +109,7 @@ class Api:
         )
 
         if req.status_code != 200:
-            return []
+            return None
 
         return req.json()
 
@@ -149,11 +170,12 @@ class Api:
                 "privacy": privacy,
                 "description": description,
                 "secret_environment_variables": self.to_secret_list(secrets),
+                "environment_variables": env,
             },
         )
 
         if req.status_code != 200:
-            return []
+            return None
 
         return req.json()
 
