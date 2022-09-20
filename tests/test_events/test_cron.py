@@ -7,7 +7,7 @@ from serverless.events.cron import Cron
     "cron,expected_expression",
     [
         (Cron("*", "*", "*", "*", "*", "*", "*"), "* * * * * *"),
-        (Cron("*", "*", "*", "*", "*", "*"), "* * * * *"),
+        (Cron("0", "0", "0", "*", "*", "TUE"), "0 0 0 * * TUE"),
     ],
 )
 def test_cron_as_expression(cron, expected_expression: str):

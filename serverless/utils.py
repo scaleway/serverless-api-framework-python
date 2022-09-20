@@ -10,6 +10,7 @@ def module_to_path(module: str):
     )  # This may break in certain scenarios need to test it. For example if your
     # serverless framework is not at the root of you project.
 
+
 def to_camel_case(snake_str):
     components = snake_str.split("_")
     # We capitalize the first letter of each component except the first one

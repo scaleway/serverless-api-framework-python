@@ -24,6 +24,7 @@ def hello_world(event: dict, context: dict):
 
     return "Hello World!"
 
+
 @app.schedule(
     schedule=Cron("1", "*", "*", "*", "*", "*"),
     inputs={"my_name": "Georges"},
