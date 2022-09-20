@@ -9,7 +9,7 @@ from scw_serverless.app import Serverless
 from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
-from serverless.config.generators.terraform import TerraformGenerator
+from scw_serverless.config.generators.terraform import TerraformGenerator
 
 
 @click.group()

@@ -27,16 +27,18 @@ class TerraformGenerator:
     def create_zip_file(self, zip_path, source):
         files = self.list_files(source)
 
-        with ZipFile(zip_path, "w") as zip:
+        with ZipFile(zip_path, "w", strict_timestamps=False) as zip:
             for file in files:
-                zip.write(file)
+                # Allow for safely running the generator multiple times
+                if os.path.realpath(file) != os.path.realpath(zip_path):
+                    zip.write(file)
 
     def add_args(self, config, args):
         allowed_args = [  # List of allowed args in terraform function configuration
             "min_scale",
             "max_scale",
             "memory_limit",
-            "timeout",
+            #TODO "timeout" See: https://github.com/scaleway/terraform-provider-scaleway/issues/1476
             "privacy",
             "description",
         ]
@@ -80,11 +82,13 @@ class TerraformGenerator:
 
         for func in self.instance.functions:  # Iterate over the functions
             config["resource"]["scaleway_function"][func["function_name"]] = {
-                "namespace_id": "${scaleway_function_namespace.main.id}",
+                "namespace_id": (
+                    "${scaleway_function_namespace.%s.id}" % self.instance.service_name
+                ),
                 "runtime": f"python{version}",
                 "handler": func["handler"],
                 "name": func["function_name"],
-                "zip": "functions.zip",
+                "zip_file": "functions.zip",
                 "zip_hash": zip_hash,
                 "deploy": True,
             }
