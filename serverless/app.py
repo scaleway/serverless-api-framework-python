@@ -95,11 +95,11 @@ class Serverless:
     ):
         """Schedules a handler with Cron, passing input as parameters to the body.
 
-        :param schedule: Cron schedule to run with 
+        :param schedule: Cron schedule to run with
         :type schedule: Cron
         :param inputs: Parameters to be passed to the body, defaults to None
         :type inputs: Optional[dict[str, Any]], optional
-        """        
+        """
 
         def decorator(handler):
             self.functions.append(_ScheduledFunction(schedule, inputs, handler, kwargs))
