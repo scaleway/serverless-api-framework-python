@@ -37,6 +37,9 @@ class ServerlessFrameworkGenerator:
 
         for k, v in args.items():
             if k in allowed_args:
+                if isinstance(v, int):
+                    v = str(v)
+
                 if k == "custom_domains":
                     config[k] = v
                 else:

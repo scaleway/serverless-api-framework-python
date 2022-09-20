@@ -5,8 +5,8 @@ import traceback
 
 import click
 
-from serverless.app import Serverless
-from serverless.config.generators.serverlessframework import (
+from scw_serverless.app import Serverless
+from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
 from serverless.config.generators.terraform import TerraformGenerator
@@ -31,7 +31,7 @@ def cli():
     "--file",
     "-f",
     "file",
-    default="./tests/app.py",
+    default="app.py",
     show_default=True,
     help="Select the file containing your functions handlers",
 )
@@ -77,7 +77,7 @@ def generate(file, target, save):
     if app_instance is None:  # No variable with type "Serverless" found
         click.echo(
             click.style(
-                "Unable to locate an instance of serverless Serverless in the provided file.",
+                "Unable to locate an instance of serverless App in the provided file.",
                 fg="red",
             ),
             err=True,
@@ -85,6 +85,9 @@ def generate(file, target, save):
         raise ImportError
 
     click.echo(f"Generating configuration for target: {target}")
+
+    if not os.path.exists(save):
+        os.mkdir(save)
 
     if target == "serverless":
         serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
