@@ -16,7 +16,34 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(help="Deploy your functions to scaleway")
+@click.option(
+    "--file",
+    "-f",
+    "file",
+    default="./tests/app.py",
+    show_default=True,
+    help="Select the file containing your functions handlers",
+)
+def deploy(file):
+    app_instance = get_app_instance(file)
+
+    """
+    List user's namespaces.
+     If a namespace exist in the same project and region, use this one
+     otherwise, create a new namespace
+     
+    List functions in the namespace
+        if a function exists with the same name, update it.
+        otherwise create a new one
+    
+    delete functions that are no longer present in the project
+    
+    update the namespace if it was already existing with the new configuration
+    """
+
+
+@cli.command(help="Generate the configuration file for your functions")
 @click.option(
     "--target",
     "-t",
@@ -43,6 +70,20 @@ def cli():
     help="Select where to save the generated configuration file",
 )
 def generate(file, target, save):
+    app_instance = get_app_instance(file)  # Get the serverless App instance
+
+    click.echo(f"Generating configuration for target: {target}")
+
+    if target == "serverless":
+        serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
+        serverless_framework_generator.write(save)
+
+    click.echo(
+        click.style(f"Done! Generated configuration file saved in {save}", fg="green")
+    )
+
+
+def get_app_instance(file: str) -> Serverless:
     abs_file = os.path.abspath(file)
 
     if not os.path.exists(abs_file):
@@ -83,15 +124,7 @@ def generate(file, target, save):
         )
         raise ImportError
 
-    click.echo(f"Generating configuration for target: {target}")
-
-    if target == "serverless":
-        serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
-        serverless_framework_generator.write(save)
-
-    click.echo(
-        click.style(f"Done! Generated configuration file saved in {save}", fg="green")
-    )
+    return app_instance
 
 
 def main():
