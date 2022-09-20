@@ -17,6 +17,9 @@ class Serverless:
         )  # This may break in certain scenarios need to test it. For example if your
         # serverless framework is not at the root of you project.
 
+    def nomalize_function_name(self, name):
+        return name.lower().replace("_", "-")
+
     def func(self, **kwargs):
         """
         @func decorator
@@ -28,7 +31,7 @@ class Serverless:
         def decorator(handler):
             self.functions.append(
                 {
-                    "function_name": handler.__name__,
+                    "function_name": self.nomalize_function_name(handler.__name__),
                     # FIXME: Using the function name may result in some function not being save if their name is
                     #  duplicated.
                     "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
