@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 import re
 import subprocess
@@ -72,11 +73,18 @@ def call_function(url: str, retries: int = 0):
             return call_function(url, retries + 1)  # retry calling the function
         raise ConnectionError  # Already retried without success abort.
 
+@contextmanager
+def open_serverless_project():
+    project_id = create_project()
+    try:
+        yield project_id
+    finally:
+        cleanup(project_id)
+        delete_project(project_id)
+
 
 def test_integration_serverless_framework():
-    project_id = create_project()
-
-    try:
+    with open_serverless_project() as project_id:
         # Run the command line
         which = subprocess.run(["which", "srvlss"], capture_output=True)
 
@@ -133,7 +141,3 @@ def test_integration_serverless_framework():
 
         # Call the actual function
         call_function(groups[1])
-
-    finally:
-        cleanup(project_id)
-        delete_project(project_id)
