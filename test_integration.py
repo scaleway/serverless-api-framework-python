@@ -80,8 +80,9 @@ def create_serverless_project_fixture():
     try:
         yield project_id
     finally:
-        cleanup(project_id)
-        delete_project(project_id)
+        # cleanup(project_id)
+        # delete_project(project_id)
+        pass
 
 
 def run_srvlss_cli(project_id: str, args: List[str]):
@@ -206,12 +207,13 @@ output "domain_name" {
         call_function(url)
 
     finally:
-        should_be_deleted = [
-            "terraform.tf.json",
-            "functions.zip",
-            "output.tf",
-            "terraform.tfstate",
-            ".terraform.lock.hcl",
-        ]
-        for file in should_be_deleted:
-            os.remove(os.path.join(TESTS_DIR, file))
+        # should_be_deleted = [
+        #     "terraform.tf.json",
+        #     "functions.zip",
+        #     "output.tf",
+        #     "terraform.tfstate",
+        #     ".terraform.lock.hcl",
+        # ]
+        # for file in should_be_deleted:
+        #     os.remove(os.path.join(TESTS_DIR, file))
+        pass

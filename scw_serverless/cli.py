@@ -10,6 +10,7 @@ from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
 from scw_serverless.config.generators.terraform import TerraformGenerator
+from scw_serverless.dependencies_manager import DependenciesManager
 
 
 @click.group()
@@ -93,7 +94,10 @@ def generate(file, target, save):
         serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
         serverless_framework_generator.write(save)
     elif target == "terraform":
-        terraform_generator = TerraformGenerator(app_instance)
+        # TODO: Change this to a configurable path
+        terraform_generator = TerraformGenerator(
+            app_instance, deps_manager=DependenciesManager("./", "./")
+        )
         terraform_generator.write(save)
 
     click.echo(

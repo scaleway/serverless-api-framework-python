@@ -4,6 +4,9 @@ import os
 import sys
 from zipfile import ZipFile
 
+from ...app import Serverless
+from ...dependencies_manager import DependenciesManager
+
 
 class TerraformGenerator:
     """
@@ -12,8 +15,9 @@ class TerraformGenerator:
     This class is responsible for generating Terraform Configuration
     """
 
-    def __init__(self, instance):
+    def __init__(self, instance: Serverless, deps_manager: DependenciesManager):
         self.instance = instance
+        self.deps_manager = deps_manager
 
     def list_files(self, source):
         zip_files = []
@@ -38,7 +42,7 @@ class TerraformGenerator:
             "min_scale",
             "max_scale",
             "memory_limit",
-            #TODO "timeout" See: https://github.com/scaleway/terraform-provider-scaleway/issues/1476
+            # TODO "timeout" See: https://github.com/scaleway/terraform-provider-scaleway/issues/1476
             "privacy",
             "description",
         ]
@@ -60,6 +64,8 @@ class TerraformGenerator:
 
         with open(config_to_read, "r") as file:
             config = json.load(file)
+
+        self.deps_manager.generate_package_folder()
 
         self.create_zip_file(f"{path}/functions.zip", "./")
         with open(f"{path}/functions.zip", "rb") as f:
