@@ -150,7 +150,7 @@ class Api:
         req = requests.post(
             f"{API_BASE}/regions/{self.region}/functions/{function_id}/deploy",
             headers={"X-Auth-Token": self.secret_key},
-            json={}
+            json={},
         )
 
         return req.status_code == 200
