@@ -294,7 +294,9 @@ def deploy(
 
         for func in api.list_functions(namespace):
             if func["name"] not in functions:
-                click.echo(click.style(f"Deleting function {func['name']}...", fg="orange"))
+                click.echo(
+                    click.style(f"Deleting function {func['name']}...", fg="orange")
+                )
                 api.delete_function(func["id"])
 
     click.echo(
