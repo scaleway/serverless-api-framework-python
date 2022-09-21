@@ -191,6 +191,17 @@ class Api:
 
         return req.json()
 
+    def get_function(self, function_id: str):
+        req = requests.get(
+            f"{API_BASE}/regions/{self.region}/functions/{function_id}",
+            headers={"X-Auth-Token": self.secret_key},
+        )
+
+        if req.status_code != 200:
+            return None
+
+        return req.json()
+
     def delete_function(self, function_id: str):
         req = requests.delete(
             f"{API_BASE}/regions/{self.region}/functions/{function_id}",

@@ -104,7 +104,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
         # Wait for the namespace to exit pending status
         namespace_data = api.get_namespace(namespace)
         while namespace_data["status"] == "pending":
-            time.sleep(30)
+            time.sleep(15)
             namespace_data = api.get_namespace(namespace)
 
     version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
@@ -142,27 +142,23 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
                 runtime=f"python{version}",
                 handler=func["handler"],
                 privacy=func["args"]["privacy"]
-                if func["args"]["privacy"] is not None
+                if "privacy" in func["args"]
                 else "unknown_privacy",
-                env=func["args"]["env"] if func["args"]["env"] is not None else None,
+                env=func["args"]["env"] if "env" in func["args"] else None,
                 min_scale=func["args"]["min_scale"]
-                if func["args"]["min_scale"] is not None
+                if "min_scale" in func["args"]
                 else None,
                 max_scale=func["args"]["max_scale"]
-                if func["args"]["max_scale"] is not None
+                if "max_scale" in func["args"]
                 else None,
                 memory_limit=func["args"]["memory_limit"]
-                if func["args"]["memory_limit"] is not None
+                if "memory_limit" in func["args"]
                 else None,
-                timeout=func["args"]["timeout"]
-                if func["args"]["timeout"] is not None
-                else None,
+                timeout=func["args"]["timeout"] if "timeout" in func["args"] else None,
                 description=func["args"]["description"]
-                if func["args"]["description"] is not None
+                if "description" in func["args"]
                 else None,
-                secrets=func["args"]["secret"]
-                if func["args"]["secret"] is not None
-                else None,
+                secrets=func["args"]["secret"] if "secret" in func["args"] else None,
             )
 
             if fn is None:
@@ -176,33 +172,39 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
                 runtime=f"python{version}",
                 handler=func["handler"],
                 privacy=func["args"]["privacy"]
-                if func["args"]["privacy"] is not None
+                if "privacy" in func["args"]
                 else "unknown_privacy",
-                env=func["args"]["env"] if func["args"]["env"] is not None else None,
+                env=func["args"]["env"] if "env" in func["args"] else None,
                 min_scale=func["args"]["min_scale"]
-                if func["args"]["min_scale"] is not None
+                if "min_scale" in func["args"]
                 else None,
                 max_scale=func["args"]["max_scale"]
-                if func["args"]["max_scale"] is not None
+                if "max_scale" in func["args"]
                 else None,
                 memory_limit=func["args"]["memory_limit"]
-                if func["args"]["memory_limit"] is not None
+                if "memory_limit" in func["args"]
                 else None,
-                timeout=func["args"]["timeout"]
-                if func["args"]["timeout"] is not None
-                else None,
+                timeout=func["args"]["timeout"] if "timeout" in func["args"] else None,
                 description=func["args"]["description"]
-                if func["args"]["description"] is not None
+                if "description" in func["args"]
                 else None,
-                secrets=func["args"]["secret"]
-                if func["args"]["secret"] is not None
-                else None,
+                secrets=func["args"]["secret"] if "secret" in func["args"] else None,
             )
 
         # Get an object storage pre-signed url
         upload_url = api.upload_function(
             function_id=target_function, content_length=file_size
         )
+
+        if upload_url is None:
+            click.echo(
+                click.style(
+                    "Unable to retrieve upload url... Verify that your function is less that 8.388608e+08 MB",
+                    fg="red",
+                ),
+                err=True,
+            )
+            raise RuntimeError
 
         click.echo("Uploading function...")
         with open(".scw/deployment.zip", "rb") as file:
@@ -225,6 +227,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
                 )
                 raise RuntimeError("Unable to upload file")
 
+        click.echo("Deploying function...")
         if not api.deploy_function(target_function):
             click.echo(
                 click.style(
@@ -234,12 +237,30 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
                 err=True,
             )
         else:
-            click.echo(
-                click.style(
-                    f"Function {func['function_name']} has been deployed to https://{domain}",
-                    fg="green",
+
+            status = api.get_function(target_function)["status"]
+            while status not in [
+                "ready",
+                "error",
+            ]:  # TODO: Add the other possible status
+                time.sleep(30)
+                status = api.get_function(target_function)["status"]
+
+            if status == "error":
+                click.echo(
+                    click.style(
+                        f"Unable to deploy {func['function_name']}. Status is in error state.",
+                        fg="red",
+                    ),
+                    err=True,
                 )
-            )
+            else:
+                click.echo(
+                    click.style(
+                        f"Function {func['function_name']} has been deployed to https://{domain}",
+                        fg="green",
+                    )
+                )
 
     if not new_namespace:
         click.echo("Updating namespace configuration...")

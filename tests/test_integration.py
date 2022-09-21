@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import subprocess
 import time
 
@@ -8,13 +9,16 @@ import requests
 REGION = "fr-par"
 
 
-def create_project():
+def create_project(suffix: str):
     sha = os.getenv("GITHUB_SHA")
     if sha is None:
         sha = "local"
     req = requests.post(
         "https://api.scaleway.com/account/v2/projects",
-        json={"name": f"apifw-{sha}", "organization_id": os.getenv("SCW_ORG_ID")},
+        json={
+            "name": f"apifw-{sha[:7]}-{suffix}",
+            "organization_id": os.getenv("SCW_ORG_ID"),
+        },
         headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
     )
 
@@ -37,6 +41,11 @@ def delete_project(project_id, retries: int = 0):
 
 
 def cleanup(project_id):
+    if os.path.exists("../.scw"):
+        shutil.rmtree("../.scw")  # remove .scw/deployment.zip
+    if os.path.exists("../.serverless"):
+        shutil.rmtree("../.serverless")  # remove serverless framework files
+
     namespaces = requests.get(
         f"https://api.scaleway.com/functions/v1beta1/regions/{REGION}/namespaces?project_id={project_id}",
         headers={"X-Auth-Token": os.getenv("SCW_SECRET_KEY")},
@@ -73,8 +82,54 @@ def call_function(url: str, retries: int = 0):
         raise ConnectionError  # Already retried without success abort.
 
 
-def test_integration_serverless_framework():
-    project_id = create_project()
+def deploy(file: str, do_cleanup: bool = True, project_id: str = None):
+    if project_id is None:
+        project_id = create_project("dpl")
+
+    try:
+        which = subprocess.run(["which", "srvlss"], capture_output=True)
+
+        ret = subprocess.run(
+            [
+                str(which.stdout.decode("UTF-8")).strip(),
+                "deploy",
+                "-f",
+                file,
+            ],
+            env={
+                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
+                "SCW_DEFAULT_PROJECT_ID": project_id,
+            },
+            capture_output=True,
+            cwd="../",
+        )
+
+        assert ret.returncode == 0
+        assert (
+            "Function hello-world has been deployed"
+            in str(ret.stdout.decode("UTF-8")).strip()
+        )
+        assert "Status is in error state" not in str(ret.stdout.decode("UTF-8")).strip()
+
+        output = str(ret.stdout.decode("UTF-8")).strip()
+        pattern = re.compile("(Function [a-z0-9-]+ has been deployed to (https://.+))")
+
+        groups = re.findall(pattern, output)
+
+        for group in groups:
+            # Call the actual function
+            call_function(group[1])
+
+    finally:
+        if do_cleanup:
+            cleanup(project_id)
+            delete_project(project_id)
+    return project_id
+
+
+def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = None):
+    if project_id is None:
+        project_id = create_project("slfw")
 
     try:
         # Run the command line
@@ -87,7 +142,7 @@ def test_integration_serverless_framework():
                 "-t",
                 "serverless",
                 "-f",
-                "tests/dev/app.py",
+                file,
             ],
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
@@ -128,12 +183,70 @@ def test_integration_serverless_framework():
         )
 
         output = str(serverless.stderr.decode("UTF-8")).strip()
-        pattern = re.compile("(Function [a-z0-9-]+ has been deployed to: (https://.+))")
-        groups = re.search(pattern, output).groups()
 
-        # Call the actual function
-        call_function(groups[1])
+        print(output)
+
+        pattern = re.compile("(Function [a-z0-9-]+ has been deployed to: (https://.+))")
+        groups = re.findall(pattern, output)
+
+        for group in groups:
+            # Call the actual function
+            call_function(group[1])
 
     finally:
-        cleanup(project_id)
-        delete_project(project_id)
+        if do_cleanup:
+            cleanup(project_id)
+            delete_project(project_id)
+    return project_id
+
+
+def test_integration_deploy():
+    deploy("tests/dev/app.py")
+
+
+def test_integration_deploy_multiple_functions():
+    deploy("tests/dev/multiple-functions.py")
+
+
+def test_integration_deploy_existing_function():
+    project_id = deploy("tests/dev/app.py", do_cleanup=False)
+    deploy("tests/dev/app.py", do_cleanup=True, project_id=project_id)
+
+
+def test_integration_deploy_multiple_existing_functions():
+    project_id = deploy("tests/dev/multiple-functions.py", do_cleanup=False)
+    deploy("tests/dev/multiple-functions.py", do_cleanup=True, project_id=project_id)
+
+
+def test_integration_deploy_one_existing_function():
+    project_id = deploy("tests/dev/app.py", do_cleanup=False)
+    deploy("tests/dev/multiple-functions.py", do_cleanup=True, project_id=project_id)
+
+
+def test_integration_serverless_framework():
+    serverless_framework("tests/dev/app.py")
+
+
+def test_integration_serverless_framework_multiple_functions():
+    serverless_framework("tests/dev/multiple-functions.py")
+
+
+def test_integration_serverless_framework_existing_function():
+    project_id = serverless_framework("tests/dev/app.py", do_cleanup=False)
+    serverless_framework("tests/dev/app.py", do_cleanup=True, project_id=project_id)
+
+
+def test_integration_serverless_framework_multiple_existing_functions():
+    project_id = serverless_framework(
+        "tests/dev/multiple-functions.py", do_cleanup=False
+    )
+    serverless_framework(
+        "tests/dev/multiple-functions.py", do_cleanup=True, project_id=project_id
+    )
+
+
+def test_integration_serverless_framework_one_existing_function():
+    project_id = serverless_framework("tests/dev/app.py", do_cleanup=False)
+    serverless_framework(
+        "tests/dev/multiple-functions.py", do_cleanup=True, project_id=project_id
+    )
