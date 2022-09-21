@@ -66,7 +66,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
         region = "fr-par"  # If the region is still not defined, update it to fr-par
 
     if secret_key is None or project_id is None:
-        raise RuntimeError
+        raise RuntimeError  # No credentials were provided, abort
 
     api = Api(region=region, secret_key=secret_key)  # Init the API Client
 
@@ -136,7 +136,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
         if target_function is None:
             click.echo(f"Creating a new function {func['function_name']}...")
 
-            fn = api.create_function(  # TODO: FIXME: Try to refactor this as it is not very readable...
+            fn = api.create_function(  # Creating a new function with the provided args
                 namespace_id=namespace,
                 name=func["function_name"],
                 runtime=f"python{version}",
@@ -167,7 +167,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
             target_function = fn["id"]
             domain = fn["domain_name"]
         else:
-            api.update_function(  # TODO: FIXME: Try to refactor this as it is not very readable...
+            api.update_function(  # Updating the function with the provided args
                 function_id=target_function,
                 runtime=f"python{version}",
                 handler=func["handler"],
@@ -208,7 +208,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
 
         click.echo("Uploading function...")
         with open(".scw/deployment.zip", "rb") as file:
-            req = requests.put(
+            req = requests.put(  # Upload function zip to S3 presigned URL
                 upload_url,
                 data=file,
                 headers={
@@ -228,7 +228,9 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
                 raise RuntimeError("Unable to upload file")
 
         click.echo("Deploying function...")
-        if not api.deploy_function(target_function):
+        if not api.deploy_function(
+            target_function
+        ):  # deploy the newly uploaded function
             click.echo(
                 click.style(
                     f"Unable to deploy function {func['function_name']}...",
@@ -242,7 +244,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
             while status not in [
                 "ready",
                 "error",
-            ]:  # TODO: Add the other possible status
+            ]:  # Wait for the function to become ready or in error state.
                 time.sleep(30)
                 status = api.get_function(target_function)["status"]
 
