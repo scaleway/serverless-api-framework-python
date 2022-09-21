@@ -82,7 +82,6 @@ class DependenciesManager:
             not self.pkg_path.exists()
             or not self.pkg_path.joinpath(__package__).exists()
         ):
-            print("not_found")
             p = pathlib.Path(__file__).parent.parent.resolve()
             python_path = sys.executable
             process = subprocess.run(
