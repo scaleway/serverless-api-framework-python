@@ -104,7 +104,7 @@ def run_srvlss_cli(project_id: str, args: List[str]):
 def test_integration_serverless_framework(project_id):
     ret = run_srvlss_cli(
         project_id,
-        ["generate", "-t", "serverless", "-f", "tests/dev/app.py"],
+        ["generate", "-t", "serverless", "-f", "dev/app.py"],
     )
 
     assert ret.returncode == 0
