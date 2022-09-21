@@ -285,6 +285,9 @@ def generate(file, target, save):
 
     click.echo(f"Generating configuration for target: {target}")
 
+    if not os.path.exists(save):
+        os.mkdir(save)
+
     if target == "serverless":
         serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
         serverless_framework_generator.write(save)
