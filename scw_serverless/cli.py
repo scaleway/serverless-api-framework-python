@@ -48,7 +48,20 @@ def cli():
     default=None,
     help="Region to deploy to. Default: fr-par",
 )
-def deploy(file, secret_key: str = None, project_id: str = None, region: str = None):
+@click.option(
+    "--no-single-source",
+    "single_source",
+    is_flag=True,
+    default=True,
+    help="Do not remove functions not present in the code being deployed.",
+)
+def deploy(
+    file: str,
+    single_source: bool,
+    secret_key: str = None,
+    project_id: str = None,
+    region: str = None,
+):
     app_instance = get_app_instance(file)  # Get the serverless App instance
 
     # if the credentials were not provided as option, look for them in configuration file or
@@ -267,10 +280,22 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
     if not new_namespace:
         click.echo("Updating namespace configuration...")
         api.update_namespace(  # Update the namespace
+            namespace,
             app_instance.env,
             None,  # Description
             app_instance.secret,
         )
+
+    if single_source:
+        # Delete functions no longer present in the code...
+        functions = list(
+            map(lambda x: x["function_name"], app_instance.functions)
+        )  # create a list containing the functions name
+
+        for func in api.list_functions(namespace):
+            if func["name"] not in functions:
+                click.echo(click.style(f"Deleting function {func['name']}...", fg="orange"))
+                api.delete_function(func["id"])
 
     click.echo(
         click.style(f"Done! Functions have been successfully deployed!", fg="green")

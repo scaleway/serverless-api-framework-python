@@ -57,12 +57,13 @@ class Api:
 
     def update_namespace(
         self,
+        namespace_id: str,
         env: dict = None,
         description: str = None,
         secrets: dict = None,
     ):
         req = requests.patch(
-            f"{API_BASE}/regions/{self.region}/namespaces",
+            f"{API_BASE}/regions/{self.region}/namespaces/{namespace_id}",
             headers={"X-Auth-Token": self.secret_key},
             json={
                 "environment_variables": env,
