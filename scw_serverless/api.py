@@ -19,6 +19,17 @@ class Api:
 
         return req.json()["namespaces"]
 
+    def get_namespace(self, namespace_id):
+        req = requests.get(
+            f"{API_BASE}/regions/{self.region}/namespaces/{namespace_id}",
+            headers={"X-Auth-Token": self.secret_key},
+        )
+
+        if req.status_code != 200:
+            return None
+
+        return req.json()
+
     def create_namespace(
         self,
         name: str,
@@ -139,6 +150,7 @@ class Api:
         req = requests.post(
             f"{API_BASE}/regions/{self.region}/functions/{function_id}/deploy",
             headers={"X-Auth-Token": self.secret_key},
+            json={}
         )
 
         return req.status_code == 200

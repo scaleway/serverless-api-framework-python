@@ -2,6 +2,7 @@ import importlib.util
 import inspect
 import os.path
 import sys
+import time
 import traceback
 
 import click
@@ -100,6 +101,12 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
         namespace = ns["id"]
         new_namespace = True
 
+        # Wait for the namespace to exit pending status
+        namespace_data = api.get_namespace(namespace)
+        while namespace_data["status"] == "pending":
+            time.sleep(30)
+            namespace_data = api.get_namespace(namespace)
+
     version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
     click.echo(f"Using python{version}")
 
@@ -128,6 +135,7 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
 
         if target_function is None:
             click.echo(f"Creating a new function {func['function_name']}...")
+
             fn = api.create_function(  # TODO: FIXME: Try to refactor this as it is not very readable...
                 namespace_id=namespace,
                 name=func["function_name"],
@@ -196,11 +204,11 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
             function_id=target_function, content_length=file_size
         )
 
-        click.echo("Uploading function")
+        click.echo("Uploading function...")
         with open(".scw/deployment.zip", "rb") as file:
-            req = requests.post(
+            req = requests.put(
                 upload_url,
-                files={"file": (f"function-{target_function}.zip", file)},
+                data=file,
                 headers={
                     "Content-Type": "application/octet-stream",
                     "Content-Length": str(file_size),
@@ -228,13 +236,13 @@ def deploy(file, secret_key: str = None, project_id: str = None, region: str = N
         else:
             click.echo(
                 click.style(
-                    f"Function {func['function_name']} has been deployed to {domain}",
+                    f"Function {func['function_name']} has been deployed to https://{domain}",
                     fg="green",
                 )
             )
 
     if not new_namespace:
-        click.echo("Updating namespace configuration")
+        click.echo("Updating namespace configuration...")
         api.update_namespace(  # Update the namespace
             app_instance.env,
             None,  # Description
