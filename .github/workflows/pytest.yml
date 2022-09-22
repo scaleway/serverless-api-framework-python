@@ -2,16 +2,15 @@ name: Pytest
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -26,6 +25,8 @@ jobs:
           node-version: 18
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
       - name: Install dependencies
         run: |
           pip install --editable .
