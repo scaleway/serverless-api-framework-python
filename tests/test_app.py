@@ -1,10 +1,10 @@
-from serverless.app import _Function, _ScheduledFunction
-from serverless.events.cron import Cron
-
+from dev.app import app
+from scw_serverless.app import Serverless
+from scw_serverless.app import _Function, _ScheduledFunction
+from scw_serverless.events.cron import Cron
 
 def handler(event, context):
     return ""
-
 
 def test_function_get_config():
     expected = {
@@ -48,3 +48,17 @@ def test_scheduled_function_get_config_with_input():
         args={"min_scale": 0, "max_scale": 20},
     )
     assert fn.get_config() == expected
+
+
+def test_module_to_path():
+    serverless = Serverless("unit_test")
+    assert serverless.module_to_path("abc.def") == "abc/def"
+
+
+def test_function_export():
+    """
+    Test if annotation are correctly exported and stored in the functions list.
+    This test use the file dev/app.py
+    :return:
+    """
+    assert len(app.functions) == 1

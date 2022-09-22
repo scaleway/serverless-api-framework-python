@@ -3,10 +3,10 @@ import sys
 
 import yaml
 
-from serverless.app import Serverless
+from .generator import Generator
+from ...app import Serverless
 
-
-class ServerlessFrameworkGenerator:
+class ServerlessFrameworkGenerator(Generator):
     """
     Serverless Framework Generator
 
@@ -15,6 +15,37 @@ class ServerlessFrameworkGenerator:
 
     def __init__(self, instance: Serverless):
         self.instance = instance
+
+    def to_camel_case(self, snake_str):
+        components = snake_str.split("_")
+        # We capitalize the first letter of each component except the first one
+        # with the 'title' method and join them together.
+        return components[0] + "".join(x.title() for x in components[1:])
+
+    def add_args(self, config, args):
+        allowed_args = (
+            [  # List of allowed args in serverless framework function configuration
+                "env",
+                "secret",
+                "min_scale",
+                "max_scale",
+                "memory_limit",
+                "timeout",
+                "custom_domains",
+                "privacy",
+                "description",
+            ]
+        )
+
+        for k, v in args.items():
+            if k in allowed_args:
+                if isinstance(v, int):
+                    v = str(v)
+
+                if k == "custom_domains":
+                    config[k] = v
+                else:
+                    config[self.to_camel_case(k)] = v
 
     def write(self, path):
         version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
@@ -44,7 +75,18 @@ class ServerlessFrameworkGenerator:
             if func.name in config["functions"]:
                 config["functions"][func.name] |= func.get_config()
             else:
-                config["functions"][func.name] = func.get_config()
+                config["functions"][func["function_name"]] = {
+                    "handler": func["handler"],
+                }
+
+            self.add_args(config["functions"][func["function_name"]], func["args"])
+            # Set the correct events.
+            # config["functions"][func["function_name"]]["events"] = [
+            #     {"http": {"path": func["url"], "method": "get"}}
+            # ]
+
+        functions = [fn["function_name"] for fn in self.instance.functions]
+        # create a list containing the functions name
 
         functions = [fun.name for fun in self.instance.functions]
         config["functions"] = {

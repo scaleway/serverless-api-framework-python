@@ -138,3 +138,11 @@ serverless.yml
 
 # Serverless Framework files
 .serverless
+
+# Terraform files
+.terraform
+.terraform.lock.hcl
+*.tf*
+
+# Additional dependencies
+package

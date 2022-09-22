@@ -1,5 +1,5 @@
-from serverless.app import Serverless
-from serverless.events.cron import Cron
+from scw_serverless.events.cron import Cron
+from scw_serverless.app import Serverless
 
 app = Serverless("helloworld", env={"key1": "value1"}, secret={"key2": "value2"})
 
@@ -12,7 +12,7 @@ app = Serverless("helloworld", env={"key1": "value1"}, secret={"key2": "value2"}
     min_scale=0,
     max_scale=20,
     memory_limit=128,
-    timeout=300,
+    timeout="300s",
     custom_domains=["domain.scw.cloud"],
 )
 def hello_world(event: dict, context: dict):

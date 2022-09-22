@@ -1,14 +1,14 @@
 from typing import Any, List, Optional
 
-import serverless.utils as utils
-from serverless.events.cron import Cron
+from .utils import to_camel_case, module_to_path
+from .events.cron import Cron
 
 
 class _Function:
     def __init__(self, handler, args: dict[str, Any]) -> None:
         self.name: str = handler.__name__
         self.handler_path: str = (
-            utils.module_to_path(handler.__module__) + "." + handler.__name__
+            module_to_path(handler.__module__) + "." + handler.__name__
         )
 
         self.args: dict[str, Any] = args
@@ -34,7 +34,7 @@ class _Function:
                 if k == "custom_domains":
                     config[k] = v
                 else:
-                    config[utils.to_camel_case(k)] = v
+                    config[to_camel_case(k)] = v
         return config
 
     def get_config(self) -> dict[str, Any]:
