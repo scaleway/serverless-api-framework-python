@@ -13,7 +13,9 @@ def handle(event, content):
         context (dict): function call metadata
     """
 
-    return {"message": "This function is handled by Scaleway functions using Serverless API Framework"}
+    return {
+        "message": "This function is handled by Scaleway functions using Serverless API Framework"
+    }
 
 
 @app.func(
@@ -34,4 +36,6 @@ def hello(event, content):
         context (dict): function call metadata
     """
 
-    return {"message": f"Hello {os.getenv('CUSTOM_NAME')} from Scaleway functions using Serverless API Framework"}
+    return {
+        "message": f"Hello {os.getenv('CUSTOM_NAME')} from Scaleway functions using Serverless API Framework"
+    }
