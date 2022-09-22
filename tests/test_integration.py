@@ -84,7 +84,7 @@ def create_serverless_project_fixture():
         delete_project(project_id)
 
 
-def run_srvlss_cli(project_id: str, args: List[str]):
+def run_srvlss_cli(project_id: str, args: List[str], cwd: str = TESTS_DIR):
     # Run the command line
     which = subprocess.run(["which", "srvlss"], capture_output=True)
 
@@ -97,14 +97,15 @@ def run_srvlss_cli(project_id: str, args: List[str]):
         },
         capture_output=True,
         # Runs the cli in the tests directory
-        cwd=TESTS_DIR,
+        cwd=cwd,
     )
 
 
 def test_integration_serverless_framework(project_id):
     ret = run_srvlss_cli(
         project_id,
-        ["generate", "-t", "serverless", "-f", "dev/app.py"],
+        ["generate", "-t", "serverless", "-f", os.path.join(TESTS_DIR, "dev/app.py")],
+        cwd=os.path.join(TESTS_DIR, os.pardir),
     )
 
     assert ret.returncode == 0
@@ -127,7 +128,7 @@ def test_integration_serverless_framework(project_id):
             "SCW_REGION": REGION,
         },
         capture_output=True,
-        cwd=TESTS_DIR,
+        cwd=os.path.join(TESTS_DIR, os.pardir),
     )
 
     assert serverless.returncode == 0
