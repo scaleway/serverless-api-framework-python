@@ -4,11 +4,16 @@ import os
 import sys
 from zipfile import ZipFile
 
+from .generator import Generator
 from ...app import Serverless
 from ...dependencies_manager import DependenciesManager
 
+TERRAFORM_OUTPUT_FILE = "terraform.tf.json"
+TF_FUNCTION_RESOURCE = "scaleway_function"
+TF_NAMESPACE_RESOURCE = "scaleway_function_namespace"
 
-class TerraformGenerator:
+
+class TerraformGenerator(Generator):
     """
     Terraform Generator
 
@@ -22,7 +27,7 @@ class TerraformGenerator:
     def list_files(self, source):
         zip_files = []
 
-        for path, subdirs, files in os.walk(source):
+        for path, _subdirs, files in os.walk(source):
             for name in files:
                 zip_files.append(os.path.join(path, name))
 
@@ -51,15 +56,15 @@ class TerraformGenerator:
             if k in allowed_args:
                 config[k] = v
 
-    def write(self, path):
+    def write(self, path: str):
         version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
-        config_path = os.path.join(path, "terraform.tf.json")
+        config_path = os.path.join(path, TERRAFORM_OUTPUT_FILE)
 
         config_to_read = config_path
 
         if not os.path.exists(config_path):
             config_to_read = os.path.join(
-                os.path.dirname(__file__), "..", "templates", "terraform.tf.json"
+                os.path.dirname(__file__), "..", "templates", TERRAFORM_OUTPUT_FILE
             )
 
         with open(config_to_read, "r") as file:
@@ -72,7 +77,7 @@ class TerraformGenerator:
             zip_bytes = f.read()
             zip_hash = hashlib.sha256(zip_bytes).hexdigest()
 
-        config["resource"]["scaleway_function_namespace"] = {
+        config["resource"][TF_NAMESPACE_RESOURCE] = {
             self.instance.service_name: {
                 "name": f"{self.instance.service_name}-function-namespace",
                 "description": f"{self.instance.service_name} function namespace",
@@ -80,16 +85,16 @@ class TerraformGenerator:
         }
 
         if self.instance.env is not None:
-            config["resource"]["scaleway_function_namespace"][
-                self.instance.service_name
-            ]["environment_variables"] = self.instance.env
+            config["resource"][TF_NAMESPACE_RESOURCE][self.instance.service_name][
+                "environment_variables"
+            ] = self.instance.env
 
-        config["resource"]["scaleway_function"] = {}
+        config["resource"][TF_FUNCTION_RESOURCE] = {}
 
         for func in self.instance.functions:  # Iterate over the functions
-            config["resource"]["scaleway_function"][func["function_name"]] = {
+            config["resource"][TF_FUNCTION_RESOURCE][func["function_name"]] = {
                 "namespace_id": (
-                    "${scaleway_function_namespace.%s.id}" % self.instance.service_name
+                    "${%s.%s.id}" % (TF_NAMESPACE_RESOURCE, self.instance.service_name)
                 ),
                 "runtime": f"python{version}",
                 "handler": func["handler"],
@@ -99,17 +104,17 @@ class TerraformGenerator:
                 "deploy": True,
             }
             self.add_args(
-                config["resource"]["scaleway_function"][func["function_name"]],
+                config["resource"][TF_FUNCTION_RESOURCE][func["function_name"]],
                 func["args"],
             )
 
-        functions = list(
-            map(lambda x: x["function_name"], self.instance.functions)
-        )  # create a list containing the functions name
+        functions = [
+            fn["function_name"] for fn in self.instance.functions
+        ]  # create a list containing the functions name
 
-        config["resource"]["scaleway_function"] = {
+        config["resource"][TF_FUNCTION_RESOURCE] = {
             key: val
-            for key, val in config["resource"]["scaleway_function"].items()
+            for key, val in config["resource"][TF_FUNCTION_RESOURCE].items()
             if key in functions
         }  # remove not present functions from configuration file
 

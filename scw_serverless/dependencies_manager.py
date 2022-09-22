@@ -17,6 +17,17 @@ def _raise_on_pip_process_err(process: subprocess.CompletedProcess) -> None:
 
 
 class DependenciesManager:
+    """
+    Dependencies Manager
+
+    This class looks for a requirements file in a given input path and
+    vendors the pip dependencies in a package folder within the provided output path.
+
+    It does not currently handles native dependencies.
+
+    See also: https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies
+    """
+
     def __init__(self, in_path: str, out_path: str) -> None:
         self.in_path = pathlib.Path(in_path)
         self.out_path = pathlib.Path(out_path)
@@ -82,6 +93,7 @@ class DependenciesManager:
             not self.pkg_path.exists()
             or not self.pkg_path.joinpath(__package__).exists()
         ):
+            # scw_serveless was not installed in the packages folder
             p = pathlib.Path(__file__).parent.parent.resolve()
             python_path = sys.executable
             process = subprocess.run(

@@ -3,8 +3,10 @@ import sys
 
 import yaml
 
+from .generator import Generator
 
-class ServerlessFrameworkGenerator:
+
+class ServerlessFrameworkGenerator(Generator):
     """
     Serverless Framework Generator
 
@@ -85,9 +87,8 @@ class ServerlessFrameworkGenerator:
             #     {"http": {"path": func["url"], "method": "get"}}
             # ]
 
-        functions = list(
-            map(lambda x: x["function_name"], self.instance.functions)
-        )  # create a list containing the functions name
+        functions = [fn["function_name"] for fn in self.instance.functions]
+        # create a list containing the functions name
 
         config["functions"] = {
             key: val for key, val in config["functions"].items() if key in functions
