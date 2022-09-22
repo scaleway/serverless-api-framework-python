@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-def Generator(ABC):
+class Generator(ABC):
     @abstractmethod
     def write(self, path: str) -> None:
         pass
