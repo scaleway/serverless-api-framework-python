@@ -7,28 +7,30 @@ class Api:
     def __init__(self, region: str, secret_key: str):
         self.secret_key = secret_key
         self.region = region
+        self.headers = {"X-Auth-Token": self.secret_key}
+        self.base_url = f"{API_BASE}/regions/{self.region}"
 
     def list_namespaces(self, project_id):
-        req = requests.get(
-            f"{API_BASE}/regions/{self.region}/namespaces?project_id={project_id}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.get(
+            f"{self.base_url}/namespaces?project_id={project_id}",
+            headers=self.headers,
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return []
 
-        return req.json()["namespaces"]
+        return resp.json()["namespaces"]
 
     def get_namespace(self, namespace_id):
-        req = requests.get(
-            f"{API_BASE}/regions/{self.region}/namespaces/{namespace_id}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.get(
+            f"{self.base_url}/namespaces/{namespace_id}",
+            headers=self.headers,
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return None
 
-        return req.json()
+        return resp.json()
 
     def create_namespace(
         self,
@@ -38,9 +40,9 @@ class Api:
         description: str = None,
         secrets: dict = None,
     ):
-        req = requests.post(
-            f"{API_BASE}/regions/{self.region}/namespaces",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.post(
+            f"{self.base_url}/namespaces",
+            headers=self.headers,
             json={
                 "name": name,
                 "environment_variables": env,
@@ -50,10 +52,10 @@ class Api:
             },
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return None
 
-        return req.json()
+        return resp.json()
 
     def update_namespace(
         self,
@@ -62,9 +64,9 @@ class Api:
         description: str = None,
         secrets: dict = None,
     ):
-        req = requests.patch(
-            f"{API_BASE}/regions/{self.region}/namespaces/{namespace_id}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.patch(
+            f"{self.base_url}/namespaces/{namespace_id}",
+            headers=self.headers,
             json={
                 "environment_variables": env,
                 "description": description,
@@ -72,10 +74,10 @@ class Api:
             },
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return None
 
-        return req.json()
+        return resp.json()
 
     def to_secret_list(self, secrets: dict) -> list:
         secrets_list = []
@@ -101,9 +103,9 @@ class Api:
         description: str = None,
         secrets: dict = None,
     ):
-        req = requests.post(
-            f"{API_BASE}/regions/{self.region}/functions",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.post(
+            f"{self.base_url}/functions",
+            headers=self.headers,
             json={
                 "name": name,
                 "namespace_id": namespace_id,
@@ -120,41 +122,41 @@ class Api:
             },
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return None
 
-        return req.json()
+        return resp.json()
 
     def list_functions(self, namespace_id: str):
-        req = requests.get(
-            f"{API_BASE}/regions/{self.region}/functions?namespace_id={namespace_id}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.get(
+            f"{self.base_url}/functions?namespace_id={namespace_id}",
+            headers=self.headers,
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return []
 
-        return req.json()["functions"]
+        return resp.json()["functions"]
 
     def upload_function(self, function_id: str, content_length: int):
-        req = requests.get(
-            f"{API_BASE}/regions/{self.region}/functions/{function_id}/upload-url?content_length={str(content_length)}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.get(
+            f"{self.base_url}/functions/{function_id}/upload-url?content_length={str(content_length)}",
+            headers=self.headers,
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return None
 
-        return req.json()["url"]
+        return resp.json()["url"]
 
     def deploy_function(self, function_id: str):
-        req = requests.post(
-            f"{API_BASE}/regions/{self.region}/functions/{function_id}/deploy",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.post(
+            f"{self.base_url}/functions/{function_id}/deploy",
+            headers=self.headers,
             json={},
         )
 
-        return req.status_code == 200
+        return resp.status_code == 200
 
     def update_function(
         self,
@@ -170,9 +172,9 @@ class Api:
         description: str = None,
         secrets: dict = None,
     ):
-        req = requests.patch(
-            f"{API_BASE}/regions/{self.region}/functions/{function_id}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.patch(
+            f"{self.base_url}/functions/{function_id}",
+            headers=self.headers,
             json={
                 "min_scale": min_scale,
                 "max_scale": max_scale,
@@ -187,26 +189,26 @@ class Api:
             },
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return None
 
-        return req.json()
+        return resp.json()
 
     def get_function(self, function_id: str):
-        req = requests.get(
-            f"{API_BASE}/regions/{self.region}/functions/{function_id}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.get(
+            f"{self.base_url}/functions/{function_id}",
+            headers=self.headers,
         )
 
-        if req.status_code != 200:
+        if resp.status_code != 200:
             return None
 
-        return req.json()
+        return resp.json()
 
     def delete_function(self, function_id: str):
-        req = requests.delete(
-            f"{API_BASE}/regions/{self.region}/functions/{function_id}",
-            headers={"X-Auth-Token": self.secret_key},
+        resp = requests.delete(
+            f"{self.base_url}/functions/{function_id}",
+            headers=self.headers,
         )
 
-        return req.status_code == 200
+        return resp.status_code == 200

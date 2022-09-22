@@ -1,6 +1,6 @@
 from scw_serverless.app import Serverless
 
-app = Serverless("multiple-functions")
+app = Serverless("integration-tests")
 
 
 @app.func()

@@ -1,9 +1,11 @@
 import os
+import subprocess
 from pathlib import Path
 from zipfile import ZipFile
 
-import click
 import yaml
+
+from scw_serverless.logger import get_logger
 
 
 def list_files(source):
@@ -24,12 +26,12 @@ def create_zip_file(zip_path, source):
             zip.write(file)
 
 
-def find_scw_credentials(log):
+def find_scw_credentials():
     if (
         os.getenv("SCW_SECRET_KEY") is not None
         and os.getenv("SCW_DEFAULT_PROJECT_ID") is not None
     ):
-        log("Using credentials from system environment")
+        get_logger().default("Using credentials from system environment")
         return os.getenv("SCW_SECRET_KEY"), os.getenv("SCW_DEFAULT_PROJECT_ID"), None
     elif os.path.exists(f"{str(Path.home())}/.config/scw/config.yaml"):
         config = {
@@ -44,7 +46,9 @@ def find_scw_credentials(log):
             config["secret_key"] is not None
             and config["default_project_id"] is not None
         ):
-            log(f"Using credentials from {str(Path.home())}/.config/scw/config.yaml")
+            get_logger().default(
+                f"Using credentials from {str(Path.home())}/.config/scw/config.yaml"
+            )
 
             return (
                 config["secret_key"],
@@ -52,11 +56,13 @@ def find_scw_credentials(log):
                 config["default_region"],
             )
     else:
-        log(
-            click.style(
-                "Unable to locate credentials",
-                fg="red",
-            )
+        get_logger().error(
+            "Unable to locate credentials",
         )
 
         return None, None, None
+
+
+def check_if_installed(command: str):
+    ret = subprocess.run(["which", command], capture_output=True)
+    return ret.returncode == 0

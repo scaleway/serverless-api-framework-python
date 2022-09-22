@@ -82,7 +82,9 @@ def call_function(url: str, retries: int = 0):
         raise ConnectionError  # Already retried without success abort.
 
 
-def deploy(file: str, do_cleanup: bool = True, project_id: str = None):
+def deploy(
+    file: str, do_cleanup: bool = True, project_id: str = None, backend: str = "api"
+):
     if project_id is None:
         project_id = create_project("dpl")
 
@@ -95,6 +97,8 @@ def deploy(file: str, do_cleanup: bool = True, project_id: str = None):
                 "deploy",
                 "-f",
                 file,
+                "-b",
+                backend,
             ],
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
@@ -112,7 +116,9 @@ def deploy(file: str, do_cleanup: bool = True, project_id: str = None):
         assert "Status is in error state" not in str(ret.stdout.decode("UTF-8")).strip()
 
         output = str(ret.stdout.decode("UTF-8")).strip()
-        pattern = re.compile("(Function [a-z0-9-]+ has been deployed to (https://.+))")
+        pattern = re.compile(
+            "(Function [a-z0-9-]+ has been deployed to:? (https://.+))"
+        )
 
         groups = re.findall(pattern, output)
 
@@ -200,6 +206,11 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
     return project_id
 
 
+"""
+deploy command integration tests using the API backend
+"""
+
+
 def test_integration_deploy():
     deploy("tests/dev/app.py")
 
@@ -221,6 +232,53 @@ def test_integration_deploy_multiple_existing_functions():
 def test_integration_deploy_one_existing_function():
     project_id = deploy("tests/dev/app.py", do_cleanup=False)
     deploy("tests/dev/multiple-functions.py", do_cleanup=True, project_id=project_id)
+
+
+"""
+deploy command integration tests using the Serverless Framework Backend
+"""
+
+
+def test_integration_deploy_using_srvless_fw():
+    deploy("tests/dev/app.py", backend="serverless")
+
+
+def test_integration_deploy_multiple_functions_using_srvless_fw():
+    deploy("tests/dev/multiple-functions.py", backend="serverless")
+
+
+def test_integration_deploy_existing_function_using_srvless_fw():
+    project_id = deploy("tests/dev/app.py", do_cleanup=False, backend="serverless")
+    deploy(
+        "tests/dev/app.py", do_cleanup=True, project_id=project_id, backend="serverless"
+    )
+
+
+def test_integration_deploy_multiple_existing_functions_using_srvless_fw():
+    project_id = deploy(
+        "tests/dev/multiple-functions.py", do_cleanup=False, backend="serverless"
+    )
+    deploy(
+        "tests/dev/multiple-functions.py",
+        do_cleanup=True,
+        project_id=project_id,
+        backend="serverless",
+    )
+
+
+def test_integration_deploy_one_existing_function_using_srvless_fw():
+    project_id = deploy("tests/dev/app.py", do_cleanup=False, backend="serverless")
+    deploy(
+        "tests/dev/multiple-functions.py",
+        do_cleanup=True,
+        project_id=project_id,
+        backend="serverless",
+    )
+
+
+"""
+Integration tests for the serverless framework configuration generation command
+"""
 
 
 def test_integration_serverless_framework():

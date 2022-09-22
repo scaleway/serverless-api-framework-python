@@ -1,19 +1,20 @@
 import importlib.util
 import inspect
 import os.path
-import sys
-import time
-import traceback
 
 import click
-import requests
 
-from scw_serverless.api import Api
 from scw_serverless.app import Serverless
 from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
-from scw_serverless.utils import find_scw_credentials, create_zip_file
+from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
+from scw_serverless.deploy.backends.serverless_backend import DeployConfig
+from scw_serverless.deploy.backends.serverless_framework_backend import (
+    ServerlessFrameworkBackend,
+)
+from scw_serverless.logger import get_logger, DEFAULT
+from scw_serverless.utils import find_scw_credentials
 
 
 @click.group()
@@ -55,8 +56,18 @@ def cli():
     default=True,
     help="Do not remove functions not present in the code being deployed.",
 )
+@click.option(
+    "--backend",
+    "-b",
+    "backend",
+    default="api",
+    type=click.Choice(["api", "serverless"], case_sensitive=False),
+    show_default=True,
+    help="Select the backend used to deploy",
+)
 def deploy(
     file: str,
+    backend: str,
     single_source: bool,
     secret_key: str = None,
     project_id: str = None,
@@ -67,7 +78,7 @@ def deploy(
     # if the credentials were not provided as option, look for them in configuration file or
     #  system environment variables
     if secret_key is None or project_id is None or region is None:
-        secret, project, reg = find_scw_credentials(lambda l: click.echo(l))
+        secret, project, reg = find_scw_credentials()
         if secret_key is None:  # Secret key is None, update it
             secret_key = secret
         if project_id is None:  # Project id is None, update it
@@ -79,229 +90,29 @@ def deploy(
         region = "fr-par"  # If the region is still not defined, update it to fr-par
 
     if secret_key is None or project_id is None:
-        raise RuntimeError  # No credentials were provided, abort
+        raise RuntimeError(
+            "Unable to find credentials for deployment."
+        )  # No credentials were provided, abort
 
-    api = Api(region=region, secret_key=secret_key)  # Init the API Client
+    # Create the deploy configuration
+    deploy_config = DeployConfig()
+    deploy_config.region = region
+    deploy_config.secret_key = secret_key
+    deploy_config.project_id = project_id
 
-    namespace = None
+    b = None
 
-    click.echo(
-        f"Looking for an existing namespace {app_instance.service_name} in {api.region}..."
-    )
-    for ns in api.list_namespaces(
-        project_id
-    ):  # Search in the user's namespace if one is matching the same name and region
-        if ns["name"] == app_instance.service_name:
-            namespace = ns["id"]
+    if backend == "api":
+        # Deploy using the scaleway api
+        get_logger().info("Using the API backend")
+        b = ScalewayApiBackend(app_instance=app_instance, single_source=single_source)
+    elif backend == "serverless":
+        # Deploy using the serverless framework
+        get_logger().info("Using the Serverless Framework backend")
+        b = ServerlessFrameworkBackend(app_instance=app_instance)
 
-    new_namespace = False
-
-    if namespace is None:
-        click.echo(
-            f"Creating a new namespace {app_instance.service_name} in {api.region}..."
-        )
-        ns = api.create_namespace(  # Create a new namespace
-            app_instance.service_name,
-            project_id,
-            app_instance.env,
-            None,  # Description
-            app_instance.secret,
-        )
-
-        if ns is None:
-            raise RuntimeError("Unable to create a new namespace")
-
-        namespace = ns["id"]
-        new_namespace = True
-
-        # Wait for the namespace to exit pending status
-        namespace_data = api.get_namespace(namespace)
-        while namespace_data["status"] == "pending":
-            time.sleep(15)
-            namespace_data = api.get_namespace(namespace)
-
-    version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
-    click.echo(f"Using python{version}")
-
-    # Create a ZIP archive containing the entire project
-    click.echo("Creating a deployment archive...")
-    if not os.path.exists("./.scw"):
-        os.mkdir("./.scw")
-
-    if os.path.exists("./.scw/deployment.zip"):
-        os.remove("./.scw/deployment.zip")
-
-    create_zip_file("./.scw/deployment.zip", "./")
-    file_size = os.path.getsize("./.scw/deployment.zip")
-
-    for func in app_instance.functions:  # For each function
-        click.echo(f"Looking for an existing function {func['function_name']}...")
-        target_function = None
-        domain = None
-
-        for fn in api.list_functions(
-            namespace_id=namespace
-        ):  # Looking if a function is already existing
-            if fn["name"] == func["function_name"]:
-                target_function = fn["id"]
-                domain = fn["domain_name"]
-
-        if target_function is None:
-            click.echo(f"Creating a new function {func['function_name']}...")
-
-            fn = api.create_function(  # Creating a new function with the provided args
-                namespace_id=namespace,
-                name=func["function_name"],
-                runtime=f"python{version}",
-                handler=func["handler"],
-                privacy=func["args"]["privacy"]
-                if "privacy" in func["args"]
-                else "unknown_privacy",
-                env=func["args"]["env"] if "env" in func["args"] else None,
-                min_scale=func["args"]["min_scale"]
-                if "min_scale" in func["args"]
-                else None,
-                max_scale=func["args"]["max_scale"]
-                if "max_scale" in func["args"]
-                else None,
-                memory_limit=func["args"]["memory_limit"]
-                if "memory_limit" in func["args"]
-                else None,
-                timeout=func["args"]["timeout"] if "timeout" in func["args"] else None,
-                description=func["args"]["description"]
-                if "description" in func["args"]
-                else None,
-                secrets=func["args"]["secret"] if "secret" in func["args"] else None,
-            )
-
-            if fn is None:
-                raise RuntimeError("Unable to create a new function")
-
-            target_function = fn["id"]
-            domain = fn["domain_name"]
-        else:
-            api.update_function(  # Updating the function with the provided args
-                function_id=target_function,
-                runtime=f"python{version}",
-                handler=func["handler"],
-                privacy=func["args"]["privacy"]
-                if "privacy" in func["args"]
-                else "unknown_privacy",
-                env=func["args"]["env"] if "env" in func["args"] else None,
-                min_scale=func["args"]["min_scale"]
-                if "min_scale" in func["args"]
-                else None,
-                max_scale=func["args"]["max_scale"]
-                if "max_scale" in func["args"]
-                else None,
-                memory_limit=func["args"]["memory_limit"]
-                if "memory_limit" in func["args"]
-                else None,
-                timeout=func["args"]["timeout"] if "timeout" in func["args"] else None,
-                description=func["args"]["description"]
-                if "description" in func["args"]
-                else None,
-                secrets=func["args"]["secret"] if "secret" in func["args"] else None,
-            )
-
-        # Get an object storage pre-signed url
-        upload_url = api.upload_function(
-            function_id=target_function, content_length=file_size
-        )
-
-        if upload_url is None:
-            click.echo(
-                click.style(
-                    "Unable to retrieve upload url... Verify that your function is less that 8.388608e+08 MB",
-                    fg="red",
-                ),
-                err=True,
-            )
-            raise RuntimeError
-
-        click.echo("Uploading function...")
-        with open(".scw/deployment.zip", "rb") as file:
-            req = requests.put(  # Upload function zip to S3 presigned URL
-                upload_url,
-                data=file,
-                headers={
-                    "Content-Type": "application/octet-stream",
-                    "Content-Length": str(file_size),
-                },
-            )
-
-            if req.status_code != 200:
-                click.echo(
-                    click.style(
-                        "Unable to upload function code... Aborting...",
-                        fg="red",
-                    ),
-                    err=True,
-                )
-                raise RuntimeError("Unable to upload file")
-
-        click.echo("Deploying function...")
-        if not api.deploy_function(
-            target_function
-        ):  # deploy the newly uploaded function
-            click.echo(
-                click.style(
-                    f"Unable to deploy function {func['function_name']}...",
-                    fg="red",
-                ),
-                err=True,
-            )
-        else:
-
-            status = api.get_function(target_function)["status"]
-            while status not in [
-                "ready",
-                "error",
-            ]:  # Wait for the function to become ready or in error state.
-                time.sleep(30)
-                status = api.get_function(target_function)["status"]
-
-            if status == "error":
-                click.echo(
-                    click.style(
-                        f"Unable to deploy {func['function_name']}. Status is in error state.",
-                        fg="red",
-                    ),
-                    err=True,
-                )
-            else:
-                click.echo(
-                    click.style(
-                        f"Function {func['function_name']} has been deployed to https://{domain}",
-                        fg="green",
-                    )
-                )
-
-    if not new_namespace:
-        click.echo("Updating namespace configuration...")
-        api.update_namespace(  # Update the namespace
-            namespace,
-            app_instance.env,
-            None,  # Description
-            app_instance.secret,
-        )
-
-    if single_source:
-        # Delete functions no longer present in the code...
-        functions = list(
-            map(lambda x: x["function_name"], app_instance.functions)
-        )  # create a list containing the functions name
-
-        for func in api.list_functions(namespace):
-            if func["name"] not in functions:
-                click.echo(
-                    click.style(f"Deleting function {func['name']}...", fg="orange")
-                )
-                api.delete_function(func["id"])
-
-    click.echo(
-        click.style(f"Done! Functions have been successfully deployed!", fg="green")
-    )
+    if b is not None:
+        b.deploy(deploy_config)
 
 
 @cli.command(help="Generate the configuration file for your functions")
@@ -333,7 +144,7 @@ def deploy(
 def generate(file, target, save):
     app_instance = get_app_instance(file)  # Get the serverless App instance
 
-    click.echo(f"Generating configuration for target: {target}")
+    get_logger().default(f"Generating configuration for target: {target}")
 
     if not os.path.exists(save):
         os.mkdir(save)
@@ -342,23 +153,16 @@ def generate(file, target, save):
         serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
         serverless_framework_generator.write(save)
 
-    click.echo(
-        click.style(f"Done! Generated configuration file saved in {save}", fg="green")
-    )
+    get_logger().success(f"Done! Generated configuration file saved in {save}")
 
 
 def get_app_instance(file: str) -> Serverless:
     abs_file = os.path.abspath(file)
 
     if not os.path.exists(abs_file):
-        click.echo(
-            click.style(
-                "The provided file doesn't seem to exist. Please provide a valid python file with -f.",
-                fg="red",
-            ),
-            err=True,
+        raise RuntimeError(
+            "The provided file doesn't seem to exist. Please provide a valid python file with -f."
         )
-        raise FileNotFoundError
 
     module_name = (
         abs_file.replace(os.path.abspath("./"), "").split(".")[0].replace("/", ".")
@@ -379,21 +183,18 @@ def get_app_instance(file: str) -> Serverless:
             app_instance = member[1]
 
     if app_instance is None:  # No variable with type "Serverless" found
-        click.echo(
-            click.style(
-                "Unable to locate an instance of serverless App in the provided file.",
-                fg="red",
-            ),
-            err=True,
+        raise RuntimeError(
+            "Unable to locate an instance of serverless App in the provided file."
         )
-        raise ImportError
 
     return app_instance
 
 
 def main():
+    # Set logging level to DEFAULT. (ignore debug)
+    get_logger().set_level(DEFAULT)
     try:
         return cli()
-    except Exception:
-        click.echo(traceback.format_exc(), err=True)
+    except Exception as ex:
+        get_logger().critical(str(ex))
         return 2
