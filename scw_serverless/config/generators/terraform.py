@@ -1,5 +1,7 @@
+from asyncio.log import logger
 from typing import Any
 
+import re
 import json
 import hashlib
 import json
@@ -58,7 +60,7 @@ class TerraformGenerator(Generator):
             "min_scale",
             "max_scale",
             "memory_limit",
-            # "timeout",
+            "timeout",
             "description",
             "privacy",
         ]
@@ -82,6 +84,12 @@ class TerraformGenerator(Generator):
         self, fn: Function, python_version: str, zip_hash: str
     ) -> dict[str, Any]:
         args = self.get_fn_args(fn)
+        if "timeout" in args:
+            if match := re.match(r"(\d*\.\d+|\d+)s", args["timeout"]):
+                args["timeout"] = float(match.lastgroup)
+            else:
+                logger.warning("could not parse timeout %s" % args["timeout"])
+                del args["timeout"]
         return {
             fn.name: {
                 "namespace_id": (
