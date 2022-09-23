@@ -58,7 +58,7 @@ class TerraformGenerator(Generator):
             "min_scale",
             "max_scale",
             "memory_limit",
-            "timeout",
+            # "timeout",
             "description",
             "privacy",
         ]
@@ -131,13 +131,13 @@ class TerraformGenerator(Generator):
         config["resource"][TF_NAMESPACE_RESOURCE] = self._get_namespace_resource()
 
         config["resource"][TF_FUNCTION_RESOURCE] = {}
-        for v in TF_EVENTS_RESOURCES.values():
-            config["resource"][v] = {}
         for fn in self.instance.functions:  # Iterate over the functions
             config["resource"][TF_FUNCTION_RESOURCE] |= self._get_function_resource(
                 fn, version, zip_hash
             )
             for i, event in enumerate(fn.events):
+                if TF_EVENTS_RESOURCES[event.kind] not in config["resource"]:
+                    config["resource"][TF_EVENTS_RESOURCES[event.kind]] = {}
                 config["resource"][
                     TF_EVENTS_RESOURCES[event.kind]
                 ] |= self._get_event_resource(event, i, fn)

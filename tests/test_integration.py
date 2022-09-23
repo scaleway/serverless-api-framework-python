@@ -203,7 +203,6 @@ output "domain_name" {
             [terraform_cmd, "output", "domain_name"], capture_output=True, cwd=TESTS_DIR
         )
         url = "https://" + tf_out.stdout.decode("UTF-8").strip().strip('"')
-        print(url)
         call_function(url)
 
     finally:
@@ -215,4 +214,6 @@ output "domain_name" {
             ".terraform.lock.hcl",
         ]
         for file in should_be_deleted:
-            os.remove(os.path.join(TESTS_DIR, file))
+            path = os.path.join(TESTS_DIR, file)
+            if os.path.exists(path):
+                os.remove(path)
