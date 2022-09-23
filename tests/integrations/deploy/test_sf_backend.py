@@ -13,7 +13,10 @@ def test_integration_deploy_multiple_functions_using_srvless_fw():
 def test_integration_deploy_existing_function_using_srvless_fw():
     project_id = deploy(test_utils.APP_PY_PATH, do_cleanup=False, backend="serverless")
     deploy(
-        test_utils.APP_PY_PATH, do_cleanup=True, project_id=project_id, backend="serverless"
+        test_utils.APP_PY_PATH,
+        do_cleanup=True,
+        project_id=project_id,
+        backend="serverless",
     )
 
 
