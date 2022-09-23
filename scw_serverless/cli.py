@@ -15,6 +15,8 @@ from scw_serverless.deploy.backends.serverless_framework_backend import (
 )
 from scw_serverless.logger import get_logger, DEFAULT
 from scw_serverless.utils.credentials import find_scw_credentials
+from scw_serverless.config.generators.terraform import TerraformGenerator
+from scw_serverless.dependencies_manager import DependenciesManager
 
 
 @click.group()
@@ -127,7 +129,7 @@ def deploy(
     "-t",
     "target",
     default="serverless",
-    type=click.Choice(["serverless"], case_sensitive=False),
+    type=click.Choice(["serverless", "terraform"], case_sensitive=False),
     show_default=True,
     help="Select the configuration type to generate",
 )
@@ -158,6 +160,12 @@ def generate(file, target, save):
     if target == "serverless":
         serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
         serverless_framework_generator.write(save)
+    elif target == "terraform":
+        # TODO: Change this to a configurable path
+        terraform_generator = TerraformGenerator(
+            app_instance, deps_manager=DependenciesManager("./", "./")
+        )
+        terraform_generator.write(save)
 
     get_logger().success(f"Done! Generated configuration file saved in {save}")
 
