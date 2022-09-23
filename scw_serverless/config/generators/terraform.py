@@ -1,6 +1,6 @@
-from typing import Any, List
+from typing import Any
 
-import logging
+import json
 import hashlib
 import json
 import os
@@ -20,6 +20,26 @@ TF_NAMESPACE_RESOURCE = "scaleway_function_namespace"
 TF_EVENTS_RESOURCES = {"schedule": "scaleway_function_cron"}
 
 
+def _list_files(source):
+    zip_files = []
+
+    for path, _subdirs, files in os.walk(source):
+        for name in files:
+            zip_files.append(os.path.join(path, name))
+
+    return zip_files
+
+
+def _create_zip_file(zip_path, source):
+    files = _list_files(source)
+
+    with ZipFile(zip_path, "w", strict_timestamps=False) as zip:
+        for file in files:
+            # Allow for safely running the generator multiple times
+            if os.path.realpath(file) != os.path.realpath(zip_path):
+                zip.write(file)
+
+
 class TerraformGenerator(Generator):
     """
     Terraform Generator
@@ -31,66 +51,37 @@ class TerraformGenerator(Generator):
         self.instance = instance
         self.deps_manager = deps_manager
 
-    def list_files(self, source):
-        zip_files = []
-
-        for path, _subdirs, files in os.walk(source):
-            for name in files:
-                zip_files.append(os.path.join(path, name))
-
-        return zip_files
-
-    def create_zip_file(self, zip_path, source):
-        files = self.list_files(source)
-
-        with ZipFile(zip_path, "w", strict_timestamps=False) as zip:
-            for file in files:
-                # Allow for safely running the generator multiple times
-                if os.path.realpath(file) != os.path.realpath(zip_path):
-                    zip.write(file)
-
-    def _get_fn_args(self, fn: Function):
-        supported_args = {  # List of supported args in terraform function configuration
-            "min_scale": None,
-            "max_scale": None,
-            "memory_limit": None,
-            "timeout": None,
-            "description": None,
-            "privacy": None,
-            "env": "environment_variables",
-        }
-        config = {}
-        for k, v in fn.args.items():
-            if k in supported_args:
-                config[supported_args[k] or k] = v
-            else:
-                # TODO: change this for custom logger
-                logging.warning(
-                    "found unsupported argument %s for %s"
-                    % (k, self.__class__.__name__)
-                )
-        return config
+    @staticmethod
+    def get_allowed_args() -> dict[str, str]:
+        # List of supported args in terraform function configuration
+        allowed = [
+            "min_scale",
+            "max_scale",
+            "memory_limit",
+            "timeout",
+            "description",
+            "privacy",
+        ]
+        return {k: k for k in allowed} | {"env": "environment_variables"}
 
     @singledispatchmethod
-    def _res_from_event(self, event, i: int, fn: Function) -> dict[str, Any]:
+    def _get_event_resource(self, event, i: int, fn: Function) -> dict[str, Any]:
         raise ValueError("received unsupported event %s", event)
 
-    @_res_from_event.register
+    @_get_event_resource.register
     def _(self, event: CronSchedule, i: int, fn: Function) -> dict[str, Any]:
         return {
-            {
-                f"{fn.name}_cron_{i+1}": {  # Functions may have multiple CRON triggers
-                    "function_id": f"{TF_FUNCTION_RESOURCE}.{fn.name}.id",
-                    "schedule": event.expression,
-                    "args": event.inputs,
-                }
+            f"{fn.name}-cron-{i+1}": {  # Functions may have multiple CRON triggers
+                "function_id": f"{TF_FUNCTION_RESOURCE}.{fn.name}.id",
+                "schedule": event.expression,
+                "args": json.dumps(event.inputs),
             }
         }
 
-    def _res_from_fn(
+    def _get_function_resource(
         self, fn: Function, python_version: str, zip_hash: str
     ) -> dict[str, Any]:
-        args = self._get_fn_args(fn)
+        args = self.get_fn_args(fn)
         return {
             fn.name: {
                 "namespace_id": (
@@ -105,6 +96,16 @@ class TerraformGenerator(Generator):
             }
             | args
         }
+
+    def _get_namespace_resource(self) -> dict[str, Any]:
+        namespace = self.instance.service_name
+        inner = {
+            "name": f"{namespace}-function-namespace",
+            "description": f"{namespace} function namespace",
+        }
+        if self.instance.env is not None:
+            inner["environment_variables"] = self.instance.env
+        return {namespace: inner}
 
     def write(self, path: str):
         version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
@@ -122,43 +123,24 @@ class TerraformGenerator(Generator):
 
         self.deps_manager.generate_package_folder()
 
-        self.create_zip_file(f"{path}/functions.zip", "./")
+        _create_zip_file(f"{path}/functions.zip", "./")
         with open(f"{path}/functions.zip", "rb") as f:
             zip_bytes = f.read()
             zip_hash = hashlib.sha256(zip_bytes).hexdigest()
 
-        config["resource"][TF_NAMESPACE_RESOURCE] = {
-            self.instance.service_name: {
-                "name": f"{self.instance.service_name}-function-namespace",
-                "description": f"{self.instance.service_name} function namespace",
-            }
-        }
-
-        if self.instance.env is not None:
-            config["resource"][TF_NAMESPACE_RESOURCE][self.instance.service_name][
-                "environment_variables"
-            ] = self.instance.env
+        config["resource"][TF_NAMESPACE_RESOURCE] = self._get_namespace_resource()
 
         config["resource"][TF_FUNCTION_RESOURCE] = {}
-
+        for v in TF_EVENTS_RESOURCES.values():
+            config["resource"][v] = {}
         for fn in self.instance.functions:  # Iterate over the functions
-            config["resource"][TF_FUNCTION_RESOURCE] |= self._res_from_fn(
+            config["resource"][TF_FUNCTION_RESOURCE] |= self._get_function_resource(
                 fn, version, zip_hash
             )
             for i, event in enumerate(fn.events):
                 config["resource"][
                     TF_EVENTS_RESOURCES[event.kind]
-                ] |= self._res_from_event(event, i, fn)
-
-        functions = [
-            fn.name for fn in self.instance.functions
-        ]  # create a list containing the functions name
-
-        config["resource"][TF_FUNCTION_RESOURCE] = {
-            key: val
-            for key, val in config["resource"][TF_FUNCTION_RESOURCE].items()
-            if key in functions
-        }  # remove not present functions from configuration file
+                ] |= self._get_event_resource(event, i, fn)
 
         with open(config_path, "w") as file:
             json.dump(config, file, indent=2)

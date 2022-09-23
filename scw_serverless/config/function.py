@@ -1,8 +1,7 @@
-import imp
-from typing import Any, List, Callable, TypedDict, Literal
+from typing import List, Callable, TypedDict, Literal
 from typing_extensions import NotRequired
 
-from ..utils import module_to_path
+from ..utils import module_to_path, to_valid_fn_name
 from ..events.event import Event
 
 
@@ -26,7 +25,7 @@ class Function:
         args: FunctionKwargs,
         events: List[Event] = [],
     ) -> None:
-        self.name: str = name
+        self.name: str = to_valid_fn_name(name)
         self.handler_path: str = handler_path
         self.args: FunctionKwargs = args
         self.events: List[Event] = events

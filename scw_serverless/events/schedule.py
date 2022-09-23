@@ -34,7 +34,7 @@ class CronSchedule(Event):
         return "schedule"
 
     @classmethod
-    def from_expression(cls, expression: str, inputs: dict[str, Any]) -> Self:
+    def from_expression(cls, expression: str, inputs: dict[str, Any] = {}) -> Self:
         c = cls.__new__(cls)
         c.expression = expression
         c.inputs = inputs

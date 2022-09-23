@@ -1,10 +1,17 @@
+from typing import Any
+
 import os
 import sys
+from functools import singledispatchmethod
 
 import yaml
 
+from ..function import Function
+from ...events.schedule import CronSchedule
+from ...utils import to_camel_case
 from .generator import Generator
 from ...app import Serverless
+
 
 class ServerlessFrameworkGenerator(Generator):
     """
@@ -16,36 +23,37 @@ class ServerlessFrameworkGenerator(Generator):
     def __init__(self, instance: Serverless):
         self.instance = instance
 
-    def to_camel_case(self, snake_str):
-        components = snake_str.split("_")
-        # We capitalize the first letter of each component except the first one
-        # with the 'title' method and join them together.
-        return components[0] + "".join(x.title() for x in components[1:])
+    @staticmethod
+    def get_allowed_args() -> dict[str, str]:
+        # List of allowed args in serverless framework function configuration
+        allowed = [
+            "env",
+            "secret",
+            "min_scale",
+            "max_scale",
+            "memory_limit",
+            "timeout",
+            "privacy",
+            "description",
+        ]
+        return {k: to_camel_case(k) for k in allowed} | {
+            "custom_domains": "custom_domains"
+        }
 
-    def add_args(self, config, args):
-        allowed_args = (
-            [  # List of allowed args in serverless framework function configuration
-                "env",
-                "secret",
-                "min_scale",
-                "max_scale",
-                "memory_limit",
-                "timeout",
-                "custom_domains",
-                "privacy",
-                "description",
-            ]
-        )
+    @singledispatchmethod
+    def _get_event_config(self, event) -> dict[str, Any]:
+        raise ValueError("received unsupported event %s", event)
 
-        for k, v in args.items():
-            if k in allowed_args:
-                if isinstance(v, int):
-                    v = str(v)
+    @_get_event_config.register
+    def _(self, event: CronSchedule) -> dict[str, Any]:
+        return {"schedule": {"rate": event.expression, "input": event.inputs}}
 
-                if k == "custom_domains":
-                    config[k] = v
-                else:
-                    config[self.to_camel_case(k)] = v
+    def _get_function_config(self, fn: Function) -> dict[str, Any]:
+        config = self.get_fn_args(fn)
+        if fn.events:
+            config["events"] = [self._get_event_config(event) for event in fn.events]
+        config["handler"] = fn.handler_path
+        return config
 
     def write(self, path):
         version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
@@ -71,27 +79,9 @@ class ServerlessFrameworkGenerator(Generator):
         if self.instance.secret is not None:
             config["provider"]["secret"] = self.instance.secret
 
-        for func in self.instance.functions:  # Iterate over the functions
-            if func.name in config["functions"]:
-                config["functions"][func.name] |= func.get_config()
-            else:
-                config["functions"][func["function_name"]] = {
-                    "handler": func["handler"],
-                }
-
-            self.add_args(config["functions"][func["function_name"]], func["args"])
-            # Set the correct events.
-            # config["functions"][func["function_name"]]["events"] = [
-            #     {"http": {"path": func["url"], "method": "get"}}
-            # ]
-
-        functions = [fn["function_name"] for fn in self.instance.functions]
-        # create a list containing the functions name
-
-        functions = [fun.name for fun in self.instance.functions]
-        config["functions"] = {
-            key: val for key, val in config["functions"].items() if key in functions
-        }  # remove not present functions from configuration file
+        config["functions"] = {fn.name: {} for fn in self.instance.functions}
+        for fn in self.instance.functions:  # Iterate over the functions
+            config["functions"][fn.name] = self._get_function_config(fn)
 
         with open(config_path, "w") as file:
             yaml.dump(config, file)  # Write serverless.yml
