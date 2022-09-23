@@ -12,10 +12,10 @@ from scw_serverless.utils import check_if_installed
 
 
 class ServerlessFrameworkBackend(ServerlessBackend):
-    def __init__(self, app_instance: Serverless):
-        super().__init__(app_instance)
+    def __init__(self, app_instance: Serverless, deploy_config: DeployConfig):
+        super().__init__(app_instance, deploy_config)
 
-    def deploy(self, deploy_config: DeployConfig):
+    def deploy(self):
         # Generate the serverless.yml configuration
         serverless_framework_generator = ServerlessFrameworkGenerator(self.app_instance)
         serverless_framework_generator.write("./")

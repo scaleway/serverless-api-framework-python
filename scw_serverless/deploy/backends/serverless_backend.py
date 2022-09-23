@@ -14,11 +14,11 @@ class DeployConfig:
 
 
 class ServerlessBackend(ABC):
-
-    def __init__(self, app_instance: Serverless):
+    def __init__(self, app_instance: Serverless, deploy_config: DeployConfig):
         self.app_instance = app_instance
+        self.deploy_config = deploy_config
         self.logger = get_logger()
 
     @abstractmethod
-    def deploy(self, deploy_config: DeployConfig):
+    def deploy(self):
         pass
