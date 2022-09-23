@@ -3,8 +3,10 @@ from scw_serverless.app import Serverless
 from scw_serverless.app import _Function, _ScheduledFunction
 from scw_serverless.events.schedule import Cron
 
+
 def handler(event, context):
     return ""
+
 
 def test_function_get_config():
     expected = {
