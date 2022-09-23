@@ -1,0 +1,24 @@
+{
+  "variable": {
+    "project_id": {
+      "type": "string",
+      "description": "Your project ID."
+    }
+  },
+  "terraform": {
+    "required_version": ">= 0.13",
+    "required_providers": {
+      "scaleway": {
+        "source": "scaleway/scaleway"
+      }
+    }
+  },
+  "provider": {
+    "scaleway": {
+      "zone": "fr-par-1",
+      "region": "fr-par",
+      "project_id": "${var.project_id}"
+    }
+  },
+  "resource": {}
+}

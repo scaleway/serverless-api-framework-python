@@ -2,16 +2,15 @@ name: Pytest
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +23,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
       - name: Install dependencies
         run: |
           pip install --editable .
@@ -35,3 +38,4 @@ jobs:
         env:
           SCW_ORG_ID: ${{ secrets.SCW_ORG_ID }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
