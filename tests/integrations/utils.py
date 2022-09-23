@@ -115,8 +115,6 @@ def deploy(
             cwd="../",
         )
 
-        print(ret)
-
         assert ret.returncode == 0
         assert (
             "Function hello-world has been deployed"
