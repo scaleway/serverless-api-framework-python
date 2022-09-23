@@ -1,4 +1,3 @@
-from scw_serverless.events.cron import Cron
 from scw_serverless.app import Serverless
 
 app = Serverless("helloworld", env={"key1": "value1"}, secret={"key2": "value2"})
@@ -25,18 +24,22 @@ def hello_world(event: dict, context: dict):
     return "Hello World!"
 
 
-@app.schedule(
-    schedule=Cron("1", "*", "*", "*", "*", "*"),
-    inputs={"my_name": "Georges"},
+@app.func(
     description="This is a description",
     privacy="public",
     env={"key": "value"},
+    secret={},
+    min_scale=0,
+    max_scale=20,
+    memory_limit=128,
+    timeout="300s",
     custom_domains=["domain.scw.cloud"],
 )
-def hello_world_cron(event: dict, _context: dict):
+def hello_world_2(event: dict, context: dict):
     """handle a request to the function
     Args:
         event (dict): request params
         context (dict): function call metadata
     """
-    return f'Hello {event["my_name"]}!'
+
+    return "Hello World!"

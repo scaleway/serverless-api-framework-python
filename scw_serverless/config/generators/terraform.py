@@ -1,16 +1,23 @@
+from typing import Any, List
+
+import logging
 import hashlib
 import json
 import os
 import sys
+from functools import singledispatchmethod
 from zipfile import ZipFile
 
+from ...events.schedule import CronSchedule
 from .generator import Generator
+from ..function import Function
 from ...app import Serverless
 from ...dependencies_manager import DependenciesManager
 
 TERRAFORM_OUTPUT_FILE = "terraform.tf.json"
 TF_FUNCTION_RESOURCE = "scaleway_function"
 TF_NAMESPACE_RESOURCE = "scaleway_function_namespace"
+TF_EVENTS_RESOURCES = {"schedule": "scaleway_function_cron"}
 
 
 class TerraformGenerator(Generator):
@@ -42,19 +49,62 @@ class TerraformGenerator(Generator):
                 if os.path.realpath(file) != os.path.realpath(zip_path):
                     zip.write(file)
 
-    def add_args(self, config, args):
-        allowed_args = [  # List of allowed args in terraform function configuration
-            "min_scale",
-            "max_scale",
-            "memory_limit",
-            # TODO "timeout" See: https://github.com/scaleway/terraform-provider-scaleway/issues/1476
-            "privacy",
-            "description",
-        ]
+    def _get_fn_args(self, fn: Function):
+        supported_args = {  # List of supported args in terraform function configuration
+            "min_scale": None,
+            "max_scale": None,
+            "memory_limit": None,
+            "timeout": None,
+            "description": None,
+            "privacy": None,
+            "env": "environment_variables",
+        }
+        config = {}
+        for k, v in fn.args.items():
+            if k in supported_args:
+                config[supported_args[k] or k] = v
+            else:
+                # TODO: change this for custom logger
+                logging.warning(
+                    "found unsupported argument %s for %s"
+                    % (k, self.__class__.__name__)
+                )
+        return config
 
-        for k, v in args.items():
-            if k in allowed_args:
-                config[k] = v
+    @singledispatchmethod
+    def _res_from_event(self, event, i: int, fn: Function) -> dict[str, Any]:
+        raise ValueError("received unsupported event %s", event)
+
+    @_res_from_event.register
+    def _(self, event: CronSchedule, i: int, fn: Function) -> dict[str, Any]:
+        return {
+            {
+                f"{fn.name}_cron_{i+1}": {  # Functions may have multiple CRON triggers
+                    "function_id": f"{TF_FUNCTION_RESOURCE}.{fn.name}.id",
+                    "schedule": event.expression,
+                    "args": event.inputs,
+                }
+            }
+        }
+
+    def _res_from_fn(
+        self, fn: Function, python_version: str, zip_hash: str
+    ) -> dict[str, Any]:
+        args = self._get_fn_args(fn)
+        return {
+            fn.name: {
+                "namespace_id": (
+                    "${%s.%s.id}" % (TF_NAMESPACE_RESOURCE, self.instance.service_name)
+                ),
+                "runtime": f"python{python_version}",
+                "handler": fn.handler_path,
+                "name": fn.name,
+                "zip_file": "functions.zip",
+                "zip_hash": zip_hash,
+                "deploy": True,
+            }
+            | args
+        }
 
     def write(self, path: str):
         version = f"{sys.version_info.major}{sys.version_info.minor}"  # Get the python version from the current env
@@ -91,25 +141,17 @@ class TerraformGenerator(Generator):
 
         config["resource"][TF_FUNCTION_RESOURCE] = {}
 
-        for func in self.instance.functions:  # Iterate over the functions
-            config["resource"][TF_FUNCTION_RESOURCE][func["function_name"]] = {
-                "namespace_id": (
-                    "${%s.%s.id}" % (TF_NAMESPACE_RESOURCE, self.instance.service_name)
-                ),
-                "runtime": f"python{version}",
-                "handler": func["handler"],
-                "name": func["function_name"],
-                "zip_file": "functions.zip",
-                "zip_hash": zip_hash,
-                "deploy": True,
-            }
-            self.add_args(
-                config["resource"][TF_FUNCTION_RESOURCE][func["function_name"]],
-                func["args"],
+        for fn in self.instance.functions:  # Iterate over the functions
+            config["resource"][TF_FUNCTION_RESOURCE] |= self._res_from_fn(
+                fn, version, zip_hash
             )
+            for i, event in enumerate(fn.events):
+                config["resource"][
+                    TF_EVENTS_RESOURCES[event.kind]
+                ] |= self._res_from_event(event, i, fn)
 
         functions = [
-            fn["function_name"] for fn in self.instance.functions
+            fn.name for fn in self.instance.functions
         ]  # create a list containing the functions name
 
         config["resource"][TF_FUNCTION_RESOURCE] = {
