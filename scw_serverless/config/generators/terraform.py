@@ -86,7 +86,7 @@ class TerraformGenerator(Generator):
         args = self.get_fn_args(fn)
         if "timeout" in args:
             if match := re.match(r"(\d*\.\d+|\d+)s", args["timeout"]):
-                args["timeout"] = float(match.lastgroup)
+                args["timeout"] = float(match.group(1))
             else:
                 logger.warning("could not parse timeout %s" % args["timeout"])
                 del args["timeout"]
