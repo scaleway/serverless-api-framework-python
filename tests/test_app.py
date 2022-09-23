@@ -1,4 +1,5 @@
 from scw_serverless.app import Serverless
+from scw_serverless.utils.commands import get_command_path
 from tests.dev.app import app
 
 
@@ -14,3 +15,8 @@ def test_function_export():
     :return:
     """
     assert len(app.functions) == 1
+
+
+def test_get_command_path():
+    assert get_command_path("serverless")
+    assert get_command_path("node")
