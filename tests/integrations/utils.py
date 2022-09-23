@@ -115,12 +115,14 @@ def deploy(
             cwd="../",
         )
 
-        assert ret.returncode == 0
+        assert ret.returncode == 0, str(ret.stdout.decode("UTF-8")).strip()
         assert (
             "Function hello-world has been deployed"
             in str(ret.stdout.decode("UTF-8")).strip()
-        )
-        assert "Status is in error state" not in str(ret.stdout.decode("UTF-8")).strip()
+        ), str(ret.stdout.decode("UTF-8")).strip()
+        assert (
+            "Status is in error state" not in str(ret.stdout.decode("UTF-8")).strip()
+        ), str(ret.stdout.decode("UTF-8")).strip()
 
         output = str(ret.stdout.decode("UTF-8")).strip()
         pattern = re.compile(
@@ -167,8 +169,10 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
             cwd="../",
         )
 
-        assert ret.returncode == 0
-        assert "Done" in str(ret.stdout.decode("UTF-8")).strip()
+        assert ret.returncode == 0, str(ret.stdout.decode("UTF-8")).strip()
+        assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), str(
+            ret.stdout.decode("UTF-8")
+        ).strip()
 
         # Run the serverless Framework
 
