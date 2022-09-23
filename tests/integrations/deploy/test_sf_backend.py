@@ -1,4 +1,4 @@
-from integrations.utils import deploy
+from tests.integrations.utils import deploy
 
 
 def test_integration_deploy_using_srvless_fw():

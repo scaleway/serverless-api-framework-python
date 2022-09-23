@@ -1,4 +1,4 @@
-from integrations.utils import serverless_framework
+from tests.integrations.utils import serverless_framework
 
 
 def test_integration_serverless_framework():
