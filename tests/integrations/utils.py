@@ -110,19 +110,20 @@ def deploy(
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
                 "SCW_DEFAULT_PROJECT_ID": project_id,
+                "PATH": os.getenv("PATH"),
             },
             capture_output=True,
             cwd="../",
         )
 
-        assert ret.returncode == 0, str(ret.stdout.decode("UTF-8")).strip()
+        assert ret.returncode == 0, print(ret)
         assert (
             "Function hello-world has been deployed"
             in str(ret.stdout.decode("UTF-8")).strip()
-        ), str(ret.stdout.decode("UTF-8")).strip()
+        ), print(ret)
         assert (
             "Status is in error state" not in str(ret.stdout.decode("UTF-8")).strip()
-        ), str(ret.stdout.decode("UTF-8")).strip()
+        ), print(ret)
 
         output = str(ret.stdout.decode("UTF-8")).strip()
         pattern = re.compile(
