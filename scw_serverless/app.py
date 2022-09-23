@@ -1,5 +1,4 @@
-import sched
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 from typing_extensions import Unpack
 
 from .config.function import Function, FunctionKwargs

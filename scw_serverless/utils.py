@@ -19,4 +19,4 @@ def to_camel_case(snake_str: str) -> str:
 
 
 def to_valid_fn_name(name: str) -> str:
-    return name.replace("_", "-")
+    return name.lower().replace("_", "-")
