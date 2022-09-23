@@ -1,27 +1,28 @@
+import tests.utils as test_utils
 from tests.integrations.utils import deploy
 
 
 def test_integration_deploy_using_srvless_fw():
-    deploy("tests/dev/app.py", backend="serverless")
+    deploy(test_utils.APP_PY_PATH, backend="serverless")
 
 
 def test_integration_deploy_multiple_functions_using_srvless_fw():
-    deploy("tests/dev/multiple-functions.py", backend="serverless")
+    deploy(test_utils.MULTIPLE_FUNCTIONS_PY_PATH, backend="serverless")
 
 
 def test_integration_deploy_existing_function_using_srvless_fw():
-    project_id = deploy("tests/dev/app.py", do_cleanup=False, backend="serverless")
+    project_id = deploy(test_utils.APP_PY_PATH, do_cleanup=False, backend="serverless")
     deploy(
-        "tests/dev/app.py", do_cleanup=True, project_id=project_id, backend="serverless"
+        test_utils.APP_PY_PATH, do_cleanup=True, project_id=project_id, backend="serverless"
     )
 
 
 def test_integration_deploy_multiple_existing_functions_using_srvless_fw():
     project_id = deploy(
-        "tests/dev/multiple-functions.py", do_cleanup=False, backend="serverless"
+        test_utils.MULTIPLE_FUNCTIONS_PY_PATH, do_cleanup=False, backend="serverless"
     )
     deploy(
-        "tests/dev/multiple-functions.py",
+        test_utils.MULTIPLE_FUNCTIONS_PY_PATH,
         do_cleanup=True,
         project_id=project_id,
         backend="serverless",
@@ -29,9 +30,9 @@ def test_integration_deploy_multiple_existing_functions_using_srvless_fw():
 
 
 def test_integration_deploy_one_existing_function_using_srvless_fw():
-    project_id = deploy("tests/dev/app.py", do_cleanup=False, backend="serverless")
+    project_id = deploy(test_utils.APP_PY_PATH, do_cleanup=False, backend="serverless")
     deploy(
-        "tests/dev/multiple-functions.py",
+        test_utils.MULTIPLE_FUNCTIONS_PY_PATH,
         do_cleanup=True,
         project_id=project_id,
         backend="serverless",
