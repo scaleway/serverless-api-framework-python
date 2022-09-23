@@ -98,7 +98,7 @@ class ScalewayApiBackend(ServerlessBackend):
 
         if not upload_url:
             raise RuntimeError(
-                "Unable to retrieve upload url... Verify that your function is less that 8.388608e+08 MB"
+                "Unable to retrieve upload url... Verify that your function is less that 100 MB"
             )
 
         self.logger.default("Uploading function...")
