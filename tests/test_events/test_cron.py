@@ -1,14 +1,14 @@
 import pytest
 
-from serverless.events.cron import Cron
+from scw_serverless.events.schedule import CronSchedule
 
 
 @pytest.mark.parametrize(
     "cron,expected_expression",
     [
-        (Cron("*", "*", "*", "*", "*", "*", "*"), "* * * * * *"),
-        (Cron("0", "0", "0", "*", "*", "TUE"), "0 0 0 * * TUE"),
+        (CronSchedule("*", "*", "*", "*", "*", "*", "*"), "* * * * * * *"),
+        (CronSchedule("0", "0", "*", "*", "FRI"), "0 0 * * FRI"),
     ],
 )
-def test_cron_as_expression(cron, expected_expression: str):
-    assert cron.as_expression() == expected_expression
+def test_cron_as_expression(cron: CronSchedule, expected_expression: str):
+    assert cron.expression == expected_expression
