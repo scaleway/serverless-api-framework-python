@@ -11,7 +11,7 @@ from scw_serverless.deploy.backends.serverless_backend import (
     ServerlessBackend,
     DeployConfig,
 )
-from scw_serverless.utils import create_zip_file
+from scw_serverless.utils.files import create_zip_file
 
 TEMP_DIR = "./.scw"
 DEPLOYMENT_ZIP = f"{TEMP_DIR}/deployment.zip"

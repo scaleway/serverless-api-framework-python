@@ -14,7 +14,7 @@ from scw_serverless.deploy.backends.serverless_framework_backend import (
     ServerlessFrameworkBackend,
 )
 from scw_serverless.logger import get_logger, DEFAULT
-from scw_serverless.utils import find_scw_credentials
+from scw_serverless.utils.credentials import find_scw_credentials
 
 
 @click.group()

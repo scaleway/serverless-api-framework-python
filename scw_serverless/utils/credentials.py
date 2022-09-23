@@ -1,29 +1,9 @@
 import os
-import subprocess
 from pathlib import Path
-from zipfile import ZipFile
 
 import yaml
 
 from scw_serverless.logger import get_logger
-
-
-def list_files(source):
-    zip_files = []
-
-    for path, subdirs, files in os.walk(source):
-        for name in files:
-            zip_files.append(os.path.join(path, name))
-
-    return zip_files
-
-
-def create_zip_file(zip_path, source):
-    files = list_files(source)
-
-    with ZipFile(zip_path, "w", strict_timestamps=False) as zip:
-        for file in files:
-            zip.write(file)
 
 
 def find_scw_credentials():
@@ -61,8 +41,3 @@ def find_scw_credentials():
         )
 
         return None, None, None
-
-
-def check_if_installed(command: str):
-    ret = subprocess.run(["which", command], capture_output=True)
-    return ret.returncode == 0
