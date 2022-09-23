@@ -105,14 +105,20 @@ def deploy(
     if backend == "api":
         # Deploy using the scaleway api
         get_logger().info("Using the API backend")
-        b = ScalewayApiBackend(app_instance=app_instance, single_source=single_source)
+        b = ScalewayApiBackend(
+            app_instance=app_instance,
+            single_source=single_source,
+            deploy_config=deploy_config,
+        )
     elif backend == "serverless":
         # Deploy using the serverless framework
         get_logger().info("Using the Serverless Framework backend")
-        b = ServerlessFrameworkBackend(app_instance=app_instance)
+        b = ServerlessFrameworkBackend(
+            app_instance=app_instance, deploy_config=deploy_config
+        )
 
     if b is not None:
-        b.deploy(deploy_config)
+        b.deploy()
 
 
 @cli.command(help="Generate the configuration file for your functions")
