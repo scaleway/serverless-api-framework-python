@@ -13,7 +13,7 @@ from scw_serverless.utils import check_if_installed
 
 class ServerlessFrameworkBackend(ServerlessBackend):
     def __init__(self, app_instance: Serverless):
-        self.app_instance = app_instance
+        super().__init__(app_instance)
 
     def deploy(self, deploy_config: DeployConfig):
         # Generate the serverless.yml configuration
