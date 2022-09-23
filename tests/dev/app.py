@@ -12,7 +12,6 @@ app = Serverless("integration-tests", env={"key1": "value1"}, secret={"key2": "v
     max_scale=20,
     memory_limit=128,
     timeout="300s",
-    custom_domains=["domain.scw.cloud"],
 )
 def hello_world(event: dict, context: dict):
     """handle a request to the function
