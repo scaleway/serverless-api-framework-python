@@ -3,7 +3,7 @@ import os.path
 from click.testing import CliRunner
 
 from scw_serverless.cli import cli
-from utils import APP_PY_PATH
+from tests.utils import APP_PY_PATH
 
 
 def init_runner(args: list):

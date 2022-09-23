@@ -7,12 +7,13 @@ import time
 import requests
 
 from scw_serverless.utils.commands import get_command_path
+from tests.utils import request_scw_api
 
 REGION = "fr-par"
 API_URL = "https://api.scaleway.com"
-FUNCTIONS_BASE_URL = f"{API_URL}/functions/v1beta1/regions/{REGION}"
-ACCOUNT_BASE_URL = f"{API_URL}/account/v2/projects"
-REGISTRY_BASE_URL = f"{API_URL}/registry/v1/regions/{REGION}"
+FUNCTIONS_BASE_URL = f"functions/v1beta1/regions/{REGION}"
+ACCOUNT_BASE_URL = f"account/v2/projects"
+REGISTRY_BASE_URL = f"registry/v1/regions/{REGION}"
 HEADERS = {"X-Auth-Token": os.getenv("SCW_SECRET_KEY")}
 
 
@@ -20,23 +21,21 @@ def create_project(suffix: str):
     sha = os.getenv("GITHUB_SHA")
     if sha is None:
         sha = "local"
-    req = requests.post(
-        ACCOUNT_BASE_URL,
+    resp = request_scw_api(
+        route=ACCOUNT_BASE_URL,
+        method="POST",
         json={
             "name": f"apifw-{sha[:7]}-{suffix}",
             "organization_id": os.getenv("SCW_ORG_ID"),
         },
-        headers=HEADERS,
     )
 
-    req.raise_for_status()
-
-    return req.json()["id"]
+    return resp.json()["id"]
 
 
 def delete_project(project_id, retries: int = 0):
     req = requests.delete(
-        f"{ACCOUNT_BASE_URL}/{project_id}",
+        f"{API_URL}/{ACCOUNT_BASE_URL}/{project_id}",
         headers=HEADERS,
     )
 
@@ -53,29 +52,26 @@ def cleanup(project_id):
     if os.path.exists("../.serverless"):
         shutil.rmtree("../.serverless")  # remove serverless framework files
 
-    namespaces = requests.get(
-        f"{FUNCTIONS_BASE_URL}/namespaces?project_id={project_id}",
-        headers=HEADERS,
-    )  # List namespaces
-    namespaces.raise_for_status()
+    # List namespaces
+    namespaces = request_scw_api(
+        route=f"{FUNCTIONS_BASE_URL}/namespaces?project_id={project_id}"
+    )
     for namespace in namespaces.json()["namespaces"]:
-        delete_namespace = requests.delete(
-            f"{FUNCTIONS_BASE_URL}/namespaces/{namespace['id']}",
-            headers=HEADERS,
-        )  # Delete namespace
-        delete_namespace.raise_for_status()
-    time.sleep(60)  # wait for resource deletion
-    registries = requests.get(
-        f"{REGISTRY_BASE_URL}/namespaces?project_id={project_id}",
-        headers=HEADERS,
-    )  # List containers registries
-    registries.raise_for_status()
+        # Delete namespace
+        request_scw_api(
+            route=f"{FUNCTIONS_BASE_URL}/namespaces/{namespace['id']}", method="DELETE"
+        )
+    # wait for resource deletion
+    time.sleep(60)
+    # List containers registries
+    registries = request_scw_api(
+        route=f"{REGISTRY_BASE_URL}/namespaces?project_id={project_id}"
+    )
     for registry in registries.json()["namespaces"]:
-        delete_registry = requests.delete(
-            f"{REGISTRY_BASE_URL}/namespaces/{registry['id']}",
-            headers=HEADERS,
-        )  # Delete container registry
-        delete_registry.raise_for_status()
+        # Delete container registry
+        request_scw_api(
+            route=f"{REGISTRY_BASE_URL}/namespaces/{registry['id']}", method="DELETE"
+        )
 
 
 def call_function(url: str, retries: int = 0):

@@ -1,10 +1,10 @@
-import tempfile, shutil, pathlib
 import os
+import shutil
+import tempfile
 
 import pytest
 
 from scw_serverless.dependencies_manager import DependenciesManager
-from tests.utils import request_scw_api
 
 
 @pytest.fixture(name="pkg_parent_folder")
