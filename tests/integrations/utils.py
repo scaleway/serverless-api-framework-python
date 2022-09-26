@@ -7,6 +7,7 @@ import time
 import requests
 
 from scw_serverless.utils.commands import get_command_path
+from tests.utils import ROOT_PROJECT_DIR
 from tests.utils import request_scw_api
 
 REGION = "fr-par"
@@ -43,7 +44,8 @@ def delete_project(project_id, retries: int = 0):
         time.sleep(42)
         return delete_project(project_id, retries + 1)
 
-    req.raise_for_status()
+    # ignoring the error.
+    # req.raise_for_status()
 
 
 def cleanup(project_id):
@@ -113,14 +115,17 @@ def deploy(
                 "PATH": os.getenv("PATH"),
             },
             capture_output=True,
-            cwd="../",
+            cwd=ROOT_PROJECT_DIR,
         )
 
         assert ret.returncode == 0, print(ret)
-        assert (
-            "Function hello-world has been deployed"
-            in str(ret.stdout.decode("UTF-8")).strip()
-        ), print(ret)
+
+        output = str(ret.stdout.decode("UTF-8")).strip()
+        if backend == "serverless":
+            # serverless framework print normal output on stderr
+            output = str(ret.stderr.decode("UTF-8")).strip()
+
+        assert "Function hello-world has been deployed" in output, print(ret)
         assert (
             "Status is in error state" not in str(ret.stdout.decode("UTF-8")).strip()
         ), print(ret)
