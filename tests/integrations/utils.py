@@ -198,7 +198,7 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
                 "SCW_REGION": REGION,
             },
             capture_output=True,
-            cwd=ROOT_PROJECT_DIR  ,
+            cwd=ROOT_PROJECT_DIR,
         )
 
         assert serverless.returncode == 0, print(serverless)
