@@ -172,13 +172,11 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
                 "SCW_REGION": REGION,
             },
             capture_output=True,
-            cwd="../",
+            cwd=ROOT_PROJECT_DIR,
         )
 
-        assert ret.returncode == 0, str(ret.stdout.decode("UTF-8")).strip()
-        assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), str(
-            ret.stdout.decode("UTF-8")
-        ).strip()
+        assert ret.returncode == 0, print(ret)
+        assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), print(ret)
 
         # Run the serverless Framework
 
@@ -200,14 +198,14 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
                 "SCW_REGION": REGION,
             },
             capture_output=True,
-            cwd="../",
+            cwd=ROOT_PROJECT_DIR  ,
         )
 
-        assert serverless.returncode == 0
+        assert serverless.returncode == 0, print(serverless)
         assert (
             "Function hello-world has been deployed"
             in str(serverless.stderr.decode("UTF-8")).strip()
-        )
+        ), print(serverless)
 
         output = str(serverless.stderr.decode("UTF-8")).strip()
 
