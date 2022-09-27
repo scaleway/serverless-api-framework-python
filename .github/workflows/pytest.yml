@@ -15,14 +15,14 @@ jobs:
     container: nikolaik/python-nodejs:python3.10-nodejs18
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-      - name: Setup node 18
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+#      - name: Set up Python 3.9
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: "3.9"
+#      - name: Setup node 18
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 18
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v2
         with:
