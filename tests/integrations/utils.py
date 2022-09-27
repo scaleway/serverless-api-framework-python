@@ -142,10 +142,9 @@ def deploy(
             call_function(group[1])
 
     finally:
-        pass
-        # if do_cleanup:
-        #     cleanup(project_id)
-        #     delete_project(project_id)
+        if do_cleanup:
+            cleanup(project_id)
+            delete_project(project_id)
     return project_id
 
 
@@ -220,8 +219,7 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
             call_function(group[1])
 
     finally:
-        pass
-        # if do_cleanup:
-        #     cleanup(project_id)
-        #     delete_project(project_id)
+        if do_cleanup:
+            cleanup(project_id)
+            delete_project(project_id)
     return project_id
