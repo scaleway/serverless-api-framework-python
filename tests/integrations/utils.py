@@ -10,7 +10,7 @@ from scw_serverless.utils.commands import get_command_path
 from tests.utils import ROOT_PROJECT_DIR
 from tests.utils import request_scw_api
 
-REGION = "fr-par"
+REGION = "pl-waw"
 API_URL = "https://api.scaleway.com"
 FUNCTIONS_BASE_URL = f"functions/v1beta1/regions/{REGION}"
 ACCOUNT_BASE_URL = f"account/v2/projects"
