@@ -1,5 +1,7 @@
 name: Pytest Integration tests with Serverless Framework Backend
 
+concurrency: serverlessfw
+
 on:
   push:
     branches: [ "main" ]

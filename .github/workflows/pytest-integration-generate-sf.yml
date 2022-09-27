@@ -1,5 +1,7 @@
 name: Pytest Integration tests for generate command using Serverless Framework
 
+concurrency: serverlessfw
+
 on:
   push:
     branches: [ "main" ]

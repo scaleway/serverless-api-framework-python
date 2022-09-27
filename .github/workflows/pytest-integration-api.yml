@@ -1,5 +1,7 @@
 name: Pytest Integration tests with API Backend
 
+concurrency: api
+
 on:
   push:
     branches: [ "main" ]
