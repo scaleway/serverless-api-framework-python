@@ -1,6 +1,6 @@
-name: Pytest Integration tests with API Backend
+name: Pytest Integration tests for generate command using Serverless Framework
 
-concurrency: api
+concurrency: serverlessfw
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 81
 
     steps:
@@ -34,7 +34,7 @@ jobs:
           npm install -g serverless serverless-scaleway-functions
       - name: Test with pytest
         working-directory: tests
-        run: pytest integrations/deploy/test_api_backend.py
+        run: pytest integrations/generate/test_sf.py
         env:
           SCW_ORG_ID: ${{ secrets.SCW_ORG_ID }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
