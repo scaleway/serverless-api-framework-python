@@ -1,6 +1,6 @@
 from scw_serverless.app import Serverless
 
-app = Serverless("integration-tests", env={"key1": "value1"}, secret={"key2": "value2"})
+app = Serverless("integration-tests") # ,env={"key1": "value1"}, secret={"key2": "value2"}
 
 
 @app.func(
@@ -10,7 +10,7 @@ app = Serverless("integration-tests", env={"key1": "value1"}, secret={"key2": "v
     secret={},
     min_scale=0,
     max_scale=20,
-    memory_limit=128,
+    memory_limit=256,
     timeout="300s",
 )
 def hello_world(event: dict, context: dict):

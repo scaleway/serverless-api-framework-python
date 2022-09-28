@@ -48,7 +48,7 @@ def test_cli_generate_no_args_multiple_functions():
     Test the generate command with no args (other than the file selector)
     :return:
     """
-    result = init_runner(["generate", "-f", "./dev/multiple-functions.py"])
+    result = init_runner(["generate", "-f", "./dev/multiple_functions.py"])
     assert result.exit_code == 0
     assert "Done" in result.output
 
@@ -59,7 +59,7 @@ def test_cli_generate_target_serverless_multiple_functions():
     :return:
     """
     result = init_runner(
-        ["generate", "-f", "./dev/multiple-functions.py", "-t", "serverless"]
+        ["generate", "-f", "./dev/multiple_functions.py", "-t", "serverless"]
     )
     assert result.exit_code == 0
     assert "Done" in result.output
@@ -72,7 +72,7 @@ def test_cli_generate_save_destination_multiple_functions():
     :return:
     """
     result = init_runner(
-        ["generate", "-f", "./dev/multiple-functions.py", "-s", "./test"]
+        ["generate", "-f", "./dev/multiple_functions.py", "-s", "./test"]
     )
     assert result.exit_code == 0
     assert "Done" in result.output

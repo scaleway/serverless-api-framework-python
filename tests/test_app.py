@@ -1,6 +1,7 @@
 from scw_serverless.app import Serverless
 from scw_serverless.utils.commands import get_command_path
 from tests.dev.app import app
+from tests.dev.multiple_functions import app as multiple_app
 
 
 def test_module_to_path():
@@ -15,6 +16,10 @@ def test_function_export():
     :return:
     """
     assert len(app.functions) == 1
+
+
+def test_multiple_function_export():
+    assert len(multiple_app.functions) == 3
 
 
 def test_get_command_path():
