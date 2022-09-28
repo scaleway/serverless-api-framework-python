@@ -1,4 +1,4 @@
-name: Pytest
+name: Pytest 1
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
           npm install -g serverless serverless-scaleway-functions
       - name: Test with pytest
         working-directory: tests
-        run: pytest test_app.py test_cli.py
+        run: pytest integrations/deploy/test_sf_backend.py
         env:
           SCW_ORG_ID: ${{ secrets.SCW_ORG_ID }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
