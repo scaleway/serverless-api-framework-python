@@ -8,6 +8,8 @@ from scw_serverless.app import Serverless
 from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
+from scw_serverless.config.generators.terraform import TerraformGenerator
+from scw_serverless.dependencies_manager import DependenciesManager
 from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
 from scw_serverless.deploy.backends.serverless_backend import DeployConfig
 from scw_serverless.deploy.backends.serverless_framework_backend import (
@@ -15,8 +17,6 @@ from scw_serverless.deploy.backends.serverless_framework_backend import (
 )
 from scw_serverless.logger import get_logger, DEFAULT
 from scw_serverless.utils.credentials import find_scw_credentials
-from scw_serverless.config.generators.terraform import TerraformGenerator
-from scw_serverless.dependencies_manager import DependenciesManager
 
 
 @click.group()
@@ -89,7 +89,7 @@ def deploy(
             region = reg
 
     if region is None:
-        region = "fr-par"  # If the region is still not defined, update it to fr-par
+        region = "pl-waw"  # If the region is still not defined, update it to fr-par
 
     if secret_key is None or project_id is None:
         raise RuntimeError(
