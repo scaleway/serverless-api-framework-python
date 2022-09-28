@@ -108,6 +108,8 @@ def deploy(
                 file,
                 "-b",
                 backend,
+                "--region",
+                "pl-waw"
             ],
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
