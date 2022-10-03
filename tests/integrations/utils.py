@@ -1,10 +1,12 @@
 import os
+import random
 import re
 import shutil
 import subprocess
 import time
 
 import requests
+from requests import HTTPError
 
 from scw_serverless.utils.commands import get_command_path
 from tests.utils import ROOT_PROJECT_DIR
@@ -21,12 +23,12 @@ HEADERS = {"X-Auth-Token": os.getenv("SCW_SECRET_KEY")}
 def create_project(suffix: str):
     sha = os.getenv("GITHUB_SHA")
     if sha is None:
-        sha = "local4"
+        sha = "local"
     resp = request_scw_api(
         route=ACCOUNT_BASE_URL,
         method="POST",
         json={
-            "name": f"apifw-{sha[:7]}-{suffix}",
+            "name": f"apifw-{sha[:7]}-{suffix}_{str(random.randint(0, 9999))}",
             "organization_id": os.getenv("SCW_ORG_ID"),
         },
     )
@@ -88,6 +90,26 @@ def call_function(url: str, retries: int = 0):
             return call_function(url, retries + 1)
         # Already retried without success abort.
         raise ConnectionError
+    except HTTPError as ex:
+        # If the request as timed out
+        if ex.response.status_code == 408:
+            if retries <= 3:
+                time.sleep(42)
+                # retry calling the function
+                return call_function(url, retries + 1)
+            # After x retries the request still time out, abort
+            raise ex
+        # Raise the original error as it is not a time out.
+        raise ex
+
+
+def copy_project(project_id: str):
+    directory = f"/tmp/apifw_{project_id}"
+    if not os.path.exists(directory):
+        # os.mkdir(directory)
+        shutil.copytree(ROOT_PROJECT_DIR, directory)
+
+    return directory
 
 
 def deploy(
@@ -96,28 +118,25 @@ def deploy(
     if project_id is None:
         project_id = create_project("dpl")
 
+    print(f"Using project: {project_id}")
+
+    # Copy the whole project to a temporary directory
+    project_dir = copy_project(project_id=project_id)
+    file = file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+
     try:
         srvlss_path = get_command_path("srvlss")
         assert srvlss_path is not None
 
         ret = subprocess.run(
-            [
-                srvlss_path,
-                "deploy",
-                "-f",
-                file,
-                "-b",
-                backend,
-                "--region",
-                "pl-waw"
-            ],
+            [srvlss_path, "deploy", "-f", file, "-b", backend, "--region", "pl-waw"],
             env={
                 "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
                 "SCW_DEFAULT_PROJECT_ID": project_id,
                 "PATH": os.getenv("PATH"),
             },
             capture_output=True,
-            cwd=ROOT_PROJECT_DIR,
+            cwd=project_dir,
         )
 
         assert ret.returncode == 0, print(ret)
@@ -144,16 +163,22 @@ def deploy(
             call_function(group[1])
 
     finally:
-        pass
-        # if do_cleanup:
-        #     cleanup(project_id)
-        #     delete_project(project_id)
+        if do_cleanup:
+            cleanup(project_id)
+            delete_project(project_id)
+            shutil.rmtree(project_dir)
     return project_id
 
 
 def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = None):
     if project_id is None:
         project_id = create_project("slfw")
+
+    print(f"Using project: {project_id}")
+
+    # Copy the whole project to a temporary directory
+    project_dir = copy_project(project_id=project_id)
+    file = file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
 
     try:
         # Run the command line
@@ -175,7 +200,7 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
                 "SCW_REGION": REGION,
             },
             capture_output=True,
-            cwd=ROOT_PROJECT_DIR,
+            cwd=project_dir,
         )
 
         assert ret.returncode == 0, print(ret)
@@ -201,7 +226,7 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
                 "SCW_REGION": REGION,
             },
             capture_output=True,
-            cwd=ROOT_PROJECT_DIR,
+            cwd=project_dir,
         )
 
         assert serverless.returncode == 0, print(serverless)
@@ -226,4 +251,5 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
         # if do_cleanup:
         #     cleanup(project_id)
         #     delete_project(project_id)
+        #     shutil.rmtree(project_dir)
     return project_id

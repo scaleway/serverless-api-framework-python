@@ -1,6 +1,8 @@
 from scw_serverless.app import Serverless
 
-app = Serverless("integration-tests") # ,env={"key1": "value1"}, secret={"key2": "value2"}
+app = Serverless(
+    "integration-tests"
+)  # ,env={"key1": "value1"}, secret={"key2": "value2"}
 
 
 @app.func(

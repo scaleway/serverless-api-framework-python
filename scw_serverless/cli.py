@@ -104,6 +104,10 @@ def deploy(
 
     b = None
 
+    get_logger().default("Packaging dependencies...")
+    deps = DependenciesManager("./", "./")
+    deps.generate_package_folder()
+
     if backend == "api":
         # Deploy using the scaleway api
         get_logger().info("Using the API backend")
