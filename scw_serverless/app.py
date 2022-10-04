@@ -1,26 +1,21 @@
+from typing import Any, List, Union
+from typing_extensions import Unpack
+
+from .config.function import Function, FunctionKwargs
+from .events.schedule import CronSchedule
+
+
 class Serverless:
     def __init__(self, service_name: str, env: dict = None, secret: dict = None):
-        self.functions = []
-        self.service_name = service_name
+        self.functions: List[Function] = []
+        self.service_name: str = service_name
         self.env = env
         self.secret = secret
 
-    def module_to_path(self, module: str):
-        """
-        Replace dots by slash in the module name
-
-        :param module:
-        :return:
-        """
-        return module.replace(
-            ".", "/"
-        )  # This may break in certain scenarios need to test it. For example if your
-        # serverless framework is not at the root of you project.
-
-    def nomalize_function_name(self, name):
-        return name.lower().replace("_", "-")
-
-    def func(self, **kwargs):
+    def func(
+        self,
+        **kwargs: Unpack[FunctionKwargs],
+    ):
         """
         @func decorator
 
@@ -30,13 +25,40 @@ class Serverless:
 
         def decorator(handler):
             self.functions.append(
-                {
-                    "function_name": self.nomalize_function_name(handler.__name__),
-                    # FIXME: Using the function name may result in some function not being save if their name is
-                    #  duplicated.
-                    "handler": f"{self.module_to_path(handler.__module__)}.{handler.__name__}",
-                    "args": kwargs,
-                }
+                Function.from_handler(
+                    handler,
+                    kwargs,
+                )
+            )
+
+            def _inner(*args, **kwargs):
+                return handler(args, kwargs)
+
+            return _inner
+
+        return decorator
+
+    def schedule(
+        self,
+        schedule: Union[str, CronSchedule],
+        inputs: dict[str, Any] = {},
+        **kwargs: Unpack[FunctionKwargs],
+    ):
+        """Schedules a handler with Cron, passing input as parameters to the body.
+
+        :param schedule: Cron schedule to run with
+        :type schedule: Cron
+        :param inputs: Parameters to be passed to the body, defaults to {}
+        :type inputs: Optional[dict[str, Any]], optional
+        """
+        if isinstance(schedule, str):
+            schedule = CronSchedule.from_expression(schedule, inputs)
+        else:
+            schedule.inputs |= inputs
+
+        def decorator(handler):
+            self.functions.append(
+                Function.from_handler(handler, kwargs, events=[schedule])
             )
 
             def _inner(*args, **kwargs):
