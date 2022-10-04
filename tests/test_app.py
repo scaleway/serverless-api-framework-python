@@ -1,12 +1,11 @@
-from scw_serverless.app import Serverless
 from scw_serverless.utils.commands import get_command_path
 from tests.dev.app import app
 from tests.dev.multiple_functions import app as multiple_app
+from utils.string import module_to_path
 
 
 def test_module_to_path():
-    serverless = Serverless("unit_test")
-    assert serverless.module_to_path("abc.def") == "abc/def"
+    assert module_to_path("abc.def") == "abc/def"
 
 
 def test_function_export():
