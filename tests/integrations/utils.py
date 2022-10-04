@@ -4,12 +4,14 @@ import re
 import shutil
 import subprocess
 import time
+from typing import List
 
 import requests
+import yaml
 from requests import HTTPError
 
 from scw_serverless.utils.commands import get_command_path
-from tests.utils import ROOT_PROJECT_DIR
+from tests.utils import ROOT_PROJECT_DIR, TESTS_DIR
 from tests.utils import request_scw_api
 
 REGION = "pl-waw"
@@ -110,6 +112,38 @@ def copy_project(project_id: str):
         shutil.copytree(ROOT_PROJECT_DIR, directory)
 
     return directory
+
+
+def run_srvlss_cli(project_id: str, args: List[str], cwd: str = TESTS_DIR):
+    # Run the command line
+    srvlss_path = get_command_path("srvlss")
+    assert srvlss_path is not None
+
+    return subprocess.run(
+        [srvlss_path] + args,
+        env={
+            "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
+            "SCW_DEFAULT_PROJECT_ID": project_id,
+            "SCW_REGION": REGION,
+        },
+        capture_output=True,
+        # Runs the cli in the tests directory
+        cwd=cwd,
+    )
+
+
+def generate_scw_config():
+    path = os.path.join(TESTS_DIR, "scw.yaml")
+    with open(path, "w") as fp:
+        yaml.dump(
+            {
+                "access_key": os.getenv("SCW_ACCESS_KEY"),
+                "secret_key": os.getenv("SCW_SECRET_KEY"),
+                "default_region": REGION,
+            },
+            fp,
+        )
+    return path
 
 
 def deploy(
@@ -247,9 +281,89 @@ def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = N
             call_function(group[1])
 
     finally:
-        pass
-        # if do_cleanup:
-        #     cleanup(project_id)
-        #     delete_project(project_id)
-        #     shutil.rmtree(project_dir)
+        if do_cleanup:
+            cleanup(project_id)
+            delete_project(project_id)
+            shutil.rmtree(project_dir)
+    return project_id
+
+
+def terraform(file: str, do_cleanup: bool = True, project_id: str = None):
+    if project_id is None:
+        project_id = create_project("slfw")
+
+    print(f"Using project: {project_id}")
+
+    # Copy the whole project to a temporary directory
+    project_dir = copy_project(project_id=project_id)
+    file = file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+
+    try:
+        # Run the command line
+        srvlss_path = get_command_path("srvlss")
+        assert srvlss_path is not None
+
+        ret = subprocess.run(
+            [
+                srvlss_path,
+                "generate",
+                "-t",
+                "terraform",
+                "-f",
+                file,
+            ],
+            env={
+                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
+                "SCW_DEFAULT_PROJECT_ID": project_id,
+                "SCW_REGION": REGION,
+            },
+            capture_output=True,
+            cwd=project_dir,
+        )
+
+        assert ret.returncode == 0, print(ret)
+        assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), print(ret)
+
+        # Run terraform
+
+        terraform_path = get_command_path("terraform")
+        assert terraform_path is not None
+
+        with open(os.path.join(TESTS_DIR, "output.tf"), "w") as fp:
+            fp.write(
+                """
+output "domain_name" {
+  value = scaleway_function.hello-world.domain_name
+}
+            """
+            )
+
+        subprocess.run([terraform_path, "init"], capture_output=True, cwd=TESTS_DIR)
+
+        tf_apply = subprocess.run(
+            [terraform_path, "apply", "-auto-approve"],
+            env={
+                "TF_VAR_project_id": project_id,
+                "SCW_CONFIG_PATH": generate_scw_config(),
+            },
+            capture_output=True,
+            cwd=TESTS_DIR,
+        )
+
+        assert tf_apply.returncode == 0
+        assert "Apply complete!" in str(tf_apply.stdout.decode("UTF-8")).strip()
+
+        tf_out = subprocess.run(
+            [terraform_path, "output", "domain_name"],
+            capture_output=True,
+            cwd=TESTS_DIR,
+        )
+        url = "https://" + tf_out.stdout.decode("UTF-8").strip().strip('"')
+        call_function(url)
+
+    finally:
+        if do_cleanup:
+            cleanup(project_id)
+            delete_project(project_id)
+            shutil.rmtree(project_dir)
     return project_id
