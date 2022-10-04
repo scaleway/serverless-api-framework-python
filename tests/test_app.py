@@ -1,7 +1,7 @@
 from scw_serverless.utils.commands import get_command_path
+from scw_serverless.utils.string import module_to_path
 from tests.dev.app import app
 from tests.dev.multiple_functions import app as multiple_app
-from utils.string import module_to_path
 
 
 def test_module_to_path():
