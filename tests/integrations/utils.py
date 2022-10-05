@@ -80,29 +80,37 @@ def cleanup(project_id):
         )
 
 
-def call_function(url: str, retries: int = 0):
-    try:
-        # Call the function
-        req = requests.get(url)
-        req.raise_for_status()
-    except ConnectionError:
-        if retries <= 3:
-            time.sleep(42)
-            # retry calling the function
-            return call_function(url, retries + 1)
-        # Already retried without success abort.
-        raise ConnectionError
-    except HTTPError as ex:
-        # If the request as timed out
-        if ex.response.status_code == 408:
-            if retries <= 3:
-                time.sleep(42)
-                # retry calling the function
-                return call_function(url, retries + 1)
-            # After x retries the request still time out, abort
-            raise ex
-        # Raise the original error as it is not a time out.
-        raise ex
+def call_function(url: str):
+    retries = 0
+    retry_delay = 42
+    raised_ex = None
+
+    while retries < 3:
+        try:
+            # Call the function
+            req = requests.get(url)
+            req.raise_for_status()
+
+            raised_ex = None
+            # No exception raised. Call was successful
+            break
+        except ConnectionError as ex:
+            time.sleep(retry_delay)
+            retries += 1
+            raised_ex = ex
+        except HTTPError as ex:
+            raised_ex = ex
+
+            # If the request as timed out
+            if ex.response.status_code == 408:
+                time.sleep(retry_delay)
+                retries += 1
+            else:
+                # The request has not timed out. The function deployment was unsuccessful
+                break
+
+    if raised_ex:
+        raise raised_ex
 
 
 def copy_project(project_id: str):
@@ -350,7 +358,9 @@ output "domain_name" {
         )
 
         assert tf_apply.returncode == 0, print(tf_apply)
-        assert "Apply complete!" in str(tf_apply.stdout.decode("UTF-8")).strip(), print(tf_apply)
+        assert "Apply complete!" in str(tf_apply.stdout.decode("UTF-8")).strip(), print(
+            tf_apply
+        )
 
         tf_out = subprocess.run(
             [terraform_path, "output", "domain_name"],
