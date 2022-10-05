@@ -177,6 +177,7 @@ class ScalewayApiBackend(ServerlessBackend):
         for ns in self.api.list_namespaces(self.deploy_config.project_id):
             if ns["name"] == self.app_instance.service_name:
                 namespace = ns["id"]
+                break
 
         new_namespace = False
 
