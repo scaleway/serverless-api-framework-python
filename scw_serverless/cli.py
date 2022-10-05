@@ -94,9 +94,7 @@ def deploy(
 
     if secret_key is None or project_id is None:
         # No credentials were provided, abort
-        raise RuntimeError(
-            "Unable to find credentials for deployment."
-        )
+        raise RuntimeError("Unable to find credentials for deployment.")
 
     # Create the deploy configuration
     deploy_config = DeployConfig()

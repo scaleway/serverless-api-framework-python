@@ -30,9 +30,7 @@ class ScalewayApiBackend(ServerlessBackend):
         )
 
     def _get_or_create_function(self, func: Function, namespace: str):
-        self.logger.default(
-            f"Looking for an existing function {func.name}..."
-        )
+        self.logger.default(f"Looking for an existing function {func.name}...")
         target_function = None
         domain = None
 
