@@ -1,5 +1,5 @@
 import tests.utils as test_utils
-from integrations.utils import terraform
+from tests.integrations.utils import terraform
 
 
 def test_integration_terraform():

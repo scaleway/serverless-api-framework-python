@@ -7,6 +7,7 @@ import requests
 
 from scw_serverless.api import Api
 from scw_serverless.app import Serverless
+from scw_serverless.config.function import Function
 from scw_serverless.deploy.backends.serverless_backend import (
     ServerlessBackend,
     DeployConfig,
@@ -29,30 +30,30 @@ class ScalewayApiBackend(ServerlessBackend):
             region=self.deploy_config.region, secret_key=self.deploy_config.secret_key
         )
 
-    def _get_or_create_function(self, func: dict, namespace: str):
+    def _get_or_create_function(self, func: Function, namespace: str):
         self.logger.default(
-            f"Looking for an existing function {func['function_name']}..."
+            f"Looking for an existing function {func.name}..."
         )
         target_function = None
         domain = None
 
         # Looking if a function is already existing
         for fn in self.api.list_functions(namespace_id=namespace):
-            if fn["name"] == func["function_name"]:
+            if fn["name"] == func.name:
                 target_function = fn["id"]
                 domain = fn["domain_name"]
 
-        fn_args = func["args"]
+        fn_args = func.args
 
         if target_function is None:
-            self.logger.default(f"Creating a new function {func['function_name']}...")
+            self.logger.default(f"Creating a new function {func.name}...")
 
             # Creating a new function with the provided args
             fn = self.api.create_function(
                 namespace_id=namespace,
-                name=func["function_name"],
+                name=func.name,
                 runtime=f"python{self._get_python_version()}",
-                handler=func["handler"],
+                handler=func.handler_path,
                 privacy=fn_args.get("privacy", "unknown_privacy"),
                 env=fn_args.get("env"),
                 min_scale=fn_args.get("min_scale"),
@@ -73,7 +74,7 @@ class ScalewayApiBackend(ServerlessBackend):
             self.api.update_function(
                 function_id=target_function,
                 runtime=f"python{self._get_python_version()}",
-                handler=func["handler"],
+                handler=func.handler_path,
                 privacy=fn_args.get("privacy", "unknown_privacy"),
                 env=fn_args.get("env"),
                 min_scale=fn_args.get("min_scale"),
@@ -86,7 +87,7 @@ class ScalewayApiBackend(ServerlessBackend):
 
         return target_function, domain
 
-    def _deploy_function(self, func: dict, namespace: str, zip_size: int):
+    def _deploy_function(self, func: Function, namespace: str, zip_size: int):
         target_function, domain = self._get_or_create_function(
             func=func, namespace=namespace
         )
@@ -119,7 +120,7 @@ class ScalewayApiBackend(ServerlessBackend):
         self.logger.default("Deploying function...")
         # deploy the newly uploaded function
         if not self.api.deploy_function(target_function):
-            self.logger.error(f"Unable to deploy function {func['function_name']}...")
+            self.logger.error(f"Unable to deploy function {func.name}...")
         else:
 
             # Wait for the function to become ready or in error state.
@@ -133,11 +134,11 @@ class ScalewayApiBackend(ServerlessBackend):
 
             if status == "error":
                 self.logger.error(
-                    f"Unable to deploy {func['function_name']}. Status is in error state."
+                    f"Unable to deploy {func.name}. Status is in error state."
                 )
             else:
                 self.logger.success(
-                    f"Function {func['function_name']} has been deployed to https://{domain}"
+                    f"Function {func.name} has been deployed to https://{domain}"
                 )
 
     def _get_python_version(self):
@@ -160,7 +161,7 @@ class ScalewayApiBackend(ServerlessBackend):
         # Delete functions no longer present in the code...
 
         # create a list containing the functions name
-        functions = list(map(lambda x: x["function_name"], self.app_instance.functions))
+        functions = list(map(lambda x: x.name, self.app_instance.functions))
 
         for func in self.api.list_functions(namespace):
             if func["name"] not in functions:
