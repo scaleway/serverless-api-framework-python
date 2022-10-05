@@ -22,15 +22,9 @@ class ServerlessFrameworkBackend(ServerlessBackend):
 
         # Test if nodejs is installed on the user's system
         node_path = get_command_path("node")
-        if not node_path:
-            raise RuntimeError("nodejs is not installed on your system")
 
         # Test if the serverless framework is installed on the user's system
         serverlessfw_path = get_command_path("serverless")
-        if not serverlessfw_path:
-            raise RuntimeError(
-                "The serverless framework is not installed on your system"
-            )
 
         # Call the serverless framework to perform the deployment
         subprocess.run(
