@@ -149,3 +149,5 @@ package
 
 # Deployment folder
 .scw
+
+scw.yaml

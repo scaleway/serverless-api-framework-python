@@ -338,7 +338,7 @@ output "domain_name" {
             """
             )
 
-        subprocess.run([terraform_path, "init"], capture_output=True, cwd=TESTS_DIR)
+        subprocess.run([terraform_path, "init"], capture_output=True, cwd=project_dir)
 
         tf_apply = subprocess.run(
             [terraform_path, "apply", "-auto-approve"],
@@ -347,16 +347,16 @@ output "domain_name" {
                 "SCW_CONFIG_PATH": generate_scw_config(),
             },
             capture_output=True,
-            cwd=TESTS_DIR,
+            cwd=project_dir,
         )
 
-        assert tf_apply.returncode == 0
-        assert "Apply complete!" in str(tf_apply.stdout.decode("UTF-8")).strip()
+        assert tf_apply.returncode == 0, print(tf_apply)
+        assert "Apply complete!" in str(tf_apply.stdout.decode("UTF-8")).strip(), print(tf_apply)
 
         tf_out = subprocess.run(
             [terraform_path, "output", "domain_name"],
             capture_output=True,
-            cwd=TESTS_DIR,
+            cwd=project_dir,
         )
         url = "https://" + tf_out.stdout.decode("UTF-8").strip().strip('"')
         call_function(url)
