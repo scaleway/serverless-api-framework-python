@@ -19,7 +19,7 @@ class Api:
         if resp.status_code != 200:
             return []
 
-        return resp.json()["namespaces"]
+        return resp.json().get("namespaces", [])
 
     def get_namespace(self, namespace_id):
         resp = requests.get(
@@ -136,7 +136,7 @@ class Api:
         if resp.status_code != 200:
             return []
 
-        return resp.json()["functions"]
+        return resp.json().get("functions", [])
 
     def upload_function(self, function_id: str, content_length: int):
         resp = requests.get(
@@ -147,7 +147,7 @@ class Api:
         if resp.status_code != 200:
             return None
 
-        return resp.json()["url"]
+        return resp.json().get("url", None)
 
     def deploy_function(self, function_id: str):
         resp = requests.post(
