@@ -108,7 +108,6 @@ def call_function(url: str, retries: int = 0):
 def copy_project(project_id: str):
     directory = f"/tmp/apifw_{project_id}"
     if not os.path.exists(directory):
-        # os.mkdir(directory)
         shutil.copytree(ROOT_PROJECT_DIR, directory)
 
     return directory
