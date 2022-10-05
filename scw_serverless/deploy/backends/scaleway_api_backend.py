@@ -25,7 +25,6 @@ class ScalewayApiBackend(ServerlessBackend):
         super().__init__(app_instance, deploy_config)
         self.single_source = single_source
 
-        # Init the self.api Client
         self.api = Api(
             region=self.deploy_config.region, secret_key=self.deploy_config.secret_key
         )
@@ -160,7 +159,7 @@ class ScalewayApiBackend(ServerlessBackend):
     def _remove_missing_functions(self, namespace: str):
         # Delete functions no longer present in the code...
 
-        # create a list containing the functions name
+        # Create a list containing the functions name
         functions = list(map(lambda x: x.name, self.app_instance.functions))
 
         for func in self.api.list_functions(namespace):

@@ -75,10 +75,11 @@ def deploy(
     project_id: str = None,
     region: str = None,
 ):
-    app_instance = get_app_instance(file)  # Get the serverless App instance
+    # Get the serverless App instance
+    app_instance = get_app_instance(file)
 
-    # if the credentials were not provided as option, look for them in configuration file or
-    #  system environment variables
+    # If the credentials were not provided as option, look for them in configuration file or
+    # system environment variables
     if secret_key is None or project_id is None or region is None:
         secret, project, reg = find_scw_credentials()
         if secret_key is None:  # Secret key is None, update it
@@ -92,9 +93,10 @@ def deploy(
         region = "pl-waw"  # If the region is still not defined, update it to fr-par
 
     if secret_key is None or project_id is None:
+        # No credentials were provided, abort
         raise RuntimeError(
             "Unable to find credentials for deployment."
-        )  # No credentials were provided, abort
+        )
 
     # Create the deploy configuration
     deploy_config = DeployConfig()
