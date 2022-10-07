@@ -5,6 +5,7 @@ from tests.integrations.utils import deploy
 def test_integration_deploy():
     deploy(test_utils.APP_PY_PATH)
 
+
 # Due to external factors these test will randomly fail.
 # def test_integration_deploy_multiple_functions():
 #     deploy(test_utils.MULTIPLE_FUNCTIONS_PY_PATH)
