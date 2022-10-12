@@ -1,7 +1,7 @@
 from scw_serverless.app import Serverless
 from scw_serverless.events.schedule import CronSchedule
 
-app = Serverless("helloworld")  # , env={"key1": "value1"}, secret={"key2": "value2"}
+app = Serverless("cron", env={"key1": "value1"}, secret={"key2": "value2"})
 
 
 @app.schedule(

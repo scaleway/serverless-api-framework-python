@@ -1,8 +1,9 @@
 from typing import List, Callable, TypedDict, Literal
+
 from typing_extensions import NotRequired
 
-from ..utils import module_to_path, to_valid_fn_name
-from ..events.event import Event
+from scw_serverless.events.event import Event
+from scw_serverless.utils.string import module_to_path, to_valid_fn_name
 
 
 class FunctionKwargs(TypedDict):

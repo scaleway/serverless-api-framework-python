@@ -1,4 +1,4 @@
-from scw_serverless import Serverless
+from scw_serverless.app import Serverless
 
 app = Serverless("hello_world")
 

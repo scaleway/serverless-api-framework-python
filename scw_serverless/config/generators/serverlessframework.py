@@ -1,16 +1,15 @@
-from typing import Any
-
 import os
 import sys
 from functools import singledispatchmethod
+from typing import Any
 
 import yaml
 
-from ..function import Function
-from ...events.schedule import CronSchedule
-from ...utils import to_camel_case
-from .generator import Generator
-from ...app import Serverless
+from scw_serverless.app import Serverless
+from scw_serverless.config.function import Function
+from scw_serverless.config.generators.generator import Generator
+from scw_serverless.events.schedule import CronSchedule
+from scw_serverless.utils.string import to_camel_case
 
 
 class ServerlessFrameworkGenerator(Generator):

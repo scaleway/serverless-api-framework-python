@@ -3,7 +3,7 @@ from typing import Any
 
 import logging
 
-from ...config.function import Function
+from scw_serverless.config.function import Function
 
 
 class Generator(ABC):

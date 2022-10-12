@@ -24,12 +24,14 @@ def hello_world(event: dict, context: dict):
 # Quickstart
 
 Initiate your python environment:
+
 ```shell
 python3 -m venv venv310
 . venv310/bin/activate
 ```
 
 Install `serverless-api-project`
+
 ```shell
 python -m pip install scw-serverless-api-project
 ```
@@ -37,6 +39,7 @@ python -m pip install scw-serverless-api-project
 You can then now, create a python file and start coding using the example above.
 
 When you are ready, you can generate a `serverless.yml` configuration file using:
+
 ```shell
 srvlss generate --file app.py
 ```

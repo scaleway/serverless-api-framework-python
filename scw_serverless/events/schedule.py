@@ -1,7 +1,7 @@
 from typing import Optional, Any
 from typing_extensions import Self
 
-from .event import Event
+from scw_serverless.events.event import Event
 
 
 class CronSchedule(Event):

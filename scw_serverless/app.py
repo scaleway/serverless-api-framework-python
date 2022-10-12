@@ -1,8 +1,8 @@
 from typing import Any, List, Union
 from typing_extensions import Unpack
 
-from .config.function import Function, FunctionKwargs
-from .events.schedule import CronSchedule
+from scw_serverless.config.function import Function, FunctionKwargs
+from scw_serverless.events.schedule import CronSchedule
 
 
 class Serverless:

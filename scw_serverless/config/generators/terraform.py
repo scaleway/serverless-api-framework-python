@@ -1,20 +1,18 @@
-from asyncio.log import logger
-from typing import Any
-
-import re
-import json
 import hashlib
 import json
 import os
+import re
 import sys
+from asyncio.log import logger
 from functools import singledispatchmethod
+from typing import Any
 from zipfile import ZipFile
 
-from ...events.schedule import CronSchedule
-from .generator import Generator
-from ..function import Function
-from ...app import Serverless
-from ...dependencies_manager import DependenciesManager
+from scw_serverless.app import Serverless
+from scw_serverless.config.function import Function
+from scw_serverless.config.generators.generator import Generator
+from scw_serverless.dependencies_manager import DependenciesManager
+from scw_serverless.events.schedule import CronSchedule
 
 TERRAFORM_OUTPUT_FILE = "terraform.tf.json"
 TF_FUNCTION_RESOURCE = "scaleway_function"
@@ -73,7 +71,7 @@ class TerraformGenerator(Generator):
     @_get_event_resource.register
     def _(self, event: CronSchedule, i: int, fn: Function) -> dict[str, Any]:
         return {
-            f"{fn.name}-cron-{i+1}": {  # Functions may have multiple CRON triggers
+            f"{fn.name}-cron-{i + 1}": {  # Functions may have multiple CRON triggers
                 "function_id": f"{TF_FUNCTION_RESOURCE}.{fn.name}.id",
                 "schedule": event.expression,
                 "args": json.dumps(event.inputs),
