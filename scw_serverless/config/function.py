@@ -5,6 +5,8 @@ from typing_extensions import NotRequired
 from scw_serverless.events.event import Event
 from scw_serverless.utils.string import module_to_path, to_valid_fn_name
 
+HttpMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
+
 
 class FunctionKwargs(TypedDict):
     env: NotRequired[dict[str, str]]
@@ -16,6 +18,8 @@ class FunctionKwargs(TypedDict):
     custom_domains: NotRequired[List[str]]
     privacy: NotRequired[Literal["private", "public"]]
     description: NotRequired[str]
+    path: NotRequired[str]
+    methods: NotRequired[list[HttpMethod]]
 
 
 class Function:

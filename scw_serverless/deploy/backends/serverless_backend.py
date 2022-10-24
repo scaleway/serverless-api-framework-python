@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from scw_serverless.app import Serverless
 from scw_serverless.logger import get_logger
@@ -6,10 +7,13 @@ from scw_serverless.logger import get_logger
 
 class DeployConfig:
     def __init__(
-        self, project_id: str = None, serect_key: str = None, region: str = None
+        self,
+        project_id: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        region: Optional[str] = None,
     ):
         self.project_id = project_id
-        self.secret_key = serect_key
+        self.secret_key = secret_key
         self.region = region
 
 

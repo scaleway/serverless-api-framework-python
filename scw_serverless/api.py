@@ -79,6 +79,12 @@ class Api:
 
         return resp.json()
 
+    def get_namespace_id(self, namespace_name: str):
+        for ns in self.list_namespaces(self.deploy_config.project_id):
+            if ns["name"] == namespace_name:
+                return ns["id"]
+        raise RuntimeError("could not find namespace %s" % namespace_name)
+
     def to_secret_list(self, secrets: dict) -> list:
         secrets_list = []
 

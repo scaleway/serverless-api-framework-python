@@ -219,7 +219,7 @@ class ScalewayApiBackend(ServerlessBackend):
             self._deploy_function(func=func, namespace=namespace, zip_size=file_size)
 
         if not new_namespace:
-            click.echo("Updating namespace configuration...")
+            self.logger.default("Updating namespace configuration...")
             # Update the namespace
             self.api.update_namespace(
                 namespace_id=namespace,

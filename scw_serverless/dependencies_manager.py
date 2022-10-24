@@ -1,9 +1,10 @@
 from typing import Optional
 
-from asyncio.log import logger
 import os, sys
 import pathlib
 import subprocess
+
+import logger
 
 REQUIREMENTS_NAME = "requirements.txt"
 
@@ -31,6 +32,7 @@ class DependenciesManager:
     def __init__(self, in_path: str, out_path: str) -> None:
         self.in_path = pathlib.Path(in_path)
         self.out_path = pathlib.Path(out_path)
+        self.logger = logger.get_logger()
 
     @property
     def pkg_path(self) -> pathlib.Path:
@@ -49,7 +51,7 @@ class DependenciesManager:
                 fp = pathlib.Path(self.in_path.joinpath(file))
                 if fp.is_file() and fp.name == REQUIREMENTS_NAME:
                     return fp.resolve()
-            logger.warning(
+            self.logger.warning(
                 "file %s not found in directory %s"
                 % (REQUIREMENTS_NAME, self.in_path.absolute)
             )
@@ -59,7 +61,7 @@ class DependenciesManager:
                 return self.in_path.resolve()
             raise ValueError("file %s is not a txt file" % self.in_path.absolute)
         else:
-            logger.warning(
+            self.logger.warning(
                 "could not find a requirements file in %s" % self.out_path.absolute
             )
             return None

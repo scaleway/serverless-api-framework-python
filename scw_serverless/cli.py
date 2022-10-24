@@ -56,7 +56,7 @@ def cli():
     "single_source",
     is_flag=True,
     default=True,
-    help="Do not remove functions not present in the code being deployed.",
+    help="Do not remove functions not present in the code being deployed",
 )
 @click.option(
     "--backend",
@@ -66,6 +66,12 @@ def cli():
     type=click.Choice(["api", "serverless"], case_sensitive=False),
     show_default=True,
     help="Select the backend used to deploy",
+)
+@click.option(
+    "--gateway-id",
+    "-g",
+    envvar="GATEWAY_ID",
+    help="API Gateway uuid to use with function endpoints",
 )
 def deploy(
     file: str,
@@ -97,7 +103,7 @@ def deploy(
         raise RuntimeError("Unable to find credentials for deployment.")
 
     # Create the deploy configuration
-    deploy_config = DeployConfig()
+    deploy_config = DeployConfig(project_id, secret_key, region)
     deploy_config.region = region
     deploy_config.secret_key = secret_key
     deploy_config.project_id = project_id

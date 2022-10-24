@@ -67,3 +67,23 @@ class Serverless:
             return _inner
 
         return decorator
+
+    def get(self, path: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"path": path, "methods": ["GET"]}
+        return self.func(**kwargs)
+
+    def post(self, path: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"path": path, "methods": ["POST"]}
+        return self.func(**kwargs)
+
+    def put(self, path: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"path": path, "methods": ["PUT"]}
+        return self.func(**kwargs)
+
+    def delete(self, path: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"path": path, "methods": ["DELETE"]}
+        return self.func(**kwargs)
+
+    def patch(self, path: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"path": path, "methods": ["PATCH"]}
+        return self.func(**kwargs)
