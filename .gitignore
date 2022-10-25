@@ -150,4 +150,10 @@ package
 # Deployment folder
 .scw
 
-scw.yaml
+# Nix files
+*nix
+.direnv/
+.env*
+
+# IDE
+.vscode/

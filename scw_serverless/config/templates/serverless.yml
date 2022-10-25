@@ -25,6 +25,3 @@ functions:
     env:
       local: local
     handler: handler.handle
-
-
-
