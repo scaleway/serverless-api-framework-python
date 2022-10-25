@@ -1,54 +1,56 @@
 import os
-from typing import Optional, List
+from typing import Optional, List, Any
 
+from ...logger import get_logger
 from ...app import Serverless
 from ...api import Api
 from ..gateway.client import GatewayClient
 from ..gateway.models import Route, GatewayInput, GatewayOutput
 
 
-class GatewayController:
+class GatewayManager:
     def __init__(
         self,
         app_instance: Serverless,
         api: Api,
         gateway_uuid: Optional[str],
+        gateway_client: GatewayClient,
     ):
         self.gateway_uuid = gateway_uuid
         self.app_instance = app_instance
         self.api = api
-        self.gateway_client = GatewayClient()
+        self.gateway_client = gateway_client
+        self.logger = get_logger()
 
-    def _get_routes(self) -> list[Route]:
+    def _get_routes(self, deployed_fns: dict[str, Any]) -> list[Route]:
         routes = []
 
-        namespace_name = self.app_instance.service_name
-        namespace_id = self.api.get_namespace_id(namespace_name)
-
-        # Get the list of the deployed functions
-        deployed_fns = {
-            fn["name"]: fn for fn in self.api.list_functions(namespace_id=namespace_id)
-        }
         # Compare with the configured functions
         for fn in self.app_instance.functions:
-            if not fn.args.path:
+            if not fn.get("path"):
                 continue
             if not fn.name in deployed_fns:
-                raise RuntimeError(
-                    "could not find function %s in namespace %s"
-                    % (fn.name, namespace_name)
-                )
+                raise RuntimeError("could not find function %s in namespace" % fn.name)
 
             deployed = deployed_fns[fn.name]
             routes.append(
                 Route(
-                    path=fn.args.path,
+                    path=fn.get("path"),
                     target=deployed["domain_name"],
-                    methods=fn.args.methods,
+                    methods=fn.get("methods"),
                 )
             )
 
         return routes
+
+    def _list_deployed_fns(self) -> dict[str, Any]:
+        namespace_name = self.app_instance.service_name
+        namespace_id = self.api.get_namespace_id(namespace_name)
+
+        # Get the list of the deployed functions
+        return {
+            fn["name"]: fn for fn in self.api.list_functions(namespace_id=namespace_id)
+        }
 
     def _deploy_to_existing(self, routes):
         self.logger.default(f"Updating gateway {self.gateway_uuid} configuration...")
@@ -59,11 +61,12 @@ class GatewayController:
 
     def _deploy_to_new(self, routes):
         self.logger.default("No gateway was configured, creating a new gateway...")
-        out = self.gateway_client.create_gateway(gateway)
+        out = self.gateway_client.create_gateway(GatewayInput([], routes))
         self
 
-    def manage_routes(self):
-        routes = self._get_routes()
+    def update_gateway_routes(self):
+        deployed_fns = self._list_deployed_fns()
+        routes = self._get_routes(deployed_fns)
 
         if self.gateway_uuid:
             self._deploy_to_existing(routes)

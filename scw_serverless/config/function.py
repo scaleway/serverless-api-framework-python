@@ -1,4 +1,4 @@
-from typing import List, Callable, TypedDict, Literal
+from typing import List, Callable, TypedDict, Literal, Optional, Any
 
 from typing_extensions import NotRequired
 
@@ -45,3 +45,6 @@ class Function:
             args=args,
             events=events,
         )
+
+    def get(self, key: str) -> Optional[Any]:
+        return self.args.get(key)

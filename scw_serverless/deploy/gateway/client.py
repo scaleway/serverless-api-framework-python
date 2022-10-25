@@ -3,8 +3,7 @@ from typing import Optional
 
 import requests
 
-import models
-
+from .models import GatewayInput, GatewayOutput, Route
 
 GATEWAY_CTRL_URL = "51.15.208.161"
 
@@ -14,19 +13,17 @@ class GatewayClient:
         self.base_url: str = base_url if base_url else GATEWAY_CTRL_URL
         self.session: requests.Session = requests.Session(*args, **kwargs)
 
-    def create_gateway(self, gateway: models.GatewayInput) -> models.GatewayOutput:
+    def create_gateway(self, gateway: GatewayInput) -> GatewayOutput:
         res = self.session.post(f"{self.base_url}/gateways", json=gateway)
-        return models.GatewayOutput.from_dict(res)
+        return GatewayOutput.from_dict(res)
 
-    def get_gateway(self, uuid: str) -> models.GatewayOutput:
+    def get_gateway(self, uuid: str) -> GatewayOutput:
         res = self.session.get(f"{self.base_url}/gateways/{self.uuid}")
-        return models.GatewayOutput.from_dict(res)
+        return GatewayOutput.from_dict(res)
 
-    def update_gateway(
-        self, uuid: str, gateway: models.GatewayInput
-    ) -> models.GatewayOutput:
+    def update_gateway(self, uuid: str, gateway: GatewayInput) -> GatewayOutput:
         res = self.session.put(f"{self.base_url}/gateways/{self.uuid}", json=gateway)
-        return models.GatewayOutput.from_dict(res)
+        return GatewayOutput.from_dict(res)
 
     def delete_gateway(self, uuid: str):
         # Will raise on exceptions
