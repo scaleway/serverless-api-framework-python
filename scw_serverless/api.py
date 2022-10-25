@@ -10,7 +10,7 @@ class Api:
         self.headers = {"X-Auth-Token": self.secret_key}
         self.base_url = f"{API_BASE}/regions/{self.region}"
 
-    def list_namespaces(self, project_id):
+    def list_namespaces(self, project_id: str):
         resp = requests.get(
             f"{self.base_url}/namespaces?project_id={project_id}",
             headers=self.headers,
@@ -79,8 +79,8 @@ class Api:
 
         return resp.json()
 
-    def get_namespace_id(self, namespace_name: str):
-        for ns in self.list_namespaces(self.deploy_config.project_id):
+    def get_namespace_id(self, project_id: str, namespace_name: str):
+        for ns in self.list_namespaces(project_id):
             if ns["name"] == namespace_name:
                 return ns["id"]
         raise RuntimeError("could not find namespace %s" % namespace_name)

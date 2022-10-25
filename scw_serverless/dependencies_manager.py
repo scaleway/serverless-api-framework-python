@@ -4,7 +4,7 @@ import os, sys
 import pathlib
 import subprocess
 
-import logger
+from .logger import get_logger
 
 REQUIREMENTS_NAME = "requirements.txt"
 
@@ -32,7 +32,7 @@ class DependenciesManager:
     def __init__(self, in_path: str, out_path: str) -> None:
         self.in_path = pathlib.Path(in_path)
         self.out_path = pathlib.Path(out_path)
-        self.logger = logger.get_logger()
+        self.logger = get_logger()
 
     @property
     def pkg_path(self) -> pathlib.Path:
@@ -52,8 +52,8 @@ class DependenciesManager:
                 if fp.is_file() and fp.name == REQUIREMENTS_NAME:
                     return fp.resolve()
             self.logger.warning(
-                "file %s not found in directory %s"
-                % (REQUIREMENTS_NAME, self.in_path.absolute)
+                "File %s not found in directory %s"
+                % (REQUIREMENTS_NAME, self.in_path.absolute())
             )
         elif self.in_path.is_file():
             # We only check the extension

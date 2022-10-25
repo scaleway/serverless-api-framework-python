@@ -10,13 +10,14 @@ MOCK_UUID = "xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx"
 HELLO_WORLD_MOCK_ENDPOINT = (
     "https://helloworldfunctionnawns8i8vo-hello-world.functions.fnc.fr-par.scw.cloud"
 )
+PROJECT_ID = "projecti-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx"
 
 
 @pytest.fixture
 def app_gateway_manager():
     api, gateway_client = MagicMock(), MagicMock()
     gateway_uuid = MOCK_UUID
-    return gateway.GatewayManager(app, api, gateway_uuid, gateway_client)
+    return gateway.GatewayManager(app, api, "", gateway_uuid, gateway_client)
 
 
 def test_gateway_manager_get_routes(app_gateway_manager):

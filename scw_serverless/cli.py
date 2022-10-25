@@ -132,7 +132,7 @@ def deploy(
     # Update the gateway
     api = Api(region=region, secret_key=secret_key)
     manager = gateway.GatewayManager(
-        app_instance, api, gateway_id, gateway.GatewayClient()
+        app_instance, api, project_id, gateway_id, gateway.GatewayClient()
     )
     manager.update_gateway_routes()
 
@@ -221,8 +221,9 @@ def get_app_instance(file: str) -> Serverless:
 def main():
     # Set logging level to DEFAULT. (ignore debug)
     get_logger().set_level(DEFAULT)
-    try:
-        return cli()
-    except Exception as ex:
-        get_logger().critical(str(ex))
-        return 2
+    return cli()
+    # try:
+    #     return cli()
+    # except Exception as ex:
+    #     get_logger().critical(str(ex))
+    #     return 2

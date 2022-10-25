@@ -13,12 +13,14 @@ class GatewayManager:
         self,
         app_instance: Serverless,
         api: Api,
+        project_id: str,
         gateway_uuid: Optional[str],
         gateway_client: GatewayClient,
     ):
-        self.gateway_uuid = gateway_uuid
         self.app_instance = app_instance
         self.api = api
+        self.project_id = project_id
+        self.gateway_uuid = gateway_uuid
         self.gateway_client = gateway_client
         self.logger = get_logger()
 
@@ -45,7 +47,7 @@ class GatewayManager:
 
     def _list_deployed_fns(self) -> dict[str, Any]:
         namespace_name = self.app_instance.service_name
-        namespace_id = self.api.get_namespace_id(namespace_name)
+        namespace_id = self.api.get_namespace_id(self.project_id, namespace_name)
 
         # Get the list of the deployed functions
         return {
@@ -61,8 +63,7 @@ class GatewayManager:
 
     def _deploy_to_new(self, routes):
         self.logger.default("No gateway was configured, creating a new gateway...")
-        out = self.gateway_client.create_gateway(GatewayInput([], routes))
-        self
+        self.gateway_client.create_gateway(GatewayInput([], routes))
 
     def update_gateway_routes(self):
         deployed_fns = self._list_deployed_fns()
