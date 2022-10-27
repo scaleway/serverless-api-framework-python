@@ -44,7 +44,7 @@ def test_gateway_manager_update_gateway_routes_with_gw_id(app_gateway_manager):
     client.update_gateway.assert_called_once_with(
         MOCK_UUID,
         GatewayInput(
-            ["toto.fr"],
+            ["example.org", "toto.fr"],
             [Route(path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=["GET"])],
         ),
     )
@@ -63,6 +63,7 @@ def test_gateway_manager_update_gateway_routes_without_gw_id(app_gateway_manager
 
     client.create_gateway.assert_called_once_with(
         GatewayInput(
-            [], [Route(path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=["GET"])]
+            ["example.org"],
+            [Route(path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=["GET"])],
         ),
     )

@@ -18,7 +18,7 @@ class FunctionKwargs(TypedDict):
     custom_domains: NotRequired[List[str]]
     privacy: NotRequired[Literal["private", "public"]]
     description: NotRequired[str]
-    path: NotRequired[str]
+    url: NotRequired[str]
     methods: NotRequired[list[HttpMethod]]
 
 

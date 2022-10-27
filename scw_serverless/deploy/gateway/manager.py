@@ -1,7 +1,9 @@
 from typing import Optional, Any
 
+from prettytable import PrettyTable
+
 from ...logger import get_logger
-from ...app import Serverless
+from ...app import Serverless, Function
 from ...api import Api
 from ..gateway.client import GatewayClient
 from ..gateway.models import Route, GatewayInput
@@ -27,18 +29,18 @@ class GatewayManager:
         routes = []
 
         # Compare with the configured functions
-        for fn in self.app_instance.functions:
-            if not fn.get("path"):
+        for func in self.app_instance.functions:
+            if not func.get("url"):
                 continue
-            if not fn.name in deployed_fns:
-                raise RuntimeError(f"could not find function {fn.name} in namespace")
+            if not func.name in deployed_fns:
+                raise RuntimeError(f"could not find function {func.name} in namespace")
 
-            deployed = deployed_fns[fn.name]
+            deployed = deployed_fns[func.name]
             routes.append(
                 Route(
-                    path=fn.get("path"),
+                    path=func.get("url"),
                     target=deployed["domain_name"],
-                    methods=fn.get("methods"),
+                    methods=func.get("methods"),
                 )
             )
 
@@ -53,20 +55,37 @@ class GatewayManager:
             fn["name"]: fn for fn in self.api.list_functions(namespace_id=namespace_id)
         }
 
-    def _deploy_to_existing(self, routes):
+    def _deploy_to_existing(self, routes: list[Route]):
         self.logger.default(f"Updating gateway {self.gateway_uuid} configuration...")
         gateway = self.gateway_client.get_gateway(self.gateway_uuid)
         domains = set(self.app_instance.gateway_domains + gateway.domains)
         self.gateway_client.update_gateway(
-            self.gateway_uuid, GatewayInput(domains, routes)
+            self.gateway_uuid, GatewayInput(sorted(domains), routes)
         )
 
-    def _deploy_to_new(self, routes):
+    def _deploy_to_new(self, routes: list[Route]):
         self.logger.default("No gateway was configured, creating a new gateway...")
         gateway = self.gateway_client.create_gateway(
             GatewayInput(self.app_instance.gateway_domains, routes)
         )
         self.logger.success(f"Successfully created gateway {gateway.uuid}")
+
+    def _display_routes(self, deployed_fns: dict[str, Any]):
+        table = PrettyTable(["Name", "Methods", "From", "To"])
+        functions = sorted(
+            self.app_instance.functions, key=lambda func: func.get("url")
+        )
+        for func in functions:
+            table.add_row(
+                [
+                    func.name,
+                    ",".join(func.get("methods")),
+                    func.get("url"),
+                    deployed_fns[func.name].get("domain_name"),
+                ]
+            )
+        self.logger.success("The following functions were configured: ")
+        self.logger.success(table.get_string())
 
     def update_gateway_routes(self):
         deployed_fns = self._list_deployed_fns()
@@ -76,3 +95,5 @@ class GatewayManager:
             self._deploy_to_existing(routes)
         else:
             self._deploy_to_new(routes)
+
+        self._display_routes(deployed_fns)

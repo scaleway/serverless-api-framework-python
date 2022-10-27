@@ -77,22 +77,22 @@ class Serverless:
 
         return decorator
 
-    def get(self, path: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"path": path, "methods": ["GET"]}
+    def get(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"url": url, "methods": ["GET"]}
         return self.func(**kwargs)
 
-    def post(self, path: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"path": path, "methods": ["POST"]}
+    def post(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"url": url, "methods": ["POST"]}
         return self.func(**kwargs)
 
-    def put(self, path: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"path": path, "methods": ["PUT"]}
+    def put(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"url": url, "methods": ["PUT"]}
         return self.func(**kwargs)
 
-    def delete(self, path: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"path": path, "methods": ["DELETE"]}
+    def delete(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"url": url, "methods": ["DELETE"]}
         return self.func(**kwargs)
 
-    def patch(self, path: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"path": path, "methods": ["PATCH"]}
+    def patch(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        kwargs |= {"url": url, "methods": ["PATCH"]}
         return self.func(**kwargs)
