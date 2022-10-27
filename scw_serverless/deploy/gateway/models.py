@@ -9,9 +9,7 @@ class Route:
 
     @staticmethod
     def from_dict(data):
-        return Route(
-            path=route["path"], target=route["target"], methods=route["methods"]
-        )
+        return Route(path=data["path"], target=data["target"], methods=data["methods"])
 
 
 @dataclass

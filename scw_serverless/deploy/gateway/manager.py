@@ -1,11 +1,10 @@
-import os
-from typing import Optional, List, Any
+from typing import Optional, Any
 
 from ...logger import get_logger
 from ...app import Serverless
 from ...api import Api
 from ..gateway.client import GatewayClient
-from ..gateway.models import Route, GatewayInput, GatewayOutput
+from ..gateway.models import Route, GatewayInput
 
 
 class GatewayManager:
@@ -32,7 +31,7 @@ class GatewayManager:
             if not fn.get("path"):
                 continue
             if not fn.name in deployed_fns:
-                raise RuntimeError("could not find function %s in namespace" % fn.name)
+                raise RuntimeError(f"could not find function {fn.name} in namespace")
 
             deployed = deployed_fns[fn.name]
             routes.append(
@@ -57,13 +56,17 @@ class GatewayManager:
     def _deploy_to_existing(self, routes):
         self.logger.default(f"Updating gateway {self.gateway_uuid} configuration...")
         gateway = self.gateway_client.get_gateway(self.gateway_uuid)
+        domains = set(self.app_instance.gateway_domains + gateway.domains)
         self.gateway_client.update_gateway(
-            self.gateway_uuid, GatewayInput(gateway.domains, routes)
+            self.gateway_uuid, GatewayInput(domains, routes)
         )
 
     def _deploy_to_new(self, routes):
         self.logger.default("No gateway was configured, creating a new gateway...")
-        self.gateway_client.create_gateway(GatewayInput([], routes))
+        gateway = self.gateway_client.create_gateway(
+            GatewayInput(self.app_instance.gateway_domains, routes)
+        )
+        self.logger.success(f"Successfully created gateway {gateway.uuid}")
 
     def update_gateway_routes(self):
         deployed_fns = self._list_deployed_fns()

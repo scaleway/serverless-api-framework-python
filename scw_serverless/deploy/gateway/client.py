@@ -1,10 +1,10 @@
-import urllib
 from typing import Optional
 
-import requests
 import dataclasses
 
-from .models import GatewayInput, GatewayOutput, Route
+import requests
+
+from .models import GatewayInput, GatewayOutput
 
 GATEWAY_CTRL_URL = "http://51.15.208.161"
 
@@ -24,15 +24,15 @@ class GatewayClient:
         return GatewayOutput.from_dict(res.json())
 
     def get_gateway(self, uuid: str) -> GatewayOutput:
-        res = self.session.get(f"{self.base_url}/gateways/{self.uuid}")
+        res = self.session.get(f"{self.base_url}/gateways/{uuid}")
         return GatewayOutput.from_dict(res.json())
 
     def update_gateway(self, uuid: str, gateway: GatewayInput) -> GatewayOutput:
         res = self.session.put(
-            f"{self.base_url}/gateways/{self.uuid}", json=dataclasses.asdict(gateway)
+            f"{self.base_url}/gateways/{uuid}", json=dataclasses.asdict(gateway)
         )
         return GatewayOutput.from_dict(res.json())
 
     def delete_gateway(self, uuid: str):
         # Will raise on exceptions
-        self.session.delete(f"{self.base_url}/gateways/{self.uuid}")
+        self.session.delete(f"{self.base_url}/gateways/{uuid}")

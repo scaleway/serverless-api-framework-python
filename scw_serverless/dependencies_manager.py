@@ -1,20 +1,13 @@
 from typing import Optional
 
-import os, sys
+import os
+import sys
 import pathlib
 import subprocess
 
 from .logger import get_logger
 
 REQUIREMENTS_NAME = "requirements.txt"
-
-
-def _raise_on_pip_process_err(process: subprocess.CompletedProcess) -> None:
-    if process.returncode != 0:
-        raise RuntimeError(
-            "pip exited with non-zero return code:\n %s"
-            % process.stdout.decode("UTF-8"),
-        )
 
 
 class DependenciesManager:
@@ -26,7 +19,8 @@ class DependenciesManager:
 
     It does not currently handles native dependencies.
 
-    See also: https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies
+    See also:
+        https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies
     """
 
     def __init__(self, in_path: str, out_path: str) -> None:
@@ -52,27 +46,24 @@ class DependenciesManager:
                 if fp.is_file() and fp.name == REQUIREMENTS_NAME:
                     return fp.resolve()
             self.logger.warning(
-                "File %s not found in directory %s"
-                % (REQUIREMENTS_NAME, self.in_path.absolute())
+                f"file {REQUIREMENTS_NAME} not found in directory {self.in_path.absolute()}"
             )
         elif self.in_path.is_file():
             # We only check the extension
             if self.in_path.suffix == ".txt":
                 return self.in_path.resolve()
-            raise ValueError("file %s is not a txt file" % self.in_path.absolute)
+            raise ValueError(f"file {self.in_path.absolute} is not a txt file")
         else:
             self.logger.warning(
-                "could not find a requirements file in %s" % self.out_path.absolute
+                f"could not find a requirements file in {self.out_path.absolute}"
             )
             return None
 
     def _install_requirements(self, requirements_path: pathlib.Path):
         if not self.out_path.is_dir():
-            raise ValueError(
-                "out_path %s is not a directory p" % self.out_path.absolute
-            )
+            raise ValueError(f"out_path {self.out_path.absolute} is not a directory p")
         python_path = sys.executable
-        process = subprocess.run(
+        subprocess.run(
             [
                 python_path,
                 "-m",
@@ -83,11 +74,11 @@ class DependenciesManager:
                 "--target",
                 str(self.pkg_path.resolve()),
             ],
+            check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=str(self.out_path.resolve()),
         )
-        _raise_on_pip_process_err(process)
 
     def _check_for_scw_serverless(self):
         # We need to load the scw_serveless package somehow
@@ -98,7 +89,7 @@ class DependenciesManager:
             # scw_serveless was not installed in the packages folder
             p = pathlib.Path(__file__).parent.parent.resolve()
             python_path = sys.executable
-            process = subprocess.run(
+            subprocess.run(
                 [
                     python_path,
                     "-m",
@@ -108,8 +99,8 @@ class DependenciesManager:
                     "--target",
                     str(self.pkg_path),
                 ],
+                check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=str(self.out_path.resolve()),
             )
-            _raise_on_pip_process_err(process)

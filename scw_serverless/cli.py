@@ -129,10 +129,24 @@ def deploy(
     if b:
         b.deploy()
 
+    if not gateway_id and not app_instance.gateway_domains:
+        for func in app_instance.functions:
+            if func.get("path"):
+                get_logger().warning(
+                    """deploying a routed functions requires a
+                     gateway_id or a gateway_domain to be configured"""
+                )
+                break
+        return
+
     # Update the gateway
     api = Api(region=region, secret_key=secret_key)
     manager = gateway.GatewayManager(
-        app_instance, api, project_id, gateway_id, gateway.GatewayClient()
+        app_instance,
+        api,
+        project_id,
+        gateway_id,
+        gateway.GatewayClient("http://localhost:3000"),
     )
     manager.update_gateway_routes()
 
@@ -206,7 +220,7 @@ def get_app_instance(file: str) -> Serverless:
     app_instance = None
 
     for member in inspect.getmembers(user_app):
-        if type(member[1]) == Serverless:
+        if isinstance(member[1], Serverless):
             # Ok. Found the variable now, need to use it
             app_instance = member[1]
 
@@ -221,9 +235,8 @@ def get_app_instance(file: str) -> Serverless:
 def main():
     # Set logging level to DEFAULT. (ignore debug)
     get_logger().set_level(DEFAULT)
-    return cli()
-    # try:
-    #     return cli()
-    # except Exception as ex:
-    #     get_logger().critical(str(ex))
-    #     return 2
+    try:
+        return cli()
+    except Exception as ex:
+        get_logger().critical(str(ex))
+        return 2
