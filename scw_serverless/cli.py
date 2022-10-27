@@ -74,6 +74,10 @@ def cli():
     envvar="GATEWAY_ID",
     help="API Gateway uuid to use with function endpoints",
 )
+@click.option(
+    "--apigw-api-url",
+    help="url for the API to manage gateways",
+)
 def deploy(
     file: str,
     backend: str,
@@ -82,6 +86,7 @@ def deploy(
     project_id: Optional[str] = None,
     region: Optional[str] = None,
     gateway_id: Optional[str] = None,
+    apigw_api_url: Optional[str] = None,
 ):
     # Get the serverless App instance
     app_instance = get_app_instance(file)
@@ -146,7 +151,7 @@ def deploy(
         api,
         project_id,
         gateway_id,
-        gateway.GatewayClient("http://localhost:3000"),
+        gateway.GatewayClient(apigw_api_url),
     )
     manager.update_gateway_routes()
 
