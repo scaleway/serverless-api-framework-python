@@ -1,4 +1,5 @@
-from typing import Any, List, Union, Optional
+from typing import Any, Callable, List, Optional, Union
+
 from typing_extensions import Unpack
 
 from scw_serverless.config.function import Function, FunctionKwargs
@@ -32,7 +33,7 @@ class Serverless:
     def func(
         self,
         **kwargs: Unpack[FunctionKwargs],
-    ):
+    ) -> Callable:
         """Define a Serverless handler and its parameters from the keyword arguments.
 
         See ``FunctionKwargs`` for all possible parameters.
@@ -49,7 +50,7 @@ class Serverless:
                 ...
         """
 
-        def decorator(handler):
+        def _decorator(handler: Callable):
             self.functions.append(
                 Function.from_handler(
                     handler,
@@ -62,15 +63,15 @@ class Serverless:
 
             return _inner
 
-        return decorator
+        return _decorator
 
     def schedule(
         self,
         schedule: Union[str, CronSchedule],
         inputs: Optional[dict[str, Any]] = None,
         **kwargs: Unpack[FunctionKwargs],
-    ):
-        """Define a scheduled handler with Cron, passing input as parameters to the body.
+    ) -> Callable:
+        """Define a scheduled handler with Cron, passing input as parameters.
 
         :param schedule: Cron schedule to run with
         :param inputs: parameters to be passed to the body (default to {})
@@ -82,7 +83,7 @@ class Serverless:
         else:
             schedule.inputs |= inputs
 
-        def decorator(handler):
+        def _decorator(handler: Callable):
             self.functions.append(
                 Function.from_handler(handler, kwargs, events=[schedule])
             )
@@ -92,9 +93,9 @@ class Serverless:
 
             return _inner
 
-        return decorator
+        return _decorator
 
-    def get(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+    def get(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
         """Define a routed handler which will respond to GET requests.
 
         :param url: relative url to trigger the function
@@ -105,7 +106,7 @@ class Serverless:
         kwargs |= {"url": url, "methods": [HTTPMethod.GET]}
         return self.func(**kwargs)
 
-    def post(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+    def post(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
         """Define a routed handler which will respond to POST requests.
 
         :param url: relative url to trigger the function
@@ -116,7 +117,7 @@ class Serverless:
         kwargs |= {"url": url, "methods": [HTTPMethod.POST]}
         return self.func(**kwargs)
 
-    def put(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+    def put(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
         """Define a routed handler which will respond to PUT requests.
 
         :param url: relative url to trigger the function
@@ -127,7 +128,7 @@ class Serverless:
         kwargs |= {"url": url, "methods": [HTTPMethod.PUT]}
         return self.func(**kwargs)
 
-    def delete(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+    def delete(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
         """Define a routed handler which will respond to DELETE requests.
 
         :param url: relative url to trigger the function
@@ -138,7 +139,7 @@ class Serverless:
         kwargs |= {"url": url, "methods": [HTTPMethod.DELETE]}
         return self.func(**kwargs)
 
-    def patch(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+    def patch(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
         """Define a routed handler which will respond to PATCH requests.
 
         :param url: relative url to trigger the function

@@ -9,9 +9,14 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/psf/black
-    rev: "22.10.0"
+    rev: 22.10.0
     hooks:
       - id: black
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: isort (python)
   - repo: local
     hooks:
       - id: pylint
@@ -22,21 +27,15 @@ repos:
         args: [
             "-rn", # Only display messages
             "-sn", # Don't display the score
-            "--rcfile=.pylintrc",
+            "--rcfile=setup.cfg",
           ]
+  - repo: https://github.com/pycqa/flake8
+    rev: 5.0.4
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-annotations]
   - repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
     rev: v1.0.6
     hooks:
       - id: python-bandit-vulnerability-check
         args: [--skip, "B101", --recursive, clumper]
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
-    hooks:
-      - id: pydocstyle
-        args:
-          # We are using Sphinx which is pep257 compliant
-          - --convention=pep257
-          # Reference: http://www.pydocstyle.org/en/stable/error_codes.html
-          # D100: Already disabled in pylint
-          # D107: I prefer to use the class docstring to document the constructor (better support in editors)
-          - --add-ignore=D100,D107
