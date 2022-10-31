@@ -7,6 +7,14 @@ from scw_serverless.utils.http import HTTPMethod
 
 
 class Serverless:
+    """Manage your Serverless Functions.
+
+    :param service_name: name of the namespace
+    :param gateway_domains: domains to be supported by the gateway (default [])
+    :param env: namespace level environment variables (default {})
+    :param secret: namespace level secrets (default {})
+    """
+
     def __init__(
         self,
         service_name: str,
@@ -14,6 +22,7 @@ class Serverless:
         env: Optional[dict[str, Any]] = None,
         secret: Optional[dict[str, Any]] = None,
     ):
+
         self.functions: List[Function] = []
         self.service_name: str = service_name
         self.gateway_domains: list[str] = gateway_domains if gateway_domains else []
@@ -24,11 +33,20 @@ class Serverless:
         self,
         **kwargs: Unpack[FunctionKwargs],
     ):
-        """
-        @func decorator
+        """Define a Serverless handler and its parameters from the keyword arguments.
 
-        :param kwargs:
-        :return:
+        See ``FunctionKwargs`` for all possible parameters.
+
+        *Note:* Some parameters may not be supported by a specific backend.
+
+        *Example:*
+
+        .. highlight:: python
+        .. code-block:: python
+            app = Serverless("example")
+            app.func(privacy="public", env={"key": "value"})
+            def handler(event, context)
+                ...
         """
 
         def decorator(handler):
@@ -52,12 +70,10 @@ class Serverless:
         inputs: Optional[dict[str, Any]] = None,
         **kwargs: Unpack[FunctionKwargs],
     ):
-        """Schedules a handler with Cron, passing input as parameters to the body.
+        """Define a scheduled handler with Cron, passing input as parameters to the body.
 
         :param schedule: Cron schedule to run with
-        :type schedule: Cron
-        :param inputs: Parameters to be passed to the body, defaults to {}
-        :type inputs: Optional[dict[str, Any]], optional
+        :param inputs: parameters to be passed to the body (default to {})
         """
         inputs = inputs if inputs else {}
 
@@ -79,21 +95,56 @@ class Serverless:
         return decorator
 
     def get(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        """Define a routed handler which will respond to GET requests.
+
+        :param url: relative url to trigger the function
+
+        *Note:*
+            - Requires an API gateway
+        """
         kwargs |= {"url": url, "methods": [HTTPMethod.GET]}
         return self.func(**kwargs)
 
     def post(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        """Define a routed handler which will respond to POST requests.
+
+        :param url: relative url to trigger the function
+
+        *Note:*
+            - Requires an API gateway
+        """
         kwargs |= {"url": url, "methods": [HTTPMethod.POST]}
         return self.func(**kwargs)
 
     def put(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        """Define a routed handler which will respond to PUT requests.
+
+        :param url: relative url to trigger the function
+
+        *Note:*
+            - Requires an API gateway
+        """
         kwargs |= {"url": url, "methods": [HTTPMethod.PUT]}
         return self.func(**kwargs)
 
     def delete(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        """Define a routed handler which will respond to DELETE requests.
+
+        :param url: relative url to trigger the function
+
+        *Note:*
+            - Requires an API gateway
+        """
         kwargs |= {"url": url, "methods": [HTTPMethod.DELETE]}
         return self.func(**kwargs)
 
     def patch(self, url: str, **kwargs: Unpack[FunctionKwargs]):
+        """Define a routed handler which will respond to PATCH requests.
+
+        :param url: relative url to trigger the function
+
+        *Note:*
+            - Requires an API gateway
+        """
         kwargs |= {"url": url, "methods": [HTTPMethod.PATCH]}
         return self.func(**kwargs)

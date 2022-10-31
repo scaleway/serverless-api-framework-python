@@ -34,8 +34,9 @@ repos:
     hooks:
       - id: pydocstyle
         args:
+          # We are using Sphinx which is pep257 compliant
           - --convention=pep257
           # Reference: http://www.pydocstyle.org/en/stable/error_codes.html
           # D100: Already disabled in pylint
-          # D107: I prefer to use the class docstring to document the constructor (better in support in editors)
+          # D107: I prefer to use the class docstring to document the constructor (better support in editors)
           - --add-ignore=D100,D107
