@@ -3,7 +3,7 @@ from typing import Optional, Any
 from prettytable import PrettyTable
 
 from ...logger import get_logger
-from ...app import Serverless, Function
+from ...app import Serverless
 from ...api import Api
 from ..gateway.client import GatewayClient
 from ..gateway.models import Route, GatewayInput
@@ -30,7 +30,7 @@ class GatewayManager:
 
         # Compare with the configured functions
         for func in self.app_instance.functions:
-            if not func.get("url"):
+            if not func.get_url():
                 continue
             if not func.name in deployed_fns:
                 raise RuntimeError(f"could not find function {func.name} in namespace")
@@ -38,9 +38,9 @@ class GatewayManager:
             deployed = deployed_fns[func.name]
             routes.append(
                 Route(
-                    path=func.get("url"),
+                    path=func.get_url(),
                     target=deployed["domain_name"],
-                    methods=func.get("methods"),
+                    methods=func.args.get("methods"),
                 )
             )
 
@@ -72,15 +72,13 @@ class GatewayManager:
 
     def _display_routes(self, deployed_fns: dict[str, Any]):
         table = PrettyTable(["Name", "Methods", "From", "To"])
-        functions = sorted(
-            self.app_instance.functions, key=lambda func: func.get("url")
-        )
+        functions = sorted(self.app_instance.functions, key=lambda func: func.get_url())
         for func in functions:
             table.add_row(
                 [
                     func.name,
-                    ",".join(func.get("methods")),
-                    func.get("url"),
+                    ",".join([str(method) for method in func.args.get("methods")]),
+                    func.get_url(),
                     deployed_fns[func.name].get("domain_name"),
                 ]
             )

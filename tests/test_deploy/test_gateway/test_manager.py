@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from scw_serverless.deploy import gateway
+from scw_serverless.utils.http import HTTPMethod
 from scw_serverless.deploy.gateway.models import GatewayInput, GatewayOutput, Route
 
 from ...dev.gateway import app
@@ -26,7 +27,10 @@ def test_gateway_manager_get_routes(app_gateway_manager):
     )
 
     assert len(routes) == 1
-    assert Route(path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=["GET"]) in routes
+    assert (
+        Route(path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=[HTTPMethod.GET])
+        in routes
+    )
 
 
 def test_gateway_manager_update_gateway_routes_with_gw_id(app_gateway_manager):
@@ -45,7 +49,11 @@ def test_gateway_manager_update_gateway_routes_with_gw_id(app_gateway_manager):
         MOCK_UUID,
         GatewayInput(
             ["example.org", "toto.fr"],
-            [Route(path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=["GET"])],
+            [
+                Route(
+                    path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=[HTTPMethod.GET]
+                )
+            ],
         ),
     )
 
@@ -64,6 +72,10 @@ def test_gateway_manager_update_gateway_routes_without_gw_id(app_gateway_manager
     client.create_gateway.assert_called_once_with(
         GatewayInput(
             ["example.org"],
-            [Route(path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=["GET"])],
+            [
+                Route(
+                    path="/", target=HELLO_WORLD_MOCK_ENDPOINT, methods=[HTTPMethod.GET]
+                )
+            ],
         ),
     )

@@ -3,6 +3,7 @@ from typing_extensions import Unpack
 
 from scw_serverless.config.function import Function, FunctionKwargs
 from scw_serverless.events.schedule import CronSchedule
+from scw_serverless.utils.http import HTTPMethod
 
 
 class Serverless:
@@ -78,21 +79,21 @@ class Serverless:
         return decorator
 
     def get(self, url: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"url": url, "methods": ["GET"]}
+        kwargs |= {"url": url, "methods": [HTTPMethod.GET]}
         return self.func(**kwargs)
 
     def post(self, url: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"url": url, "methods": ["POST"]}
+        kwargs |= {"url": url, "methods": [HTTPMethod.POST]}
         return self.func(**kwargs)
 
     def put(self, url: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"url": url, "methods": ["PUT"]}
+        kwargs |= {"url": url, "methods": [HTTPMethod.PUT]}
         return self.func(**kwargs)
 
     def delete(self, url: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"url": url, "methods": ["DELETE"]}
+        kwargs |= {"url": url, "methods": [HTTPMethod.DELETE]}
         return self.func(**kwargs)
 
     def patch(self, url: str, **kwargs: Unpack[FunctionKwargs]):
-        kwargs |= {"url": url, "methods": ["PATCH"]}
+        kwargs |= {"url": url, "methods": [HTTPMethod.PATCH]}
         return self.func(**kwargs)

@@ -83,7 +83,7 @@ class Api:
         for ns in self.list_namespaces(project_id):
             if ns["name"] == namespace_name:
                 return ns["id"]
-        raise RuntimeError("could not find namespace %s" % namespace_name)
+        raise RuntimeError(f"could not find namespace {namespace_name}")
 
     def to_secret_list(self, secrets: dict) -> list:
         secrets_list = []

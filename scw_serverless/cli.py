@@ -18,6 +18,7 @@ import scw_serverless.deploy.gateway as gateway
 
 from scw_serverless.logger import get_logger, DEFAULT
 from scw_serverless.utils.credentials import find_scw_credentials
+from scw_serverless.utils.config import Config
 
 
 @click.group()
@@ -69,14 +70,15 @@ def cli():
     help="Select the backend used to deploy",
 )
 @click.option(
-    "--gateway-id",
+    "--gw-id",
     "-g",
-    envvar="GATEWAY_ID",
+    envvar="SCW_API_GW_ID",
     help="API Gateway uuid to use with function endpoints",
 )
 @click.option(
-    "--apigw-api-url",
-    help="url for the API to manage gateways",
+    "--api_gw_host",
+    envvar="SCW_API_GW_HOST",
+    help="Host of the API to manage gateways",
 )
 def deploy(
     file: str,
@@ -85,9 +87,12 @@ def deploy(
     secret_key: Optional[str] = None,
     project_id: Optional[str] = None,
     region: Optional[str] = None,
-    gateway_id: Optional[str] = None,
-    apigw_api_url: Optional[str] = None,
+    gw_id: Optional[str] = None,
+    api_gw_host: Optional[str] = None,
 ):
+    config = Config(api_gw_host=api_gw_host, gateway_id=gw_id)
+    config = config.update_from_config_file()
+
     # Get the serverless App instance
     app_instance = get_app_instance(file)
 
@@ -134,15 +139,15 @@ def deploy(
     if b:
         b.deploy()
 
-    if not gateway_id and not app_instance.gateway_domains:
-        for func in app_instance.functions:
-            if func.get("path"):
-                get_logger().warning(
-                    """deploying a routed functions requires a
-                     gateway_id or a gateway_domain to be configured"""
-                )
-                break
-        return
+    # If gateway_id is not configured, gateway_domains needs to be set
+    is_gateway_configured = config.gateway_id or app_instance.gateway_domains
+    contains_routed_func = any(filter(app_instance.functions, lambda f: f.get_path()))
+
+    if contains_routed_func and not is_gateway_configured:
+        raise RuntimeError(
+            """Deploying a routed functions requires a
+                     gateway_id or a gateway_domain to be configured."""
+        )
 
     # Update the gateway
     api = Api(region=region, secret_key=secret_key)
@@ -150,8 +155,8 @@ def deploy(
         app_instance,
         api,
         project_id,
-        gateway_id,
-        gateway.GatewayClient(apigw_api_url),
+        config.gateway_id,
+        gateway.GatewayClient(config.api_gw_host),
     )
     manager.update_gateway_routes()
 

@@ -2,10 +2,9 @@ from typing import List, Callable, TypedDict, Literal, Optional, Any
 
 from typing_extensions import NotRequired
 
+from scw_serverless.utils.http import HTTPMethod
 from scw_serverless.events.event import Event
 from scw_serverless.utils.string import module_to_path, to_valid_fn_name
-
-HttpMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 
 
 class FunctionKwargs(TypedDict):
@@ -19,7 +18,7 @@ class FunctionKwargs(TypedDict):
     privacy: NotRequired[Literal["private", "public"]]
     description: NotRequired[str]
     url: NotRequired[str]
-    methods: NotRequired[list[HttpMethod]]
+    methods: NotRequired[list[HTTPMethod]]
 
 
 class Function:
@@ -46,5 +45,6 @@ class Function:
             events=events,
         )
 
-    def get(self, key: str) -> Optional[Any]:
-        return self.args.get(key)
+    def get_url(self) -> Optional[str]:
+        """Get the function url if present."""
+        return self.args.get("url")
