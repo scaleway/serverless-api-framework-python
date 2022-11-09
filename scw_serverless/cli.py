@@ -2,21 +2,23 @@ import importlib.util
 import inspect
 import os.path
 
+from typing import Optional
+
 import click
 
 from scw_serverless.app import Serverless
+from scw_serverless.api import Api
 from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
 from scw_serverless.config.generators.terraform import TerraformGenerator
 from scw_serverless.dependencies_manager import DependenciesManager
-from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
-from scw_serverless.deploy.backends.serverless_backend import DeployConfig
-from scw_serverless.deploy.backends.serverless_framework_backend import (
-    ServerlessFrameworkBackend,
-)
+import scw_serverless.deploy.backends as backends
+import scw_serverless.deploy.gateway as gateway
+
 from scw_serverless.logger import get_logger, DEFAULT
 from scw_serverless.utils.credentials import find_scw_credentials
+from scw_serverless.utils.config import Config
 
 
 @click.group()
@@ -56,7 +58,7 @@ def cli():
     "single_source",
     is_flag=True,
     default=True,
-    help="Do not remove functions not present in the code being deployed.",
+    help="Do not remove functions not present in the code being deployed",
 )
 @click.option(
     "--backend",
@@ -67,14 +69,30 @@ def cli():
     show_default=True,
     help="Select the backend used to deploy",
 )
+@click.option(
+    "--gw-id",
+    "-g",
+    envvar="SCW_API_GW_ID",
+    help="API Gateway uuid to use with function endpoints",
+)
+@click.option(
+    "--api_gw_host",
+    envvar="SCW_API_GW_HOST",
+    help="Host of the API to manage gateways",
+)
 def deploy(
     file: str,
     backend: str,
     single_source: bool,
-    secret_key: str = None,
-    project_id: str = None,
-    region: str = None,
+    secret_key: Optional[str] = None,
+    project_id: Optional[str] = None,
+    region: Optional[str] = None,
+    gw_id: Optional[str] = None,
+    api_gw_host: Optional[str] = None,
 ):
+    config = Config(api_gw_host=api_gw_host, gateway_id=gw_id)
+    config = config.update_from_config_file()
+
     # Get the serverless App instance
     app_instance = get_app_instance(file)
 
@@ -97,21 +115,17 @@ def deploy(
         raise RuntimeError("Unable to find credentials for deployment.")
 
     # Create the deploy configuration
-    deploy_config = DeployConfig()
-    deploy_config.region = region
-    deploy_config.secret_key = secret_key
-    deploy_config.project_id = project_id
-
-    b = None
+    deploy_config = backends.DeployConfig(project_id, secret_key, region)
 
     get_logger().default("Packaging dependencies...")
     deps = DependenciesManager("./", "./")
     deps.generate_package_folder()
 
+    b = None  # Select the request backend
     if backend == "api":
         # Deploy using the scaleway api
         get_logger().info("Using the API backend")
-        b = ScalewayApiBackend(
+        b = backends.ScalewayApiBackend(
             app_instance=app_instance,
             single_source=single_source,
             deploy_config=deploy_config,
@@ -119,12 +133,32 @@ def deploy(
     elif backend == "serverless":
         # Deploy using the serverless framework
         get_logger().info("Using the Serverless Framework backend")
-        b = ServerlessFrameworkBackend(
+        b = backends.ServerlessFrameworkBackend(
             app_instance=app_instance, deploy_config=deploy_config
         )
-
-    if b is not None:
+    if b:
         b.deploy()
+
+    # If gateway_id is not configured, gateway_domains needs to be set
+    is_gateway_configured = config.gateway_id or app_instance.gateway_domains
+    contains_routed_func = any(filter(app_instance.functions, lambda f: f.get_path()))
+
+    if contains_routed_func and not is_gateway_configured:
+        raise RuntimeError(
+            """Deploying a routed functions requires a
+                     gateway_id or a gateway_domain to be configured."""
+        )
+
+    # Update the gateway
+    api = Api(region=region, secret_key=secret_key)
+    manager = gateway.GatewayManager(
+        app_instance,
+        api,
+        project_id,
+        config.gateway_id,
+        gateway.GatewayClient(config.api_gw_host),
+    )
+    manager.update_gateway_routes()
 
 
 @cli.command(help="Generate the configuration file for your functions")
@@ -196,7 +230,7 @@ def get_app_instance(file: str) -> Serverless:
     app_instance = None
 
     for member in inspect.getmembers(user_app):
-        if type(member[1]) == Serverless:
+        if isinstance(member[1], Serverless):
             # Ok. Found the variable now, need to use it
             app_instance = member[1]
 
