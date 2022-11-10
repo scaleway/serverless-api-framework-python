@@ -5,9 +5,11 @@ on: [push, pull_request]
 jobs:
   lint:
     runs-on: self-hosted
-    container: nikolaik/python-nodejs:python3.10-nodejs18
+    container:
+      image: python:3.10.8-slim-bullseye
     steps:
       - uses: actions/checkout@v2
+      - run: sudo apt install -y jq
       - uses: akaihola/darker@1.5.1
         with:
           options: "--check --diff --color --isort"
