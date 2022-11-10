@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Literal, Optional, TypedDict
+from typing import Callable, List, Literal, Optional, TypedDict
 
 from typing_extensions import NotRequired
 
@@ -11,7 +11,8 @@ class FunctionKwargs(TypedDict):
     """
     Typed arguments supported by Scaleway functions.
 
-    See also: https://developers.scaleway.com/en/products/functions/api/#create-a-function
+    See also:
+    https://developers.scaleway.com/en/products/functions/api/#create-a-function
     """
 
     env: NotRequired[dict[str, str]]
