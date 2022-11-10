@@ -1,9 +1,8 @@
-from typing import Optional
-
 import os
-import sys
 import pathlib
 import subprocess
+import sys
+from typing import Optional
 
 from .logger import get_logger
 

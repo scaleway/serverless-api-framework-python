@@ -1,7 +1,6 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Any
-
-import logging
 
 from scw_serverless.config.function import Function
 

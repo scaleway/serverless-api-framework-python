@@ -9,8 +9,8 @@ from scw_serverless.api import Api
 from scw_serverless.app import Serverless
 from scw_serverless.config.function import Function
 from scw_serverless.deploy.backends.serverless_backend import (
-    ServerlessBackend,
     DeployConfig,
+    ServerlessBackend,
 )
 from scw_serverless.utils.files import create_zip_file
 

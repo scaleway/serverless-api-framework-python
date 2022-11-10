@@ -1,24 +1,22 @@
 import importlib.util
 import inspect
 import os.path
-
 from typing import Optional
 
 import click
 
-from scw_serverless.app import Serverless
+import scw_serverless.deploy.backends as backends
+import scw_serverless.deploy.gateway as gateway
 from scw_serverless.api import Api
+from scw_serverless.app import Serverless
 from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
 from scw_serverless.config.generators.terraform import TerraformGenerator
 from scw_serverless.dependencies_manager import DependenciesManager
-import scw_serverless.deploy.backends as backends
-import scw_serverless.deploy.gateway as gateway
-
-from scw_serverless.logger import get_logger, DEFAULT
-from scw_serverless.utils.credentials import find_scw_credentials
+from scw_serverless.logger import DEFAULT, get_logger
 from scw_serverless.utils.config import Config
+from scw_serverless.utils.credentials import find_scw_credentials
 
 
 @click.group()

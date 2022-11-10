@@ -1,9 +1,9 @@
-from typing import List, Callable, TypedDict, Literal, Optional, Any
+from typing import Any, Callable, List, Literal, Optional, TypedDict
 
 from typing_extensions import NotRequired
 
-from scw_serverless.utils.http import HTTPMethod
 from scw_serverless.events.event import Event
+from scw_serverless.utils.http import HTTPMethod
 from scw_serverless.utils.string import module_to_path, to_valid_fn_name
 
 

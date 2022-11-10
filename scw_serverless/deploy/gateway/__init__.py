@@ -1,2 +1,2 @@
-from .manager import GatewayManager
 from .client import GatewayClient
+from .manager import GatewayManager

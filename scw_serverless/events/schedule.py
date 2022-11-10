@@ -1,4 +1,5 @@
-from typing import Optional, Any
+from typing import Any, Optional
+
 from typing_extensions import Self
 
 from scw_serverless.events.event import Event

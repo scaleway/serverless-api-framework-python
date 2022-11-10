@@ -1,9 +1,10 @@
 from unittest.mock import MagicMock
+
 import pytest
 
 from scw_serverless.deploy import gateway
-from scw_serverless.utils.http import HTTPMethod
 from scw_serverless.deploy.gateway.models import GatewayInput, GatewayOutput, Route
+from scw_serverless.utils.http import HTTPMethod
 
 from ...dev.gateway import app
 

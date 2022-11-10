@@ -1,10 +1,9 @@
-from typing import Optional
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Optional
 
-from typing_extensions import Self
 import yaml
-
+from typing_extensions import Self
 
 DEFAULT_CONFIG_PATH = "~/.config/scw/py_api.yaml"
 

@@ -11,8 +11,7 @@ import yaml
 from requests import HTTPError
 
 from scw_serverless.utils.commands import get_command_path
-from tests.utils import ROOT_PROJECT_DIR, TESTS_DIR
-from tests.utils import request_scw_api
+from tests.utils import ROOT_PROJECT_DIR, TESTS_DIR, request_scw_api
 
 REGION = "pl-waw"
 API_URL = "https://api.scaleway.com"
