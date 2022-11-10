@@ -9,7 +9,7 @@ jobs:
       image: python:3.10.8-slim-bullseye
     steps:
       - uses: actions/checkout@v2
-      - run: apt install -y jq
+      - run: apt-get update && apt-get install -y jq
       - uses: akaihola/darker@1.5.1
         with:
           options: "--check --diff --color --isort"
