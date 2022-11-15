@@ -149,11 +149,3 @@ package
 
 # Deployment folder
 .scw
-
-# Nix files
-*nix
-.direnv/
-.env*
-
-# IDE
-.vscode/
