@@ -21,9 +21,7 @@ class Config:
         config_path = Path(DEFAULT_CONFIG_PATH).expanduser()
 
         if not config_path.exists():
-            raise RuntimeError(
-                f"could not read config file at {config_path.absolute()}"
-            )
+            return self
 
         with open(config_path, mode="rt", encoding="utf-8") as file:
             config = yaml.safe_load(file)
