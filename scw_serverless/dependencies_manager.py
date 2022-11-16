@@ -87,9 +87,8 @@ class DependenciesManager:
         ):
             # scw_serveless was not installed in the packages folder
             p = pathlib.Path(__file__).parent.parent.resolve()
-            print(f"installing: {str(p.resolve())}")
             python_path = sys.executable
-            process = subprocess.run(
+            subprocess.run(
                 [
                     python_path,
                     "-m",
@@ -104,4 +103,3 @@ class DependenciesManager:
                 stderr=subprocess.STDOUT,
                 cwd=str(self.out_path.resolve()),
             )
-            print(str(process.stdout.decode("UTF-8")).strip())
