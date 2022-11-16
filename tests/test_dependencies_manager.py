@@ -30,5 +30,7 @@ def test_dependencies_manager_generate_package_folder(pkg_parent_folder):
 
     assert "package" in os.listdir(pkg_parent_folder)
     installed = os.listdir(os.path.join(pkg_parent_folder, "package"))
+    print(installed)
+
     assert "yaml" in installed
     assert "scw_serverless" in installed
