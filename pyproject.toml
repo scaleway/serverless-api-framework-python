@@ -21,7 +21,6 @@ srvless = "scw_serverless.cli:main"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["scw_serverless"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
