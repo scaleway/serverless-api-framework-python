@@ -40,22 +40,22 @@ TODO: search about the community why to use theses framework
    > Every framework other than Google Functions generate configuration in the background.
 
 3. Does the user have to write any configuration files?
-   > For Azure Functions, the user is required to write configuration files.  
-   > For Chalice, configuration is required if you want to customize the resources usages  
-   > For Google Functions Framework there seems to have no configuration file by rather parameters to the CLI.  
+   > For Azure Functions, the user is required to write configuration files.
+   > For Chalice, configuration is required if you want to customize the resources usages
+   > For Google Functions Framework there seems to have no configuration file by rather parameters to the CLI.
    > For Dapr, you have to create configuration to define components.
 
 4. How much of the project is specific to the underlying cloud provider?
-   > Chalice is 100% specific to AWS even if you can generate Terraform configuration.  
-   > Google Functions Framework can be run on anything that support custom docker images.  
-   > Azure Functions is 100% specific to Azure.  
+   > Chalice is 100% specific to AWS even if you can generate Terraform configuration.
+   > Google Functions Framework can be run on anything that support custom docker images.
+   > Azure Functions is 100% specific to Azure.
    > Dapr is not specific to any cloud provider. They make it easier for you to run on Azure (with an extension) but you
    can run your app on Kubernetes or a simple virtual machine.
 
 5. Which parts of the API can we adopt in our project?
    > We have two solutions:
    >
-   >    1. Create a new framework with its own features.  
+   >    1. Create a new framework with its own features.
            >       In that case the annotation api seems to be more developer-friendly and easier for us to
    >    2. Create an extension flask/fast api to integrate the features we want to facilitate the usage of serverless.
    >

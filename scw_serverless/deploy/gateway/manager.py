@@ -1,12 +1,12 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 from prettytable import PrettyTable
 
-from ...logger import get_logger
-from ...app import Serverless
 from ...api import Api
+from ...app import Serverless
+from ...logger import get_logger
 from ..gateway.client import GatewayClient
-from ..gateway.models import Route, GatewayInput
+from ..gateway.models import GatewayInput, Route
 
 
 class GatewayManager:

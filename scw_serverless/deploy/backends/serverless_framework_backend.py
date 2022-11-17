@@ -5,8 +5,8 @@ from scw_serverless.config.generators.serverlessframework import (
     ServerlessFrameworkGenerator,
 )
 from scw_serverless.deploy.backends.serverless_backend import (
-    ServerlessBackend,
     DeployConfig,
+    ServerlessBackend,
 )
 from scw_serverless.utils.commands import get_command_path
 

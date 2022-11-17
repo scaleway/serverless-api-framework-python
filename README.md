@@ -21,12 +21,12 @@ def hello_world(event: dict, context: dict):
     return "Hello World!"
 ```
 
-# Quickstart
+## Quickstart
 
 Initiate your python environment:
 
 ```shell
-python3 -m venv venv310
+python -m venv venv310
 . venv310/bin/activate
 ```
 
@@ -41,5 +41,15 @@ You can then now, create a python file and start coding using the example above.
 When you are ready, you can generate a `serverless.yml` configuration file using:
 
 ```shell
-srvlss generate --file app.py
+srvlss generate app.py
+```
+
+## Contributing
+
+We welcome all contributions.
+
+This project uses [pre-commit](https://pre-commit.com/) hooks to run code quality checks locally. It is highly recommended to install them before contributing.
+
+```shell
+pre-commit install
 ```
