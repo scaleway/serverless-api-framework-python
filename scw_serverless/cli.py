@@ -90,8 +90,8 @@ WARNING: Please use environment variables instead""",
     help="API Gateway uuid to use with function endpoints",
 )
 @click.option(
-    "--api_gw_host",
-    envvar="SCW_APIGW_HOST",
+    "--api-gw-host",
+    envvar="SCW_API_GW_HOST",
     help="Host of the API to manage gateways",
 )
 def deploy(
