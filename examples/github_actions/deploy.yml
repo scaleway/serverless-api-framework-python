@@ -2,11 +2,7 @@
 
 name: Deploy to scaleway's serverless functions
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: tags
 
 permissions:
   contents: read
@@ -28,4 +24,4 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Deploy to scaleway's serverless functions
       run: |
-        srvless deploy -f app.py
+        srvless deploy
