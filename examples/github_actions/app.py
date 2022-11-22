@@ -11,4 +11,6 @@ def handle(event, content):
         context (dict): function call metadata
     """
 
-    return {"message": "Hello from Scaleway functions using Serverless API Framework deployed with Github Actions"}
+    return {
+        "message": "Hello from Scaleway functions using Serverless API Framework deployed with Github Actions"
+    }
