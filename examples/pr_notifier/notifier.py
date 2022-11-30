@@ -172,9 +172,7 @@ class PullRequest(JSONWizard):
         user: dict[str, Any],
         reviewers: list[dict[str, Any]],
     ):
-        """Creates from a GitLab MR event
-        See: https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#merge-request-events
-        """
+        """Creates from a GitLab MR event"""
         return PullRequest(
             number=pull_request["id"],
             repository=Repository.from_gitlab(project),
@@ -409,14 +407,16 @@ def _handle_gitlab_events(body: dict[str, Any]):
             pull = PullRequest.from_gitlab(project, pull_request, user, [])
             pull.on_closed()
         case _:
-            logging.info("could not match body %s", body)
+            logging.info("could not match body")
             return {"statusCode": 400}
     return {"statusCode": 200}
 
 
 @app.func(min_scale=1, memory_limit=1024)
 def handle_gitlab(event, _content):
-    """Handles GitLab webhook request"""
+    """Handles GitLab webhook request
+    See: https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#merge-request-events
+    """
     response = {"statusCode": 200}
     try:
         response = _handle_gitlab_events(json.loads(event[0]["body"]))
