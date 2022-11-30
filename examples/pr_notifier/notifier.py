@@ -351,8 +351,8 @@ def _handle_github_events(body: dict[str, Any]):
             pull.on_closed()
         case _:
             logging.info("could not match body")
-            return {"status_code": 400}
-    return {"status_code": 200}
+            return {"statusCode": 400}
+    return {"statusCode": 200}
 
 
 # pylint: disable=broad-except,line-too-long # disabled for convenience
@@ -361,12 +361,12 @@ def handle_github(event, _content):
     """Handles GitHub webhook request
     See: https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
     """
-    response = {"status_code": 200}
+    response = {"statusCode": 200}
     try:
         response = _handle_github_events(json.loads(event[0]["body"]))
     except Exception as exception:
         logging.error(exception)
-        return {"status_code": 500}
+        return {"statusCode": 500}
     return response
 
 
@@ -410,19 +410,19 @@ def _handle_gitlab_events(body: dict[str, Any]):
             pull.on_closed()
         case _:
             logging.info("could not match body %s", body)
-            return {"status_code": 400}
-    return {"status_code": 200}
+            return {"statusCode": 400}
+    return {"statusCode": 200}
 
 
 @app.func(min_scale=1, memory_limit=1024)
 def handle_gitlab(event, _content):
     """Handles GitLab webhook request"""
-    response = {"status_code": 200}
+    response = {"statusCode": 200}
     try:
         response = _handle_gitlab_events(json.loads(event[0]["body"]))
     except Exception as exception:
         logging.error(exception)
-        return {"status_code": 500}
+        return {"statusCode": 500}
     return response
 
 
@@ -435,7 +435,7 @@ def pull_request_reminder(_event, _content):
     )  # not worth using list_objects_v2 since there shouldn't be a lot of active MRs
     if len(opened_prs) == 0:
         logging.info("No PRs were found")
-        return {"status_code": 200}
+        return {"statusCode": 200}
     blocks = [blks.HeaderBlock(text="PRs awaiting for review: "), blks.DividerBlock()]
     try:
         for opened_pr in opened_prs:
@@ -456,8 +456,8 @@ def pull_request_reminder(_event, _content):
         response = client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
         if not response["ok"]:
             logging.error(response["error"])
-            return {"status_code": 500}
-        return {"status_code": 200}
+            return {"statusCode": 500}
+        return {"statusCode": 200}
     except Exception as exception:
         logging.error(exception)
-        return {"status_code": 500}
+        return {"statusCode": 500}
