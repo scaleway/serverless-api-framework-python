@@ -1,6 +1,6 @@
 from scw_serverless.app import Serverless
 
-app = Serverless("hello_world")
+app = Serverless("hello-world")
 
 
 @app.func()

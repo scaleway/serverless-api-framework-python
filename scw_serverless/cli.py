@@ -257,8 +257,8 @@ def main() -> int:
     """Entrypoint for click"""
     # Set logging level to DEFAULT. (ignore debug)
     get_logger().set_level(DEFAULT)
-    try:
-        return cli()
-    except Exception as ex:  # pylint: disable=broad-except
-        get_logger().critical(str(ex))
-        return 2
+    # try:
+    cli()
+    # except Exception as ex:  # pylint: disable=broad-except
+    #     get_logger().critical(str(ex))
+    #     return 2

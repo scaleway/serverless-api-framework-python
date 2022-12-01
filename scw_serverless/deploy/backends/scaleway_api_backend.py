@@ -13,6 +13,16 @@ from scw_serverless.deploy.backends.serverless_backend import (
     ServerlessBackend,
 )
 from scw_serverless.utils.files import create_zip_file
+from scaleway import Client, load_profile_from_config_file, load_profile_from_env
+from scaleway.function.v1beta1 import FunctionV1Beta1API
+from scaleway.function.v1beta1 import (
+    FunctionHttpOption,
+    Secret,
+    FunctionStatus,
+    NamespaceStatus,
+)
+from scaleway.core.utils.waiter import WaitForOptions
+
 
 TEMP_DIR = "./.scw"
 DEPLOYMENT_ZIP = f"{TEMP_DIR}/deployment.zip"
@@ -25,9 +35,13 @@ class ScalewayApiBackend(ServerlessBackend):
         super().__init__(app_instance, deploy_config)
         self.single_source = single_source
 
-        self.api = Api(
-            region=self.deploy_config.region, secret_key=self.deploy_config.secret_key
-        )
+        # self.api = Api(
+        #     region=self.deploy_config.region, secret_key=self.deploy_config.secret_key
+        # )
+        profile = load_profile_from_env()
+        client = Client.from_profile(profile)
+
+        self.api = FunctionV1Beta1API(client)
 
     def _get_or_create_function(self, func: Function, namespace: str):
         self.logger.default(f"Looking for an existing function {func.name}...")
@@ -35,10 +49,10 @@ class ScalewayApiBackend(ServerlessBackend):
         domain = None
 
         # Looking if a function is already existing
-        for fn in self.api.list_functions(namespace_id=namespace):
-            if fn["name"] == func.name:
-                target_function = fn["id"]
-                domain = fn["domain_name"]
+        for fn in self.api.list_functions_all(namespace):
+            if fn.name == func.name:
+                target_function = fn.id
+                domain = fn.domain_name
 
         fn_args = func.args
 
@@ -52,13 +66,17 @@ class ScalewayApiBackend(ServerlessBackend):
                 runtime=f"python{self._get_python_version()}",
                 handler=func.handler_path,
                 privacy=fn_args.get("privacy", "unknown_privacy"),
-                env=fn_args.get("env"),
+                environment_variables=fn_args.get("env"),
                 min_scale=fn_args.get("min_scale"),
                 max_scale=fn_args.get("max_scale"),
                 memory_limit=fn_args.get("memory_limit"),
                 timeout=fn_args.get("timeout"),
                 description=fn_args.get("description"),
-                secrets=fn_args.get("secret"),
+                secret_environment_variables=[
+                    Secret(key, value)
+                    for key, value in fn_args.get("secrets", {}).items()
+                ],
+                http_option=FunctionHttpOption.UNKNOWN_HTTP_OPTION,
             )
 
             if fn is None:
@@ -73,13 +91,17 @@ class ScalewayApiBackend(ServerlessBackend):
                 runtime=f"python{self._get_python_version()}",
                 handler=func.handler_path,
                 privacy=fn_args.get("privacy", "unknown_privacy"),
-                env=fn_args.get("env"),
+                environment_variables=fn_args.get("env"),
                 min_scale=fn_args.get("min_scale"),
                 max_scale=fn_args.get("max_scale"),
                 memory_limit=fn_args.get("memory_limit"),
                 timeout=fn_args.get("timeout"),
                 description=fn_args.get("description"),
-                secrets=fn_args.get("secret"),
+                secret_environment_variables=[
+                    Secret(key, value)
+                    for key, value in fn_args.get("secrets", {}).items()
+                ],
+                http_option=FunctionHttpOption.UNKNOWN_HTTP_OPTION,
             )
 
         return target_function, domain
@@ -90,9 +112,9 @@ class ScalewayApiBackend(ServerlessBackend):
         )
 
         # Get an object storage pre-signed url
-        upload_url = self.api.upload_function(
+        upload_url = self.api.get_function_upload_url(
             function_id=target_function, content_length=zip_size
-        )
+        ).url
 
         if not upload_url:
             raise RuntimeError(
@@ -119,24 +141,15 @@ class ScalewayApiBackend(ServerlessBackend):
         if not self.api.deploy_function(target_function):
             self.logger.error(f"Unable to deploy function {func.name}...")
         else:
-
-            # Wait for the function to become ready or in error state.
-            status = self.api.get_function(target_function)["status"]
-            while status not in [
-                "ready",
-                "error",
-            ]:
-                time.sleep(30)
-                status = self.api.get_function(target_function)["status"]
-
-            if status == "error":
-                self.logger.error(
-                    f"Unable to deploy {func.name}. Status is in error state."
-                )
-            else:
-                self.logger.success(
-                    f"Function {func.name} has been deployed to https://{domain}"
-                )
+            self.api.wait_for_function(
+                target_function,
+                options=WaitForOptions(
+                    timeout=3600,
+                    stop=lambda f: (
+                        f.status in [FunctionStatus.CREATED, FunctionStatus.ERROR]
+                    ),
+                ),
+            )
 
     def _get_python_version(self):
         # Get the python version from the current env
@@ -160,48 +173,51 @@ class ScalewayApiBackend(ServerlessBackend):
         # Create a list containing the functions name
         functions = list(map(lambda x: x.name, self.app_instance.functions))
 
-        for func in self.api.list_functions(namespace):
-            if func["name"] not in functions:
-                self.logger.warning(f"Deleting function {func['name']}...")
-                self.api.delete_function(func["id"])
+        for func in self.api.list_functions_all(namespace):
+            if func.name not in functions:
+                # self.logger.warning(f"Deleting function {func['name']}...")
+                self.api.delete_function(func.id)
 
     def _get_or_create_namespace(self):
         namespace = None
 
         self.logger.default(
-            f"Looking for an existing namespace {self.app_instance.service_name} in {self.api.region}..."
+            f"Looking for an existing namespace {self.app_instance.service_name} in {self.api.client.default_region}..."
         )
         # Search in the user's namespace if one is matching the same name and region
-        for ns in self.api.list_namespaces(self.deploy_config.project_id):
-            if ns["name"] == self.app_instance.service_name:
-                namespace = ns["id"]
+        for ns in self.api.list_namespaces_all(
+            project_id=self.deploy_config.project_id
+        ):
+            if ns.name == self.app_instance.service_name:
+                namespace = ns.id
                 break
 
         new_namespace = False
 
         if namespace is None:
             self.logger.default(
-                f"Creating a new namespace {self.app_instance.service_name} in {self.api.region}..."
+                f"Creating a new namespace {self.app_instance.service_name} in {self.api.client.default_region}..."
             )
             # Create a new namespace
             ns = self.api.create_namespace(
                 name=self.app_instance.service_name,
                 project_id=self.deploy_config.project_id,
-                env=self.app_instance.env,
-                secrets=self.app_instance.secret,
+                environment_variables=self.app_instance.env,
+                secret_environment_variables=[
+                    Secret(key, value)
+                    for key, value in (self.app_instance.secret or {}).items()
+                ],
             )
 
             if ns is None:
                 raise RuntimeError("Unable to create a new namespace")
 
-            namespace = ns["id"]
-            new_namespace = True
-
-            # Wait for the namespace to exit pending status
-            namespace_data = self.api.get_namespace(namespace)
-            while namespace_data["status"] == "pending":
-                time.sleep(15)
-                namespace_data = self.api.get_namespace(namespace)
+            self.api.wait_for_namespace(
+                ns.id,
+                options=WaitForOptions(
+                    stop=lambda namespace: namespace.status != NamespaceStatus.PENDING
+                ),
+            )
 
         return namespace, new_namespace
 
@@ -223,8 +239,11 @@ class ScalewayApiBackend(ServerlessBackend):
             # Update the namespace
             self.api.update_namespace(
                 namespace_id=namespace,
-                env=self.app_instance.env,
-                secrets=self.app_instance.secret,
+                environment_variables=self.app_instance.env,
+                secret_environment_variables=[
+                    Secret(key, value)
+                    for key, value in self.app_instance.secret.items()
+                ],
             )
 
         if self.single_source:
