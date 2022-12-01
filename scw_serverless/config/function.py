@@ -1,4 +1,4 @@
-from typing import Callable, List, Literal, Optional, TypedDict
+from typing import Callable, List, Literal, Optional, TypedDict, Any
 
 from typing_extensions import NotRequired
 
@@ -43,21 +43,21 @@ class Function:
         self.args: FunctionKwargs = args
         self.events: List[Event] = events if events else []
 
-    @classmethod
+    @staticmethod
     def from_handler(
-        cls,
         handler: Callable,
         args: FunctionKwargs,
         events: Optional[List[Event]] = None,
     ):
         """Create a Scaleway function from a handler."""
-        return cls(
+        return Function(
             name=handler.__name__,
             handler_path=module_to_path(handler.__module__) + "." + handler.__name__,
             args=args,
             events=events,
         )
 
-    def get_url(self) -> Optional[str]:
+    @property
+    def url(self) -> Optional[str]:
         """Get the function url if present."""
         return self.args.get("url")
