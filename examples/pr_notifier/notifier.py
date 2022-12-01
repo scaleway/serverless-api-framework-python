@@ -189,12 +189,12 @@ class PullRequest(JSONWizard):
             deletions=None,
         )
 
+    def on_draft(self):
+        """Saves a PR marked as a draft to notify when it's ready"""
+        save_pr_to_bucket(self, "")
+
     def on_created(self):
         """Sends a notification for a newly created PR"""
-        if self.is_draft:
-            # We will not
-            save_pr_to_bucket(self, "")
-            return
         response = client.chat_postMessage(
             channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
         )
@@ -329,7 +329,10 @@ def _handle_github_events(body: dict[str, Any]):
             "repository": repository,
         }:
             pull = PullRequest.from_github(repository, pull_request)
-            pull.on_created()
+            if pull.is_draft:
+                pull.on_draft()
+            else:
+                pull.on_created()
         case {
             "review": review,
             "sender": reviewer,
@@ -381,6 +384,8 @@ def _handle_gitlab_events(body: dict[str, Any]):
             pull = PullRequest.from_gitlab(project, pull_request, user, reviewers)
             if pull_request["action"] == "update":
                 pull.on_updated()
+            elif pull.is_draft:
+                pull.on_draft()
             else:
                 pull.on_created()
         case {
