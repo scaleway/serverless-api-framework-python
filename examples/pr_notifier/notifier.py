@@ -180,7 +180,7 @@ class PullRequest(JSONWizard):
             url=pull_request["url"],
             is_draft=pull_request["work_in_progress"],
             is_merged=(pull_request["action"] == "merge"),
-            owner=Developer.from_gitlab(user),
+            owner=Developer.from_gitlab(user),  # only true when action is create
             reviewers={d["username"]: Developer.from_gitlab(d) for d in reviewers},
             reviews={},
             target_branch=pull_request["target_branch"],
@@ -215,6 +215,7 @@ class PullRequest(JSONWizard):
         timestamp, pull = load_pr_from_bucket(self.bucket_path)
         self.reviews = pull.reviews.copy()
         self.reviews[reviewer.name] = review
+        self.owner = pull.owner
         save_pr_to_bucket(self, timestamp)
         response = client.chat_update(
             channel=SLACK_CHANNEL, ts=timestamp, blocks=self._as_slack_notification()
