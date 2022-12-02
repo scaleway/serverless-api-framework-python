@@ -19,7 +19,7 @@ SLACK_CHANNEL = os.environ["SLACK_CHANNEL"]
 SLACK_INSTANCE = os.getenv(
     "SLACK_INSTANCE", ""
 )  # used to generate archive links to slack messages
-REMINDER_SCHEDULE = os.getenv("REMINDER_SCHEDULE", "0 * * * *")
+REMINDER_SCHEDULE = os.getenv("REMINDER_SCHEDULE", "0 9 * * 1-5")
 
 app = Serverless(
     "slack-bots",
@@ -38,7 +38,7 @@ s3 = boto3.resource(
     "s3",
     region_name="fr-par",
     use_ssl=True,
-    endpoint_url="http://s3.fr-par.scw.cloud",
+    endpoint_url="https://s3.fr-par.scw.cloud",
     aws_access_key_id=SCW_ACCESS_KEY,
     aws_secret_access_key=SCW_SECRET_KEY,
 )
@@ -70,7 +70,7 @@ class Developer(JSONWizard):
 class Review(JSONWizard):
     """Generic representation of a review from GitHub/GitLab"""
 
-    state: str
+    state: Literal["approved", "dismissed", "changes_requested"]
     _slack_emojis: ClassVar[dict[str, str]] = {
         "approved": ":heavy_check_mark:",
         "dismissed": ":put_litter_in_its_place:",
@@ -152,7 +152,7 @@ class PullRequest(JSONWizard):
             title=pull_request["title"],
             url=pull_request["html_url"],
             is_draft=pull_request["draft"],
-            is_merged=pull_request["merged"],
+            is_merged=pull_request.get("merged", False),  # not available in reviews
             owner=Developer.from_github(pull_request["user"]),
             reviewers={
                 d["login"]: Developer.from_github(d)
