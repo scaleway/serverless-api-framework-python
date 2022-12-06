@@ -1,13 +1,21 @@
+from dataclasses import dataclass
 from typing import Any, Optional
 
-from typing_extensions import Self
 
-from scw_serverless.events.event import Event
+@dataclass
+class CronTrigger:
+    """Cron trigger which will execute a function periodically.
 
+    See also:
+    https://developers.scaleway.com/en/products/functions/api/#create-a-cron-trigger-for-your-function
+    """
 
-class CronSchedule(Event):
-    def __init__(
-        self,
+    schedule: str
+    args: Optional[dict[str, Any]]
+
+    # pylint: disable=too-many-arguments
+    @staticmethod
+    def from_parts(
         minutes: str,
         hours: str,
         day_of_month: str,
@@ -15,8 +23,9 @@ class CronSchedule(Event):
         day_of_week: str,
         seconds: str = "",
         year: Optional[str] = None,
-        inputs: dict[str, Any] = {},
-    ) -> None:
+        args: Optional[dict[str, Any]] = None,
+    ):
+        """Create a Cron expression from its parts."""
         fields = list(
             filter(
                 lambda s: s != "",
@@ -32,16 +41,4 @@ class CronSchedule(Event):
         )
         if year is not None:
             fields.append(year)
-        self.expression = " ".join(fields)
-        self.inputs = inputs
-
-    @property
-    def kind(self) -> str:
-        return "schedule"
-
-    @classmethod
-    def from_expression(cls, expression: str, inputs: dict[str, Any] = {}) -> Self:
-        c = cls.__new__(cls)
-        c.expression = expression
-        c.inputs = inputs
-        return c
+        return CronTrigger(schedule=" ".join(fields), args=args)

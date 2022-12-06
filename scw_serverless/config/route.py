@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 
 class HTTPMethod(Enum):
@@ -12,3 +14,11 @@ class HTTPMethod(Enum):
     PUT = "PUT"
     DELETE = "DELETE"
     PATCH = "PATCH"
+
+
+@dataclass
+class GatewayRoute:
+    """Route to a function."""
+
+    path: str
+    methods: Optional[list[HTTPMethod]] = None

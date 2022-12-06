@@ -27,8 +27,13 @@ exclude = ["tests*"]
 scw_serverless = ["*.py", "*.yml"]
 
 [tool.pylint]
+load-plugins = ["pylint_per_file_ignores"]
 disable = "missing-module-docstring"
 max-line-length = 88
+good-names = "i,fp"
+
+[tool.pylint-per-file-ignores]
+"/tests/" = "missing-function-docstring"
 
 [tool.isort]
 profile = "black"

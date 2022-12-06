@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import tests.utils as test_utils
 from scw_serverless.dependencies_manager import DependenciesManager
 from tests.integrations.utils import serverless_framework
 
 
 def test_integration_serverless_framework():
-    deps = DependenciesManager("./", "./")
+    deps = DependenciesManager(Path("./"), Path("./"))
     deps.generate_package_folder()
 
     serverless_framework(test_utils.APP_PY_PATH)

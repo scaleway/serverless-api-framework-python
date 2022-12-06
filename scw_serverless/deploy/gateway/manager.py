@@ -1,26 +1,25 @@
 from typing import Any, Optional
 
 from prettytable import PrettyTable
+from scaleway import Profile
 
-from ...api import Api
-from ...app import Serverless
-from ...logger import get_logger
-from ..gateway.client import GatewayClient
-from ..gateway.models import GatewayInput, Route
+from scw_serverless.app import Serverless
+from scw_serverless.deploy.gateway.client import GatewayClient
+from scw_serverless.deploy.gateway.models import GatewayInput, Route
+from scw_serverless.logger import get_logger
 
 
 class GatewayManager:
+    """Manages API Gateways."""
+
     def __init__(
         self,
+        profile: Profile,
         app_instance: Serverless,
-        api: Api,
-        project_id: str,
         gateway_uuid: Optional[str],
         gateway_client: GatewayClient,
     ):
         self.app_instance = app_instance
-        self.api = api
-        self.project_id = project_id
         self.gateway_uuid = gateway_uuid
         self.gateway_client = gateway_client
         self.logger = get_logger()
@@ -29,11 +28,13 @@ class GatewayManager:
         routes = []
 
         # Compare with the configured functions
-        for func in self.app_instance.functions:
-            if not func.get_url():
+        for function in self.app_instance.functions:
+            if not function.gateway_route:
                 continue
-            if not func.name in deployed_fns:
-                raise RuntimeError(f"could not find function {func.name} in namespace")
+            if function.name not in deployed_fns:
+                raise RuntimeError(
+                    f"Could not find function {function.name} in namespace"
+                )
 
             deployed = deployed_fns[func.name]
             routes.append(
@@ -86,6 +87,8 @@ class GatewayManager:
         self.logger.success(table.get_string())
 
     def update_gateway_routes(self):
+        """Updates the configurations of the API gateway."""
+
         deployed_fns = self._list_deployed_fns()
         routes = self._get_routes(deployed_fns)
 

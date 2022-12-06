@@ -1,11 +1,11 @@
 from scw_serverless.app import Serverless
-from scw_serverless.events.schedule import CronSchedule
+from scw_serverless.triggers.schedule import CronTrigger
 
 app = Serverless("helloworld")  # , env={"key1": "value1"}, secret={"key2": "value2"}
 
 
 @app.schedule(
-    schedule=CronSchedule.from_expression("0 0 * * MON"),
+    schedule=CronTrigger.from_expression("0 0 * * MON"),
     inputs={"my_name": "Georges"},
     description="This is a description",
     privacy="public",

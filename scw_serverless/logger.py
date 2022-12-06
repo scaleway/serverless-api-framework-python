@@ -8,15 +8,16 @@ WARNING = 40
 ERROR = 50
 CRITICAL = 60
 
-_logger_singleton = None
+_LOGGER_SINGLETON = None
 
 
 def get_logger():
-    global _logger_singleton
+    """Get"""
+    global _LOGGER_SINGLETON
     # This is the first time we call get_logger, init the singleton
-    if not _logger_singleton:
-        _logger_singleton = Logger()
-    return _logger_singleton
+    if not _LOGGER_SINGLETON:
+        _LOGGER_SINGLETON = Logger()
+    return _LOGGER_SINGLETON
 
 
 class _LogRecord:

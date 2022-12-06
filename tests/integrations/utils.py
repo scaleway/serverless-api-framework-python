@@ -3,375 +3,248 @@ import random
 import re
 import shutil
 import subprocess
+import tempfile
 import time
-from typing import List
+from typing import Iterable, List, Tuple
 
+import pytest
 import requests
 import yaml
 from requests import HTTPError
+from scaleway import Client, load_profile_from_env
+from scaleway.account.v2 import AccountV2API
+from scaleway.function.v1beta1 import FunctionV1Beta1API
+from scaleway.registry.v1 import RegistryV1API
 
 from scw_serverless.utils.commands import get_command_path
-from tests.utils import ROOT_PROJECT_DIR, TESTS_DIR, request_scw_api
+from tests.utils import ROOT_PROJECT_DIR, TESTS_DIR
 
-REGION = "pl-waw"
-API_URL = "https://api.scaleway.com"
-FUNCTIONS_BASE_URL = f"functions/v1beta1/regions/{REGION}"
-ACCOUNT_BASE_URL = f"account/v2/projects"
-REGISTRY_BASE_URL = f"registry/v1/regions/{REGION}"
-HEADERS = {"X-Auth-Token": os.getenv("SCW_SECRET_KEY")}
+DEFAULT_REGION = "pl-waw"
+CLI_COMMAND = "srvless"
 
 
-def create_project(suffix: str):
-    sha = os.getenv("GITHUB_SHA")
-    if sha is None:
-        sha = "local"
-    resp = request_scw_api(
-        route=ACCOUNT_BASE_URL,
-        method="POST",
-        json={
-            "name": f"apifw-{sha[:7]}-{suffix}_{str(random.randint(0, 9999))}",
-            "organization_id": os.getenv("SCW_ORG_ID"),
-        },
-    )
-
-    return resp.json()["id"]
+def create_project(client: Client, suffix: str):
+    sha = os.getenv("GITHUB_SHA", "local")
+    name = f"apifw-{sha[:7]}-{suffix}-{random.randint(0, 9999)}"
+    project = AccountV2API(client).create_project(name, os.getenv("SCW_ORG_ID"))
+    return project.id
 
 
-def delete_project(project_id, retries: int = 0):
-    req = requests.delete(
-        f"{API_URL}/{ACCOUNT_BASE_URL}/{project_id}",
-        headers=HEADERS,
-    )
-
-    if req.status_code == 400 and retries <= 3:
-        time.sleep(42)
-        return delete_project(project_id, retries + 1)
-
-    # ignoring the error.
-    # req.raise_for_status()
+def delete_project(client: Client, project_id: str, max_tries: int = 5):
+    api = AccountV2API(client)
+    for _ in range(max_tries):
+        try:
+            api.delete_project(project_id=project_id)
+            break
+        # pylint: disable=broad-except # SDK only returns Exception
+        except Exception:
+            time.sleep(30)
 
 
-def cleanup(project_id):
+def cleanup(client: Client, project_id):
     if os.path.exists("../.scw"):
         shutil.rmtree("../.scw")  # remove .scw/deployment.zip
     if os.path.exists("../.serverless"):
         shutil.rmtree("../.serverless")  # remove serverless framework files
 
-    # List namespaces
-    namespaces = request_scw_api(
-        route=f"{FUNCTIONS_BASE_URL}/namespaces?project_id={project_id}"
-    )
-    for namespace in namespaces.json()["namespaces"]:
-        # Delete namespace
-        request_scw_api(
-            route=f"{FUNCTIONS_BASE_URL}/namespaces/{namespace['id']}", method="DELETE"
-        )
-    # wait for resource deletion
-    time.sleep(60)
-    # List containers registries
-    registries = request_scw_api(
-        route=f"{REGISTRY_BASE_URL}/namespaces?project_id={project_id}"
-    )
-    for registry in registries.json()["namespaces"]:
-        # Delete container registry
-        request_scw_api(
-            route=f"{REGISTRY_BASE_URL}/namespaces/{registry['id']}", method="DELETE"
-        )
+    api = FunctionV1Beta1API(client)
+    for namespace in api.list_namespaces_all(project_id=project_id):
+        api.delete_namespace(namespace_id=namespace.id)
+
+    registry_api = RegistryV1API(client)
+    for registry in registry_api.list_namespaces_all(project_id=project_id):
+        registry_api.delete_namespace(namespace_id=registry.id)
+
+    print("Waiting for namespaces deletions...")
+    for _ in range(30):
+        namespaces = api.list_namespaces_all(project_id=project_id)
+        registries = registry_api.list_namespaces_all(project_id=project_id)
+        if not namespaces and not registries:
+            break
+        time.sleep(20)
 
 
-def call_function(url: str):
-    retries = 0
-    retry_delay = 42
+def call_function(url: str, max_retries: int = 5):
+    retry_delay = 5
     raised_ex = None
 
-    while retries < 3:
-        try:
-            # Call the function
-            req = requests.get(url)
+    for _ in range(max_retries):
+        try:  # Call the function
+            req = requests.get(url, timeout=retry_delay)
             req.raise_for_status()
-
-            raised_ex = None
-            # No exception raised. Call was successful
             break
-        except ConnectionError as ex:
+        except ConnectionError as exception:
             time.sleep(retry_delay)
-            retries += 1
-            raised_ex = ex
-        except HTTPError as ex:
-            raised_ex = ex
-
+            raised_ex = exception
+        except HTTPError as exception:
+            raised_ex = exception
             # If the request as timed out
-            if ex.response.status_code == 408:
-                time.sleep(retry_delay)
-                retries += 1
-            else:
-                # The request has not timed out. The function deployment was unsuccessful
+            if exception.response.status_code != 408:
                 break
+            time.sleep(retry_delay)
 
     if raised_ex:
         raise raised_ex
 
 
-def copy_project(project_id: str):
-    directory = f"/tmp/apifw_{project_id}"
-    if not os.path.exists(directory):
-        shutil.copytree(ROOT_PROJECT_DIR, directory)
-
+def copy_project():
+    directory = tempfile.mkdtemp()
+    shutil.copytree(TESTS_DIR, os.path.join(directory, "tests"))
     return directory
 
 
-def run_srvlss_cli(project_id: str, args: List[str], cwd: str = TESTS_DIR):
+def run_srvless_cli(project_id: str, args: List[str], cwd: str = TESTS_DIR):
     # Run the command line
-    srvlss_path = get_command_path("srvlss")
-    assert srvlss_path is not None
+    srvless_path = get_command_path(CLI_COMMAND)
+    assert srvless_path
 
     return subprocess.run(
-        [srvlss_path] + args,
+        [srvless_path] + args,
         env={
-            "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
+            # Should fail if SCW_SECRET_KEY is not defined
+            "SCW_SECRET_KEY": os.environ["SCW_SECRET_KEY"],
+            "SCW_ACCESS_KEY": os.environ["SCW_ACCESS_KEY"],
             "SCW_DEFAULT_PROJECT_ID": project_id,
-            "SCW_REGION": REGION,
+            "SCW_REGION": DEFAULT_REGION,
+            "PATH": os.environ["PATH"],
         },
         capture_output=True,
         # Runs the cli in the tests directory
         cwd=cwd,
+        check=False,  # Checked in the tests
     )
 
 
 def generate_scw_config():
     path = os.path.join(TESTS_DIR, "scw.yaml")
-    with open(path, "w") as fp:
+    with open(path, mode="w", encoding="utf-8") as fp:
         yaml.dump(
             {
                 "access_key": os.getenv("SCW_ACCESS_KEY"),
                 "secret_key": os.getenv("SCW_SECRET_KEY"),
-                "default_region": REGION,
+                "default_region": DEFAULT_REGION,
             },
             fp,
         )
     return path
 
 
-def deploy(
-    file: str, do_cleanup: bool = True, project_id: str = None, backend: str = "api"
-):
-    if project_id is None:
-        project_id = create_project("dpl")
+@pytest.fixture(name="serverless_project")
+def _create_serverless_project() -> Iterable[Tuple[str, str]]:
+    profile = load_profile_from_env()
+    if not profile.default_region:
+        profile.default_region = DEFAULT_REGION
+    client = Client.from_profile(profile)
+    project_id = create_project(client, "dpl")
 
     print(f"Using project: {project_id}")
 
     # Copy the whole project to a temporary directory
-    project_dir = copy_project(project_id=project_id)
-    file = file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+    project_dir = copy_project()
 
     try:
-        srvlss_path = get_command_path("srvlss")
-        assert srvlss_path is not None
-
-        ret = subprocess.run(
-            [srvlss_path, "deploy", "-f", file, "-b", backend, "--region", "pl-waw"],
-            env={
-                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
-                "SCW_DEFAULT_PROJECT_ID": project_id,
-                "PATH": os.getenv("PATH"),
-            },
-            capture_output=True,
-            cwd=project_dir,
-        )
-
-        assert ret.returncode == 0, print(ret)
-
-        output = str(ret.stdout.decode("UTF-8")).strip()
-        if backend == "serverless":
-            # serverless framework print normal output on stderr
-            output = str(ret.stderr.decode("UTF-8")).strip()
-
-        assert "Function hello-world has been deployed" in output, print(ret)
-        assert (
-            "Status is in error state" not in str(ret.stdout.decode("UTF-8")).strip()
-        ), print(ret)
-
-        output = str(ret.stdout.decode("UTF-8")).strip()
-        pattern = re.compile(
-            "(Function [a-z0-9-]+ has been deployed to:? (https://.+))"
-        )
-
-        groups = re.findall(pattern, output)
-
-        for group in groups:
-            # Call the actual function
-            call_function(group[1])
-
+        yield (project_id, project_dir)
     finally:
-        if do_cleanup:
-            cleanup(project_id)
-            delete_project(project_id)
-            shutil.rmtree(project_dir)
-    return project_id
+        cleanup(client, project_id)
+        delete_project(client, project_id)
+        shutil.rmtree(project_dir)
 
 
-def serverless_framework(file: str, do_cleanup: bool = True, project_id: str = None):
-    if project_id is None:
-        project_id = create_project("slfw")
+def deploy(app_file: str, backend: str, serverless_project):
+    (project_id, project_dir) = serverless_project
+    app_file = app_file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+    ret = run_srvless_cli(project_id, ["deploy", app_file, "-b", backend], project_dir)
 
-    print(f"Using project: {project_id}")
+    assert ret.returncode == 0, print(ret)
 
-    # Copy the whole project to a temporary directory
-    project_dir = copy_project(project_id=project_id)
-    file = file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+    output = str(ret.stdout.decode("UTF-8")).strip()
+    if backend == "serverless":
+        # serverless framework print normal output on stderr
+        output = str(ret.stderr.decode("UTF-8")).strip()
 
-    try:
-        # Run the command line
-        srvlss_path = get_command_path("srvlss")
-        assert srvlss_path is not None
+    assert "Done! Functions have been successfully deployed!" in output, print(ret)
 
-        ret = subprocess.run(
-            [
-                srvlss_path,
-                "generate",
-                "-t",
-                "serverless",
-                "-f",
-                file,
-            ],
-            env={
-                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
-                "SCW_DEFAULT_PROJECT_ID": project_id,
-                "SCW_REGION": REGION,
-            },
-            capture_output=True,
-            cwd=project_dir,
-        )
+    output = str(ret.stdout.decode("UTF-8")).strip()
+    pattern = re.compile(r"(Function [a-z0-9-]+ deployed to:? (https://.+))")
 
-        assert ret.returncode == 0, print(ret)
-        assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), print(ret)
+    groups = re.findall(pattern, output)
 
-        # Run the serverless Framework
-
-        serverless_path = get_command_path("serverless")
-        assert serverless_path is not None
-
-        node_path = get_command_path("node")
-        assert node_path is not None
-
-        serverless = subprocess.run(
-            [
-                node_path,
-                serverless_path,
-                "deploy",
-            ],
-            env={
-                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
-                "SCW_DEFAULT_PROJECT_ID": project_id,
-                "SCW_REGION": REGION,
-            },
-            capture_output=True,
-            cwd=project_dir,
-        )
-
-        assert serverless.returncode == 0, print(serverless)
-        assert (
-            "Function hello-world has been deployed"
-            in str(serverless.stderr.decode("UTF-8")).strip()
-        ), print(serverless)
-
-        output = str(serverless.stderr.decode("UTF-8")).strip()
-
-        print(output)
-
-        pattern = re.compile("(Function [a-z0-9-]+ has been deployed to: (https://.+))")
-        groups = re.findall(pattern, output)
-
-        for group in groups:
-            # Call the actual function
-            call_function(group[1])
-
-    finally:
-        if do_cleanup:
-            cleanup(project_id)
-            delete_project(project_id)
-            shutil.rmtree(project_dir)
-    return project_id
+    for group in groups:
+        # Call the actual function
+        call_function(group[1])
 
 
-def terraform(file: str, do_cleanup: bool = True, project_id: str = None):
-    if project_id is None:
-        project_id = create_project("slfw")
+def serverless_framework(app_file: str, serverless_project):
+    (project_id, project_dir) = serverless_project
+    app_file = app_file.replace(os.path.abspath(TESTS_DIR), project_dir)
+    ret = run_srvless_cli(
+        project_id, ["generate", app_file, "-t", "serverless"], project_dir
+    )
 
-    print(f"Using project: {project_id}")
+    assert ret.returncode == 0, print(ret)
+    assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), print(ret)
 
-    # Copy the whole project to a temporary directory
-    project_dir = copy_project(project_id=project_id)
-    file = file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+    # Run the serverless Framework
+    serverless_path = get_command_path("serverless")
+    assert serverless_path
 
-    try:
-        # Run the command line
-        srvlss_path = get_command_path("srvlss")
-        assert srvlss_path is not None
+    node_path = get_command_path("node")
+    assert node_path
 
-        ret = subprocess.run(
-            [
-                srvlss_path,
-                "generate",
-                "-t",
-                "terraform",
-                "-f",
-                file,
-            ],
-            env={
-                "SCW_SECRET_KEY": os.getenv("SCW_SECRET_KEY"),
-                "SCW_DEFAULT_PROJECT_ID": project_id,
-                "SCW_REGION": REGION,
-            },
-            capture_output=True,
-            cwd=project_dir,
-        )
+    serverless = subprocess.run(
+        [node_path, serverless_path, "deploy"],
+        env={
+            "SCW_SECRET_KEY": os.environ["SCW_SECRET_KEY"],
+            "SCW_DEFAULT_PROJECT_ID": project_id,
+            "SCW_REGION": DEFAULT_REGION,
+        },
+        capture_output=True,
+        cwd=project_dir,
+        check=False,
+    )
 
-        assert ret.returncode == 0, print(ret)
-        assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), print(ret)
+    assert serverless.returncode == 0, print(serverless)
+    assert (
+        "Function hello-world has been deployed"
+        in str(serverless.stderr.decode("UTF-8")).strip()
+    ), print(serverless)
 
-        # Run terraform
+    output = str(serverless.stderr.decode("UTF-8")).strip()
 
-        terraform_path = get_command_path("terraform")
-        assert terraform_path is not None
+    print(output)
 
-        with open(os.path.join(TESTS_DIR, "output.tf"), "w") as fp:
-            fp.write(
-                """
-output "domain_name" {
-  value = scaleway_function.hello-world.domain_name
-}
-            """
-            )
+    pattern = re.compile("(Function [a-z0-9-]+ has been deployed to: (https://.+))")
+    groups = re.findall(pattern, output)
 
-        subprocess.run([terraform_path, "init"], capture_output=True, cwd=project_dir)
+    for group in groups:
+        # Call the actual function
+        call_function(group[1])
 
-        tf_apply = subprocess.run(
-            [terraform_path, "apply", "-auto-approve"],
-            env={
-                "TF_VAR_project_id": project_id,
-                "SCW_CONFIG_PATH": generate_scw_config(),
-            },
-            capture_output=True,
-            cwd=project_dir,
-        )
 
-        assert tf_apply.returncode == 0, print(tf_apply)
-        assert "Apply complete!" in str(tf_apply.stdout.decode("UTF-8")).strip(), print(
-            tf_apply
-        )
+def terraform(app_file: str, serverless_project):
+    (project_id, project_dir) = serverless_project
+    app_file = app_file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+    ret = run_srvless_cli(
+        project_id, ["generate", app_file, "-t", "terraform"], project_dir
+    )
 
-        tf_out = subprocess.run(
-            [terraform_path, "output", "domain_name"],
-            capture_output=True,
-            cwd=project_dir,
-        )
-        url = "https://" + tf_out.stdout.decode("UTF-8").strip().strip('"')
-        call_function(url)
+    assert ret.returncode == 0, print(ret)
+    assert "Done" in str(ret.stdout.decode("UTF-8")).strip(), print(ret)
 
-    finally:
-        if do_cleanup:
-            cleanup(project_id)
-            delete_project(project_id)
-            shutil.rmtree(project_dir)
-    return project_id
+    # Run terraform
+    terraform_path = get_command_path("terraform")
+    assert terraform_path
+
+    subprocess.run(
+        [terraform_path, "init"], capture_output=True, cwd=project_dir, check=True
+    )
+
+    subprocess.run(
+        [terraform_path, "validate"],
+        env={
+            "TF_VAR_project_id": project_id,
+            "SCW_CONFIG_PATH": generate_scw_config(),
+        },
+        capture_output=True,
+        check=True,
+    )

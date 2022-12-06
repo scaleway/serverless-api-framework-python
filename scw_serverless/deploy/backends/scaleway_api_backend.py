@@ -1,128 +1,80 @@
 import os
-import sys
-import time
+from typing import Tuple
 
-import click
 import requests
-
-from scw_serverless.api import Api
-from scw_serverless.app import Serverless
-from scw_serverless.config.function import Function
-from scw_serverless.deploy.backends.serverless_backend import (
-    DeployConfig,
-    ServerlessBackend,
-)
-from scw_serverless.utils.files import create_zip_file
-from scaleway import Client, load_profile_from_config_file, load_profile_from_env
-from scaleway.function.v1beta1 import FunctionV1Beta1API
-from scaleway.function.v1beta1 import (
-    FunctionHttpOption,
-    Secret,
-    FunctionStatus,
-    NamespaceStatus,
-)
+import scaleway.function.v1beta1 as sdk
+from scaleway import Client, Profile
 from scaleway.core.utils.waiter import WaitForOptions
 
+from scw_serverless.app import Serverless
+from scw_serverless.config.function import Function
+from scw_serverless.deploy.backends.serverless_backend import ServerlessBackend
+from scw_serverless.utils.files import create_zip_file
 
 TEMP_DIR = "./.scw"
 DEPLOYMENT_ZIP = f"{TEMP_DIR}/deployment.zip"
+UPLOAD_TIMEOUT = 600  # In seconds
+DEPLOY_TIMEOUT = 600
 
 
 class ScalewayApiBackend(ServerlessBackend):
+    """Uses the API to deploy functions."""
+
     def __init__(
-        self, app_instance: Serverless, deploy_config: DeployConfig, single_source: bool
+        self, app_instance: Serverless, sdk_profile: Profile, single_source: bool
     ):
-        super().__init__(app_instance, deploy_config)
+        super().__init__(app_instance, sdk_profile)
         self.single_source = single_source
+        client = Client.from_profile(sdk_profile)
+        self.api = sdk.FunctionV1Beta1API(client)
 
-        # self.api = Api(
-        #     region=self.deploy_config.region, secret_key=self.deploy_config.secret_key
-        # )
-        profile = load_profile_from_env()
-        client = Client.from_profile(profile)
-
-        self.api = FunctionV1Beta1API(client)
-
-    def _get_or_create_function(self, func: Function, namespace: str):
-        self.logger.default(f"Looking for an existing function {func.name}...")
-        target_function = None
-        domain = None
-
+    def _get_or_create_function(
+        self, function: Function, namespace_id: str
+    ) -> Tuple[str, str]:
+        self.logger.default(f"Looking for an existing function {function.name}...")
+        created_function = None
         # Looking if a function is already existing
-        for fn in self.api.list_functions_all(namespace):
-            if fn.name == func.name:
-                target_function = fn.id
-                domain = fn.domain_name
-
-        fn_args = func.args
-
-        if target_function is None:
-            self.logger.default(f"Creating a new function {func.name}...")
-
+        for func in self.api.list_functions_all(namespace_id):
+            if func.name == function.name:
+                created_function = func
+        if not created_function:
+            self.logger.default(f"Creating a new function {function.name}...")
             # Creating a new function with the provided args
-            fn = self.api.create_function(
-                namespace_id=namespace,
-                name=func.name,
-                runtime=f"python{self._get_python_version()}",
-                handler=func.handler_path,
-                privacy=fn_args.get("privacy", "unknown_privacy"),
-                environment_variables=fn_args.get("env"),
-                min_scale=fn_args.get("min_scale"),
-                max_scale=fn_args.get("max_scale"),
-                memory_limit=fn_args.get("memory_limit"),
-                timeout=fn_args.get("timeout"),
-                description=fn_args.get("description"),
-                secret_environment_variables=[
-                    Secret(key, value)
-                    for key, value in fn_args.get("secrets", {}).items()
-                ],
-                http_option=FunctionHttpOption.UNKNOWN_HTTP_OPTION,
+            created_function = self.api.create_function(
+                namespace_id=namespace_id,
+                # required by the SDK
+                http_option=sdk.FunctionHttpOption.UNKNOWN_HTTP_OPTION,
+                **function.asdict(),
             )
-
-            if fn is None:
-                raise RuntimeError("Unable to create a new function")
-
-            target_function = fn["id"]
-            domain = fn["domain_name"]
         else:
             # Updating the function with the provided args
-            self.api.update_function(
-                function_id=target_function,
-                runtime=f"python{self._get_python_version()}",
-                handler=func.handler_path,
-                privacy=fn_args.get("privacy", "unknown_privacy"),
-                environment_variables=fn_args.get("env"),
-                min_scale=fn_args.get("min_scale"),
-                max_scale=fn_args.get("max_scale"),
-                memory_limit=fn_args.get("memory_limit"),
-                timeout=fn_args.get("timeout"),
-                description=fn_args.get("description"),
-                secret_environment_variables=[
-                    Secret(key, value)
-                    for key, value in fn_args.get("secrets", {}).items()
-                ],
-                http_option=FunctionHttpOption.UNKNOWN_HTTP_OPTION,
+            kwargs = function.asdict()
+            del kwargs["name"]
+            created_function = self.api.update_function(
+                function_id=created_function.id,
+                # required by the SDK
+                http_option=sdk.FunctionHttpOption.UNKNOWN_HTTP_OPTION,
+                **kwargs,
             )
+        return (created_function.id, created_function.domain_name)
 
-        return target_function, domain
-
-    def _deploy_function(self, func: Function, namespace: str, zip_size: int):
-        target_function, domain = self._get_or_create_function(
-            func=func, namespace=namespace
-        )
+    def _deploy_function(self, function: Function, namespace_id: str, zip_size: int):
+        function_id, domain_name = self._get_or_create_function(function, namespace_id)
 
         # Get an object storage pre-signed url
-        upload_url = self.api.get_function_upload_url(
-            function_id=target_function, content_length=zip_size
-        ).url
-
-        if not upload_url:
-            raise RuntimeError(
-                "Unable to retrieve upload url... Verify that your function is less that 100 MB"
+        try:
+            upload_url = self.api.get_function_upload_url(
+                function_id=function_id, content_length=zip_size
+            ).url
+        except Exception as exception:
+            self.logger.error(
+                "Unable to retrieve upload url... "
+                + "Verify that your function is less that 100 MB"
             )
+            raise exception
 
         self.logger.default("Uploading function...")
-        with open(DEPLOYMENT_ZIP, "rb") as file:
+        with open(DEPLOYMENT_ZIP, mode="rb") as file:
             # Upload function zip to S3 presigned URL
             req = requests.put(
                 upload_url,
@@ -131,6 +83,7 @@ class ScalewayApiBackend(ServerlessBackend):
                     "Content-Type": "application/octet-stream",
                     "Content-Length": str(zip_size),
                 },
+                timeout=UPLOAD_TIMEOUT,
             )
 
             if req.status_code != 200:
@@ -138,22 +91,23 @@ class ScalewayApiBackend(ServerlessBackend):
 
         self.logger.default("Deploying function...")
         # deploy the newly uploaded function
-        if not self.api.deploy_function(target_function):
-            self.logger.error(f"Unable to deploy function {func.name}...")
-        else:
-            self.api.wait_for_function(
-                target_function,
-                options=WaitForOptions(
-                    timeout=3600,
-                    stop=lambda f: (
-                        f.status in [FunctionStatus.CREATED, FunctionStatus.ERROR]
-                    ),
-                ),
-            )
+        self.api.deploy_function(function_id)
 
-    def _get_python_version(self):
-        # Get the python version from the current env
-        return f"{sys.version_info.major}{sys.version_info.minor}"
+        func = self.api.wait_for_function(
+            function_id,
+            options=WaitForOptions(
+                timeout=DEPLOY_TIMEOUT,
+                min_delay=10,
+                stop=lambda f: (
+                    f.status in [sdk.FunctionStatus.READY, sdk.FunctionStatus.ERROR]
+                ),
+            ),
+        )
+        if func.status is sdk.FunctionStatus.ERROR:
+            raise ValueError(
+                f"Function {func.name} is in error state: {func.error_message}"
+            )
+        self.logger.success(f"Function {func.name} deployed to: https://{domain_name}")
 
     def _create_deployment_zip(self):
         # Create a ZIP archive containing the entire project
@@ -167,87 +121,70 @@ class ScalewayApiBackend(ServerlessBackend):
         create_zip_file(DEPLOYMENT_ZIP, "./")
         return os.path.getsize(DEPLOYMENT_ZIP)
 
-    def _remove_missing_functions(self, namespace: str):
-        # Delete functions no longer present in the code...
-
-        # Create a list containing the functions name
-        functions = list(map(lambda x: x.name, self.app_instance.functions))
-
-        for func in self.api.list_functions_all(namespace):
-            if func.name not in functions:
-                # self.logger.warning(f"Deleting function {func['name']}...")
+    def _remove_missing_functions(self, namespace_id: str):
+        """Deletes functions no longer present in the code."""
+        function_names = [func.name for func in self.app_instance.functions]
+        for func in self.api.list_functions_all(namespace_id=namespace_id):
+            if func.name not in function_names:
+                self.logger.info(f"Deleting function {func.name}...")
                 self.api.delete_function(func.id)
 
-    def _get_or_create_namespace(self):
+    def _get_or_create_namespace(self) -> str:
+        project_id = self.api.client.default_project_id
+        namespace_name = self.app_instance.service_name
         namespace = None
-
         self.logger.default(
-            f"Looking for an existing namespace {self.app_instance.service_name} in {self.api.client.default_region}..."
+            f"Looking for an existing namespace {namespace_name} in {project_id}..."
         )
         # Search in the user's namespace if one is matching the same name and region
-        for ns in self.api.list_namespaces_all(
-            project_id=self.deploy_config.project_id
-        ):
-            if ns.name == self.app_instance.service_name:
-                namespace = ns.id
-                break
-
-        new_namespace = False
-
-        if namespace is None:
-            self.logger.default(
-                f"Creating a new namespace {self.app_instance.service_name} in {self.api.client.default_region}..."
-            )
+        for deployed_namespace in self.api.list_namespaces_all():
+            if deployed_namespace.name == self.app_instance.service_name:
+                namespace = deployed_namespace
+        self.logger.default(
+            f"Creating a new namespace {namespace_name} in {project_id}..."
+        )
+        secrets = [
+            sdk.Secret(key, value)
+            for key, value in (self.app_instance.secret or {}).items()
+        ]
+        if not namespace:
             # Create a new namespace
-            ns = self.api.create_namespace(
-                name=self.app_instance.service_name,
-                project_id=self.deploy_config.project_id,
+            namespace = self.api.create_namespace(
+                name=namespace_name,
                 environment_variables=self.app_instance.env,
-                secret_environment_variables=[
-                    Secret(key, value)
-                    for key, value in (self.app_instance.secret or {}).items()
-                ],
+                secret_environment_variables=secrets,
             )
-
-            if ns is None:
-                raise RuntimeError("Unable to create a new namespace")
-
-            self.api.wait_for_namespace(
-                ns.id,
-                options=WaitForOptions(
-                    stop=lambda namespace: namespace.status != NamespaceStatus.PENDING
-                ),
+        else:
+            self.logger.default("Updating namespace configuration...")
+            namespace = self.api.update_namespace(
+                namespace_id=namespace.id,
+                environment_variables=self.app_instance.env,
+                secret_environment_variables=secrets,
             )
+        namespace = self.api.wait_for_namespace(
+            namespace_id=namespace.id,
+            options=WaitForOptions(
+                stop=lambda namespace: namespace.status != sdk.NamespaceStatus.PENDING
+            ),
+        )
+        if namespace.status != sdk.NamespaceStatus.READY:
+            raise ValueError(
+                f"Namespace {namespace.name} is not ready: {namespace.error_message}"
+            )
+        return namespace.id
 
-        return namespace, new_namespace
-
-    def deploy(self):
-        namespace, new_namespace = self._get_or_create_namespace()
-
-        self.logger.info(f"Using python{self._get_python_version()}")
-
+    def deploy(self) -> None:
+        namespace_id = self._get_or_create_namespace()
         # Create a zip containing the user's project
         file_size = self._create_deployment_zip()
 
         # For each function
-        for func in self.app_instance.functions:
+        for function in self.app_instance.functions:
             # Deploy the function
-            self._deploy_function(func=func, namespace=namespace, zip_size=file_size)
-
-        if not new_namespace:
-            self.logger.default("Updating namespace configuration...")
-            # Update the namespace
-            self.api.update_namespace(
-                namespace_id=namespace,
-                environment_variables=self.app_instance.env,
-                secret_environment_variables=[
-                    Secret(key, value)
-                    for key, value in self.app_instance.secret.items()
-                ],
-            )
+            self._deploy_function(function, namespace_id, zip_size=file_size)
 
         if self.single_source:
             # Remove functions no longer present in the code
-            self._remove_missing_functions(namespace=namespace)
+            self._remove_missing_functions(namespace_id)
 
-        self.logger.success(f"Done! Functions have been successfully deployed!")
+        self.logger.success("Done! Functions have been successfully deployed!")

@@ -12,20 +12,14 @@ def _init_runner(args: list):
 
 
 def test_cli_generate_no_args():
-    """
-    Test the generate command with no args (other than the file selector)
-    :return:
-    """
+    """Test the generate command with no args"""
     result = _init_runner(["generate", APP_PY_PATH])
     assert result.exit_code == 0
     assert "Done" in result.output
 
 
 def test_cli_generate_target_serverless():
-    """
-    Test the generate command targeting the serverless framework
-    :return:
-    """
+    """Test the generate command targeting the serverless framework"""
     result = _init_runner(["generate", APP_PY_PATH, "-t", "serverless"])
     assert result.exit_code == 0
     assert "Done" in result.output
@@ -33,10 +27,7 @@ def test_cli_generate_target_serverless():
 
 
 def test_cli_generate_save_destination():
-    """
-    Test the generate command with a specific save folder path
-    :return:
-    """
+    """Test the generate command with a specific save folder path"""
     result = _init_runner(["generate", APP_PY_PATH, "-s", "./test"])
     assert result.exit_code == 0
     assert "Done" in result.output
@@ -44,20 +35,14 @@ def test_cli_generate_save_destination():
 
 
 def test_cli_generate_no_args_multiple_functions():
-    """
-    Test the generate command with no args (other than the file selector)
-    :return:
-    """
+    """Test the generate command with no args and multiple functions"""
     result = _init_runner(["generate", f"{TESTS_DIR}/dev/multiple_functions.py"])
     assert result.exit_code == 0
     assert "Done" in result.output
 
 
 def test_cli_generate_target_serverless_multiple_functions():
-    """
-    Test the generate command targeting the serverless framework
-    :return:
-    """
+    """Test the generate command targeting the serverless framework"""
     result = _init_runner(
         ["generate", f"{TESTS_DIR}/dev/multiple_functions.py", "-t", "serverless"]
     )
@@ -67,10 +52,7 @@ def test_cli_generate_target_serverless_multiple_functions():
 
 
 def test_cli_generate_save_destination_multiple_functions():
-    """
-    Test the generate command with a specific save folder path
-    :return:
-    """
+    """Test the generate command with a specific save folder path"""
     result = _init_runner(
         ["generate", f"{TESTS_DIR}/dev/multiple_functions.py", "-s", "./test"]
     )

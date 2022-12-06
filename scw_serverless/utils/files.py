@@ -3,9 +3,11 @@ from zipfile import ZipFile
 
 
 def list_files(source):
+    """Lists files contained in the source directory."""
+
     zip_files = []
 
-    for path, subdirs, files in os.walk(source):
+    for path, _subdirs, files in os.walk(source):
         for name in files:
             zip_files.append(os.path.join(path, name))
 
@@ -13,8 +15,10 @@ def list_files(source):
 
 
 def create_zip_file(zip_path, source):
+    """Creates an archive to zip_path from source."""
+
     files = list_files(source)
 
-    with ZipFile(zip_path, "w", strict_timestamps=False) as zip:
+    with ZipFile(zip_path, "w", strict_timestamps=False) as zip_file:
         for file in files:
-            zip.write(file)
+            zip_file.write(file)
