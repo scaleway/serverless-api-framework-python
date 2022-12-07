@@ -1,7 +1,8 @@
-from typing import Any, Optional
+from typing import Optional
 
+import scaleway.function.v1beta1 as sdk
 from prettytable import PrettyTable
-from scaleway import Profile
+from scaleway import Client
 
 from scw_serverless.app import Serverless
 from scw_serverless.deploy.gateway.client import GatewayClient
@@ -14,19 +15,20 @@ class GatewayManager:
 
     def __init__(
         self,
-        profile: Profile,
         app_instance: Serverless,
+        sdk_client: Client,
         gateway_uuid: Optional[str],
         gateway_client: GatewayClient,
     ):
+
+        self.api = sdk.FunctionV1Beta1API(sdk_client)
         self.app_instance = app_instance
-        self.gateway_uuid = gateway_uuid
         self.gateway_client = gateway_client
+        self.gateway_uuid = gateway_uuid
         self.logger = get_logger()
 
-    def _get_routes(self, deployed_fns: dict[str, Any]) -> list[Route]:
+    def _get_routes(self, deployed_fns: dict[str, sdk.Function]) -> list[Route]:
         routes = []
-
         # Compare with the configured functions
         for function in self.app_instance.functions:
             if not function.gateway_route:
@@ -35,66 +37,81 @@ class GatewayManager:
                 raise RuntimeError(
                     f"Could not find function {function.name} in namespace"
                 )
-
-            deployed = deployed_fns[func.name]
+            deployed = deployed_fns[function.name]
             routes.append(
                 Route(
-                    path=func.get_url(),
-                    target=deployed["domain_name"],
-                    methods=func.args.get("methods"),
+                    path=function.gateway_route.path,
+                    target=deployed.domain_name,
+                    methods=[
+                        str(method) for method in function.gateway_route.methods or []
+                    ],
                 )
             )
-
         return routes
 
-    def _list_deployed_fns(self) -> dict[str, Any]:
+    def _list_deployed_fns(self) -> dict[str, sdk.Function]:
         namespace_name = self.app_instance.service_name
-        namespace_id = self.api.get_namespace_id(self.project_id, namespace_name)
-
+        namespaces = self.api.list_namespaces_all(name=namespace_name)
+        if not namespaces:
+            raise ValueError(f"Could not find a namespace with name: {namespace_name}")
+        namespace_id = namespaces[0].id
         # Get the list of the deployed functions
         return {
-            fn["name"]: fn for fn in self.api.list_functions(namespace_id=namespace_id)
+            function.name: function
+            for function in self.api.list_functions_all(namespace_id=namespace_id)
         }
 
-    def _deploy_to_existing(self, routes: list[Route]):
+    def _deploy_to_existing(self, routes: list[Route]) -> list[str]:
+        assert self.gateway_uuid
         self.logger.default(f"Updating gateway {self.gateway_uuid} configuration...")
         gateway = self.gateway_client.get_gateway(self.gateway_uuid)
-        domains = set(self.app_instance.gateway_domains + gateway.domains)
+        domains = sorted(set(self.app_instance.gateway_domains + gateway.domains))
         self.gateway_client.update_gateway(
-            self.gateway_uuid, GatewayInput(sorted(domains), routes)
+            self.gateway_uuid, GatewayInput(domains, routes)
         )
+        return domains
 
-    def _deploy_to_new(self, routes: list[Route]):
+    def _deploy_to_new(self, routes: list[Route]) -> list[str]:
         self.logger.default("No gateway was configured, creating a new gateway...")
         gateway = self.gateway_client.create_gateway(
             GatewayInput(self.app_instance.gateway_domains, routes)
         )
         self.logger.success(f"Successfully created gateway {gateway.uuid}")
+        return self.app_instance.gateway_domains
 
-    def _display_routes(self, deployed_fns: dict[str, Any]):
+    def _display_routes(
+        self, domains: list[str], deployed_fns: dict[str, sdk.Function]
+    ):
+        prefix = domains[0] if domains else ""
         table = PrettyTable(["Name", "Methods", "From", "To"])
-        functions = sorted(self.app_instance.functions, key=lambda func: func.get_url())
-        for func in functions:
+        routed = filter(
+            lambda function: function.gateway_route, self.app_instance.functions
+        )
+        for function in routed:
+            assert function.gateway_route
             table.add_row(
                 [
-                    func.name,
-                    ",".join([str(method) for method in func.args.get("methods")]),
-                    func.get_url(),
-                    deployed_fns[func.name].get("domain_name"),
+                    function.name,
+                    ",".join(
+                        [str(method) for method in function.gateway_route.methods or []]
+                    ),
+                    prefix + function.gateway_route.path,
+                    deployed_fns[function.name].domain_name,
                 ]
             )
         self.logger.success("The following functions were configured: ")
         self.logger.success(table.get_string())
 
-    def update_gateway_routes(self):
+    def update_gateway_routes(self) -> None:
         """Updates the configurations of the API gateway."""
 
         deployed_fns = self._list_deployed_fns()
         routes = self._get_routes(deployed_fns)
 
+        domains = None
         if self.gateway_uuid:
-            self._deploy_to_existing(routes)
+            domains = self._deploy_to_existing(routes)
         else:
-            self._deploy_to_new(routes)
+            domains = self._deploy_to_new(routes)
 
-        self._display_routes(deployed_fns)
+        self._display_routes(domains, deployed_fns)

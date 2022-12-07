@@ -15,12 +15,12 @@ from scw_serverless.logger import get_logger
 DEFAULT_REGION: str = "fr-par"
 
 
-def get_scw_profile(
+def get_scw_client(
     profile_name: Optional[str],
     secret_key: Optional[str],
     project_id: Optional[str],
     region: Optional[str],
-) -> Profile:
+) -> Client:
     """Attempts to load the profile. Will raise on invalid profiles."""
     if profile_name or not os.getenv(ENV_KEY_SCW_SECRET_KEY):
         # pylint: disable=line-too-long
@@ -29,22 +29,21 @@ def get_scw_profile(
         )
         profile = load_profile_from_config_file(profile_name=profile_name)
         _update_profile_from_cli(profile, secret_key, project_id, region)
-        _validate_profile(profile)
-        return profile
+        return to_valid_client(profile)
     get_logger().default("Using credentials from system environment")
     profile = load_profile_from_env()
     _update_profile_from_cli(profile, secret_key, project_id, region)
-    _validate_profile(profile)
-    return profile
+    return to_valid_client(profile)
 
 
-def _validate_profile(profile: Profile):
+def to_valid_client(profile: Profile) -> Client:
     """Validate a SDK profile to be used with scw_serverless."""
     client = Client.from_profile(profile)
     client.validate()  # Will throw
     if not profile.default_project_id:
         # Client.validate will have already checked that it's an uuid if it exists
         raise ValueError("Invalid config, default_project_id must be defined")
+    return client
 
 
 def _update_profile_from_cli(

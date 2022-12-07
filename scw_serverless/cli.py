@@ -1,6 +1,6 @@
 import importlib.util
 import inspect
-import os.path
+import os
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -15,7 +15,7 @@ from scw_serverless.dependencies_manager import DependenciesManager
 from scw_serverless.deploy import backends, gateway
 from scw_serverless.logger import DEFAULT, get_logger
 from scw_serverless.utils.config import Config
-from scw_serverless.utils.credentials import DEFAULT_REGION, get_scw_profile
+from scw_serverless.utils.credentials import DEFAULT_REGION, get_scw_client
 
 CLICK_ARG_FILE = click.argument(
     "file",
@@ -117,7 +117,7 @@ def deploy(
     # Get the serverless App instance
     app_instance = get_app_instance(file.resolve())
 
-    profile = get_scw_profile(profile_name, secret_key, project_id, region)
+    client = get_scw_client(profile_name, secret_key, project_id, region)
 
     logger.default("Packaging dependencies...")
     DependenciesManager(file.parent, Path("./")).generate_package_folder()
@@ -126,11 +126,11 @@ def deploy(
     if backend == "api":
         logger.info("Using the API backend")
         deploy_backend = backends.ScalewayApiBackend(
-            app_instance, profile, single_source=single_source
+            app_instance, client, single_source=single_source
         )
     elif backend == "serverless":
         logger.info("Using the Serverless Framework backend")
-        deploy_backend = backends.ServerlessFrameworkBackend(app_instance, profile)
+        deploy_backend = backends.ServerlessFrameworkBackend(app_instance, client)
     if not deploy_backend:
         logger.warning(f"Unknown backend selected: {backend}")
 
@@ -142,23 +142,21 @@ def deploy(
     config = Config(api_gw_host, gateway_id).update_from_config_file()
     # If gateway_id is not configured, gateway_domains needs to be set
     is_gateway_configured = config.gateway_id or app_instance.gateway_domains
-
-    if is_gateway_configured:
+    if not is_gateway_configured:
         raise RuntimeError(
-            """Deploying a routed functions requires a
-                     gateway_id or a gateway_domain to be configured."""
+            "Deploying a routed functions requires a"
+            + "gateway_id or a gateway_domain to be configured"
         )
-
-    # # Update the gateway
-    # api = Api(region=region, secret_key=secret_key)
-    # manager = gateway.GatewayManager(
-    #     app_instance,
-    #     api,
-    #     project_id,
-    #     config.gateway_id,
-    #     gateway.GatewayClient(config.api_gw_host),
-    # )
-    # manager.update_gateway_routes()
+    if not config.api_gw_host:
+        raise RuntimeError("No api gateway host was configured")
+    # Update the gateway
+    manager = gateway.GatewayManager(
+        app_instance,
+        client,
+        config.gateway_id,
+        gateway.GatewayClient(config.api_gw_host),
+    )
+    manager.update_gateway_routes()
 
 
 @cli.command()
@@ -238,12 +236,13 @@ def get_app_instance(file: Path) -> Serverless:
     return app_instance
 
 
-def main():
+def main() -> int:
     """Entrypoint for click"""
     # Set logging level to DEFAULT. (ignore debug)
     get_logger().set_level(DEFAULT)
     try:
         cli()
-    except Exception as ex:  # pylint: disable=broad-except
-        get_logger().critical(str(ex))
+        return 0
+    except Exception as exception:  # pylint: disable=broad-except
+        get_logger().critical(str(exception))
         return 2

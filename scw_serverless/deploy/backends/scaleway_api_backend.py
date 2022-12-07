@@ -3,7 +3,7 @@ from typing import Tuple
 
 import requests
 import scaleway.function.v1beta1 as sdk
-from scaleway import Client, Profile
+from scaleway import Client
 from scaleway.core.utils.waiter import WaitForOptions
 
 from scw_serverless.app import Serverless
@@ -21,12 +21,11 @@ class ScalewayApiBackend(ServerlessBackend):
     """Uses the API to deploy functions."""
 
     def __init__(
-        self, app_instance: Serverless, sdk_profile: Profile, single_source: bool
+        self, app_instance: Serverless, sdk_client: Client, single_source: bool
     ):
-        super().__init__(app_instance, sdk_profile)
+        super().__init__(app_instance, sdk_client)
         self.single_source = single_source
-        client = Client.from_profile(sdk_profile)
-        self.api = sdk.FunctionV1Beta1API(client)
+        self.api = sdk.FunctionV1Beta1API(sdk_client)
 
     def _get_or_create_function(
         self, function: Function, namespace_id: str

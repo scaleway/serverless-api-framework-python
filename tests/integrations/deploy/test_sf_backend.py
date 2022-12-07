@@ -1,10 +1,12 @@
+from typing import Tuple
+
 import tests.utils as test_utils
 
 # pylint: disable=unused-import # fixture
-from tests.integrations.utils import _create_serverless_project, deploy # noqa: F401
+from tests.integrations.utils import _create_serverless_project, deploy  # noqa: F401
 
 
-def test_integration_deploy_using_srvless_fw(serverless_project):
+def test_integration_deploy_using_srvless_fw(serverless_project: Tuple[str, str]):
     deploy(
         test_utils.APP_PY_PATH,
         serverless_project=serverless_project,

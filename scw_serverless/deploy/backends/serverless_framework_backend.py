@@ -10,7 +10,7 @@ from scw_serverless.utils.commands import get_command_path
 class ServerlessFrameworkBackend(ServerlessBackend):
     """Uses ServerlessFramework to deploy functions."""
 
-    def deploy(self):
+    def deploy(self) -> None:
         # Generate the serverless.yml configuration
         serverless_framework_generator = ServerlessFrameworkGenerator(self.app_instance)
         serverless_framework_generator.write("./")
@@ -21,9 +21,9 @@ class ServerlessFrameworkBackend(ServerlessBackend):
         # Test if the serverless framework is installed on the user's system
         serverlessfw_path = get_command_path("serverless")
 
-        secret_key = self.sdk_profile.secret_key
-        project_id = self.sdk_profile.default_project_id
-        region = self.sdk_profile.default_region
+        secret_key = self.sdk_client.secret_key
+        project_id = self.sdk_client.default_project_id
+        region = self.sdk_client.default_region
         if not secret_key or not project_id or not region:
             # While it won't happen under the normal control flow,
             # this prevents mypy errors

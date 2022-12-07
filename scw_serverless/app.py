@@ -4,7 +4,7 @@ from typing_extensions import Unpack
 
 from scw_serverless.config.function import Function, FunctionKwargs
 from scw_serverless.config.route import HTTPMethod
-from scw_serverless.config.triggers import CronTrigger
+from scw_serverless.triggers import CronTrigger
 
 
 class Serverless:

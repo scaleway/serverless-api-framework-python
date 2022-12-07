@@ -29,11 +29,12 @@ scw_serverless = ["*.py", "*.yml"]
 [tool.pylint]
 load-plugins = ["pylint_per_file_ignores"]
 disable = "missing-module-docstring"
-max-line-length = 88
+# Commented Black formatted code
+max-line-length = 89
 good-names = "i,fp"
 
 [tool.pylint-per-file-ignores]
-"/tests/" = "missing-function-docstring"
+"/tests/" = "missing-function-docstring,protected-access"
 
 [tool.isort]
 profile = "black"
