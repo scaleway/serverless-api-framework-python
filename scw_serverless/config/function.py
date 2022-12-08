@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass
-from typing import Any, Callable, List, Literal, Optional, TypedDict
+from typing import Callable, List, Literal, Optional, TypedDict
 
 from scaleway.function.v1beta1.types import FunctionPrivacy, FunctionRuntime, Secret
 from typing_extensions import NotRequired
@@ -107,15 +107,6 @@ class Function(_SerializableDataClass):
             domains=args.get("custom_domains") or [],
             triggers=args.get("triggers") or [],
         )
-
-    def asdict(self) -> dict[str, Any]:
-        """Converts to a dictionary compatible with the SDK."""
-        result = super().asdict()
-        reject_keys = ["gateway_route", "domains", "triggers"]
-        result = {k: v for k, v in result.items() if k not in reject_keys}
-        if "privacy" not in result:  # Privacy is required by the SDK
-            result["privacy"] = "public"
-        return result
 
     def secrets_asdict(self) -> Optional[dict[str, str]]:
         """Gets secret_environment_variables as a dictionary"""

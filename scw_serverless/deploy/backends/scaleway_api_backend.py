@@ -41,9 +41,18 @@ class ScalewayApiBackend(ServerlessBackend):
             # Creating a new function with the provided args
             created_function = self.api.create_function(
                 namespace_id=namespace_id,
-                # required by the SDK
+                runtime=function.runtime,
+                privacy=function.privacy or sdk.FunctionPrivacy.PUBLIC,
                 http_option=sdk.FunctionHttpOption.UNKNOWN_HTTP_OPTION,
-                **function.asdict(),
+                name=function.name,
+                environment_variables=function.environment_variables,
+                min_scale=function.min_scale,
+                max_scale=function.max_scale,
+                memory_limit=function.memory_limit,
+                timeout=function.timeout,
+                handler=function.handler,
+                description=function.description,
+                secret_environment_variables=function.secret_environment_variables,
             )
         else:
             # Updating the function with the provided args
@@ -51,9 +60,17 @@ class ScalewayApiBackend(ServerlessBackend):
             del kwargs["name"]
             created_function = self.api.update_function(
                 function_id=created_function.id,
-                # required by the SDK
+                runtime=function.runtime,
+                privacy=function.privacy or sdk.FunctionPrivacy.PUBLIC,
                 http_option=sdk.FunctionHttpOption.UNKNOWN_HTTP_OPTION,
-                **kwargs,
+                environment_variables=function.environment_variables,
+                min_scale=function.min_scale,
+                max_scale=function.max_scale,
+                memory_limit=function.memory_limit,
+                timeout=function.timeout,
+                handler=function.handler,
+                description=function.description,
+                secret_environment_variables=function.secret_environment_variables,
             )
         return (created_function.id, created_function.domain_name)
 
