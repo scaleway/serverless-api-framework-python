@@ -11,9 +11,9 @@ class Serverless:
     """Manage your Serverless Functions.
 
     :param service_name: name of the namespace
-    :param env: namespace level environment variables (default {})
-    :param secret: namespace level secrets (default {})
-    :param gateway_domains: domains to be supported by the gateway (default [])
+    :param env: namespace level environment variables
+    :param secret: namespace level secrets
+    :param gateway_domains: domains to be supported by the gatewas
     """
 
     def __init__(
@@ -71,10 +71,10 @@ class Serverless:
         inputs: Optional[dict[str, Any]] = None,
         **kwargs: Unpack[FunctionKwargs],
     ) -> Callable:
-        """Define a scheduled handler with Cron, passing args as parameters.
+        """Define a scheduled handler with Cron, passing inputs as parameters.
 
         :param schedule: Cron schedule to run with
-        :param inputs: parameters to be passed to the body (default to {})
+        :param inputs: parameters to be passed to the body
         """
         if isinstance(schedule, str):
             schedule = CronTrigger(schedule, inputs)
