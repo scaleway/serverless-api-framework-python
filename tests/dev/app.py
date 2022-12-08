@@ -1,3 +1,5 @@
+from typing import Any
+
 from scw_serverless.app import Serverless
 
 app = Serverless("integration-tests")
@@ -13,7 +15,7 @@ app = Serverless("integration-tests")
     memory_limit=256,
     timeout="300s",
 )
-def hello_world(event: dict, context: dict):
+def hello_world(_event: dict[str, Any], _context: dict[str, Any]):
     """handle a request to the function
     Args:
         event (dict): request params

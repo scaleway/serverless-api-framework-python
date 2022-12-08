@@ -18,7 +18,7 @@ def clean_up_pkg_folder() -> Iterable[Path]:
         shutil.rmtree(folder)
 
 
-def test_dependencies_manager_generate_package_folder(pkg_folder):
+def test_dependencies_manager_generate_package_folder(pkg_folder: Path):
     req_path = pkg_folder.joinpath("requirements.txt")
     with open(req_path, mode="w", encoding="utf-8") as fp:
         fp.write("PyYAML==6.0\n" + "scw_serverless==0.0.1b")
@@ -33,7 +33,7 @@ def test_dependencies_manager_generate_package_folder(pkg_folder):
     assert "scw_serverless" in installed
 
 
-def test_dependencies_manager_install_scw_from_local(pkg_folder):
+def test_dependencies_manager_install_scw_from_local(pkg_folder: Path):
     req_path = pkg_folder.joinpath("requirements.txt")
     with open(req_path, mode="w", encoding="utf-8") as fp:
         fp.write("PyYAML==6.0")

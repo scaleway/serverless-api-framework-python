@@ -32,7 +32,7 @@ class DependenciesManager:
         """Path to the package directory to vendor the deps into."""
         return self.out_path.joinpath("package")
 
-    def generate_package_folder(self):
+    def generate_package_folder(self) -> None:
         """Generates a package folder with vendored pip dependencies."""
         requirements = self._find_requirements()
         if requirements is not None:

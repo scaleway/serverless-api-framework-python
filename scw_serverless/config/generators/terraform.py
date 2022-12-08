@@ -151,7 +151,7 @@ class TerraformGenerator(Generator):
                 f"{resource.resource_name}_trigger_{i}": event_config
             }
 
-    def write(self, path: str):
+    def write(self, path: str) -> None:
         """Generates a terraform.tf.json file to path."""
 
         self.deps_manager.generate_package_folder()
@@ -177,7 +177,7 @@ class TerraformGenerator(Generator):
             namespace_resource = _TerraformNamespaceResource.from_serverless(
                 self.instance
             )
-            if not TF_NAMESPACE_RESOURCE in config["resource"]:
+            if TF_NAMESPACE_RESOURCE not in config["resource"]:
                 config["resource"][TF_NAMESPACE_RESOURCE] = {}
             config["resource"][TF_NAMESPACE_RESOURCE] |= {
                 namespace_resource.resource_name: namespace_resource.asdict()

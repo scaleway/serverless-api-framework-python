@@ -75,7 +75,7 @@ class ServerlessFrameworkGenerator(Generator):
     def __init__(self, instance: Serverless):
         self.instance = instance
 
-    def write(self, path: str):
+    def write(self, path: str) -> None:
         """Generates a serverless.yml file to path."""
 
         config_path = os.path.join(path, "serverless.yml")

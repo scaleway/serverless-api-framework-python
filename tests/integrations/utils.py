@@ -41,7 +41,7 @@ def delete_project(client: Client, project_id: str, max_tries: int = 5):
             time.sleep(30)
 
 
-def cleanup(client: Client, project_id):
+def cleanup(client: Client, project_id: str):
     if os.path.exists("../.scw"):
         shutil.rmtree("../.scw")  # remove .scw/deployment.zip
     if os.path.exists("../.serverless"):
@@ -150,7 +150,7 @@ def _create_serverless_project() -> Iterable[Tuple[str, str]]:
         shutil.rmtree(project_dir)
 
 
-def deploy(app_file: str, backend: str, serverless_project):
+def deploy(app_file: str, backend: str, serverless_project: Tuple[str, str]):
     (project_id, project_dir) = serverless_project
     app_file = app_file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
     ret = run_srvless_cli(project_id, ["deploy", app_file, "-b", backend], project_dir)
@@ -174,7 +174,7 @@ def deploy(app_file: str, backend: str, serverless_project):
         call_function(group[1])
 
 
-def serverless_framework(app_file: str, serverless_project):
+def serverless_framework(app_file: str, serverless_project: Tuple[str, str]):
     (project_id, project_dir) = serverless_project
     app_file = app_file.replace(os.path.abspath(TESTS_DIR), project_dir)
     ret = run_srvless_cli(
@@ -221,7 +221,7 @@ def serverless_framework(app_file: str, serverless_project):
         call_function(group[1])
 
 
-def terraform(app_file: str, serverless_project):
+def terraform(app_file: str, serverless_project: Tuple[str, str]):
     (project_id, project_dir) = serverless_project
     app_file = app_file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
     ret = run_srvless_cli(

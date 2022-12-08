@@ -11,7 +11,7 @@ class CronTrigger:
     """
 
     schedule: str
-    args: Optional[dict[str, Any]]
+    args: Optional[dict[str, Any]] = None
 
     # pylint: disable=too-many-arguments
     @staticmethod
