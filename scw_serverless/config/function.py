@@ -89,7 +89,7 @@ class Function(_SerializableDataClass):
             gateway_route = GatewayRoute(url, methods=args.get("methods"))
         secrets = None
         if args_secret := args.get("secret"):
-            secrets = [Secret(key, value) for key, value in args_secret]
+            secrets = [Secret(key, value) for key, value in args_secret.items()]
 
         return Function(
             name=to_valid_fn_name(handler.__name__),
