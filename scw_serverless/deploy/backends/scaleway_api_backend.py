@@ -1,5 +1,5 @@
+import multiprocessing
 import os
-from typing import Tuple
 
 import requests
 import scaleway.function.v1beta1 as sdk
@@ -26,9 +26,7 @@ class ScalewayApiBackend(ServerlessBackend):
         self.single_source = single_source
         self.api = sdk.FunctionV1Beta1API(sdk_client)
 
-    def _get_or_create_function(
-        self, function: Function, namespace_id: str
-    ) -> Tuple[str, str]:
+    def _get_or_create_function(self, function: Function, namespace_id: str) -> str:
         self.logger.default(f"Looking for an existing function {function.name}...")
         created_function = None
         # Looking if a function is already existing
@@ -71,10 +69,10 @@ class ScalewayApiBackend(ServerlessBackend):
                 description=function.description,
                 secret_environment_variables=function.secret_environment_variables,
             )
-        return (created_function.id, created_function.domain_name)
+        return created_function.id
 
     def _deploy_function(self, function: Function, namespace_id: str, zip_size: int):
-        function_id, domain_name = self._get_or_create_function(function, namespace_id)
+        function_id = self._get_or_create_function(function, namespace_id)
 
         # Get an object storage pre-signed url
         try:
@@ -113,16 +111,10 @@ class ScalewayApiBackend(ServerlessBackend):
             options=sdk.api.WaitForOptions(
                 timeout=DEPLOY_TIMEOUT,
                 min_delay=10,
-                stop=lambda f: (
-                    f.status in [sdk.FunctionStatus.READY, sdk.FunctionStatus.ERROR]
-                ),
+                stop=lambda f: (f.status != sdk.FunctionStatus.PENDING),
             ),
         )
-        if func.status is sdk.FunctionStatus.ERROR:
-            raise ValueError(
-                f"Function {func.name} is in error state: {func.error_message}"
-            )
-        self.logger.success(f"Function {func.name} deployed to: https://{domain_name}")
+        return func
 
     def _create_deployment_zip(self):
         # Create a ZIP archive containing the entire project
@@ -193,10 +185,23 @@ class ScalewayApiBackend(ServerlessBackend):
         # Create a zip containing the user's project
         file_size = self._create_deployment_zip()
 
-        # For each function
-        for function in self.app_instance.functions:
-            # Deploy the function
-            self._deploy_function(function, namespace_id, zip_size=file_size)
+        deploy_inputs = [
+            (function, namespace_id, file_size)
+            for function in self.app_instance.functions
+        ]
+
+        n_proc = min(len(self.app_instance.functions), 3 * (os.cpu_count() or 1))
+        with multiprocessing.Pool(processes=n_proc) as pool:
+            for function in pool.starmap(self._deploy_function, deploy_inputs):
+                if function.status is sdk.FunctionStatus.ERROR:
+                    raise ValueError(
+                        f"Function {function.name} is in error state: "
+                        + (function.error_message or "")
+                    )
+                self.logger.success(
+                    f"Function {function.name} deployed to: "
+                    + f"https://{function.domain_name}"
+                )
 
         if self.single_source:
             # Remove functions no longer present in the code
