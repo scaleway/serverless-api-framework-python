@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from scw_serverless import Serverless
@@ -18,4 +19,8 @@ def hello_world_cron(event: dict[str, Any], _context: dict[str, Any]) -> dict[st
         event (dict): request params
         context (dict): function call metadata
     """
-    return f'Hello {event["my_name"]}!'
+
+    my_name = event["body"]["myname"]
+    logging.info("My name is: %s", my_name)
+
+    return {"body": f"Hello {my_name}!"}
