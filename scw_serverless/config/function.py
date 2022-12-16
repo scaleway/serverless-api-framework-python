@@ -1,5 +1,5 @@
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Callable, List, Literal, Optional, TypedDict
 
 import scaleway.function.v1beta1 as sdk
@@ -89,9 +89,9 @@ class Function(_SerializableDataClass):
     description: Optional[str]
     http_option: Optional[sdk.FunctionHttpOption]
 
-    gateway_route: Optional[GatewayRoute]
-    domains: list[str]
-    triggers: list[Trigger]
+    gateway_route: Optional[GatewayRoute] = None
+    domains: list[str] = field(default_factory=list)
+    triggers: list[Trigger] = field(default_factory=list)
 
     @staticmethod
     def from_handler(

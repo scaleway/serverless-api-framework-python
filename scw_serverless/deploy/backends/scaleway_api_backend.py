@@ -134,7 +134,7 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         return self.api.wait_for_cron(created_trigger.id)
 
-    def _create_deployment_zip(self):
+    def _create_deployment_zip(self) -> int:
         # Create a ZIP archive containing the entire project
         self.logger.default("Creating a deployment archive...")
         if not os.path.exists(TEMP_DIR):
