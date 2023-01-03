@@ -1,14 +1,7 @@
-import os
 from importlib.metadata import version
 from typing import Optional
 
-from scaleway import (
-    Client,
-    Profile,
-    load_profile_from_config_file,
-    load_profile_from_env,
-)
-from scaleway.core.profile.env import ENV_KEY_SCW_SECRET_KEY
+from scaleway import Client
 
 from scw_serverless.logger import get_logger
 
@@ -22,41 +15,34 @@ def get_scw_client(
     region: Optional[str],
 ) -> Client:
     """Attempts to load the profile. Will raise on invalid profiles."""
-    if profile_name or not os.getenv(ENV_KEY_SCW_SECRET_KEY):
-        # pylint: disable=line-too-long
-        get_logger().default(
-            f'Using credentials from scw config with profile {profile_name or "default"}'
-        )
-        profile = load_profile_from_config_file(profile_name=profile_name)
-        _update_profile_from_cli(profile, secret_key, project_id, region)
-        return to_valid_client(profile)
-    get_logger().default("Using credentials from system environment")
-    profile = load_profile_from_env()
-    _update_profile_from_cli(profile, secret_key, project_id, region)
-    return to_valid_client(profile)
+    client = Client.from_config_file_and_env(profile_name)
+    _update_client_from_cli(client, secret_key, project_id, region)
+    return _validate_client(client)
 
 
-def to_valid_client(profile: Profile) -> Client:
-    """Validate a SDK profile to be used with scw_serverless."""
-    client = Client.from_profile(profile)
+def _validate_client(client: Client) -> Client:
+    """Validate a SDK profile to be used with scw_serverless.
+    Note: because we do not specify the project_id in API calls,
+    it needs to be defined in the client.
+    """
     client.validate()  # Will throw
-    if not profile.default_project_id:
+    if not client.default_project_id:
         # Client.validate will have already checked that it's an uuid if it exists
-        raise ValueError("Invalid config, default_project_id must be defined")
+        raise ValueError("Invalid config, project_id must be specified")
     return client
 
 
-def _update_profile_from_cli(
-    profile: Profile,
+def _update_client_from_cli(
+    client: Client,
     secret_key: Optional[str],
     project_id: Optional[str],
     region: Optional[str],
 ):
-    """Update values with defined CLI arguments."""
-    profile.user_agent = f'scw-serverless/{version("scw_serverless")}'
-    profile.secret_key = secret_key or profile.secret_key
-    profile.default_project_id = project_id or profile.default_project_id
-    profile.default_region = region or profile.default_region
-    if not profile.default_region:
-        profile.default_region = DEFAULT_REGION
-        get_logger().info(f"No region was configured, using {profile.default_region}")
+    """Update Client with defined CLI arguments."""
+    client.user_agent = f'scw-serverless/{version("scw_serverless")}'
+    client.secret_key = secret_key or client.secret_key
+    client.default_project_id = project_id or client.default_project_id
+    client.default_region = region or client.default_region
+    if not client.default_region:
+        get_logger().info(f"No region was configured, using {DEFAULT_REGION}")
+        client.default_region = DEFAULT_REGION

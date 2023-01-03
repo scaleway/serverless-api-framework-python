@@ -2,7 +2,7 @@ import sys
 from dataclasses import dataclass
 from typing import Callable, List, Literal, Optional, TypedDict
 
-from scaleway.function.v1beta1.types import FunctionPrivacy, FunctionRuntime, Secret
+import scaleway.function.v1beta1 as sdk
 from typing_extensions import NotRequired
 
 from scw_serverless.config.route import GatewayRoute, HTTPMethod
@@ -13,13 +13,14 @@ from scw_serverless.utils.string import module_to_path, to_valid_fn_name
 
 MemoryLimit = Literal[128, 256, 512, 1024, 2048, 3072, 4096]
 Privacy = Literal["private", "public"]  # Stricter than FunctionPrivacy from the SDK
+HTTPOption = Literal["enabled", "redirected"]
 
 
-def _get_current_runtime() -> FunctionRuntime:
-    runtime = FunctionRuntime.PYTHON310
+def _get_current_runtime() -> sdk.FunctionRuntime:
+    runtime = sdk.FunctionRuntime.PYTHON310
     version = f"python{sys.version_info.major}{sys.version_info.minor}"
     try:
-        runtime = FunctionRuntime(version)
+        runtime = sdk.FunctionRuntime(version)
     except ValueError:
         get_logger().warning(
             f"Unsupported Python version: {version}, selecting default: {runtime}"
@@ -44,6 +45,7 @@ class FunctionKwargs(TypedDict):
     custom_domains: NotRequired[List[str]]
     privacy: NotRequired[Privacy]
     description: NotRequired[str]
+    http_option: NotRequired[HTTPOption]
     # Parameters for the Gateway
     url: NotRequired[str]
     methods: NotRequired[list[HTTPMethod]]
@@ -61,12 +63,13 @@ class Function(_SerializableDataClass):
     environment_variables: Optional[dict[str, str]]
     min_scale: Optional[int]
     max_scale: Optional[int]
-    runtime: FunctionRuntime
+    runtime: sdk.FunctionRuntime
     memory_limit: Optional[int]
     timeout: Optional[str]
-    secret_environment_variables: Optional[list[Secret]]
-    privacy: Optional[FunctionPrivacy]
+    secret_environment_variables: Optional[list[sdk.Secret]]
+    privacy: Optional[sdk.FunctionPrivacy]
     description: Optional[str]
+    http_option: Optional[sdk.FunctionHttpOption]
 
     gateway_route: Optional[GatewayRoute]
     domains: list[str]
@@ -81,15 +84,18 @@ class Function(_SerializableDataClass):
         description = args.get("description")
         if not description and handler.__doc__:
             description = handler.__doc__
+        secrets = None
+        if args_secret := args.get("secret"):
+            secrets = [sdk.Secret(key, value) for key, value in args_secret.items()]
         privacy = None
         if args_privacy := args.get("privacy"):
-            privacy = FunctionPrivacy(args_privacy)
+            privacy = sdk.FunctionPrivacy(args_privacy)
+        http_option = None
+        if args_http_option := args.get("http_option"):
+            http_option = sdk.FunctionHttpOption(args_http_option)
         gateway_route = None
         if url := args.get("url"):
             gateway_route = GatewayRoute(url, methods=args.get("methods"))
-        secrets = None
-        if args_secret := args.get("secret"):
-            secrets = [Secret(key, value) for key, value in args_secret.items()]
 
         return Function(
             name=to_valid_fn_name(handler.__name__),
@@ -103,6 +109,7 @@ class Function(_SerializableDataClass):
             secret_environment_variables=secrets,
             privacy=privacy,
             description=description,
+            http_option=http_option,
             gateway_route=gateway_route,
             domains=args.get("custom_domains") or [],
             triggers=args.get("triggers") or [],

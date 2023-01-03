@@ -4,7 +4,6 @@ from typing import Tuple
 import requests
 import scaleway.function.v1beta1 as sdk
 from scaleway import Client
-from scaleway.core.utils.waiter import WaitForOptions
 
 from scw_serverless.app import Serverless
 from scw_serverless.config.function import Function
@@ -43,7 +42,7 @@ class ScalewayApiBackend(ServerlessBackend):
                 namespace_id=namespace_id,
                 runtime=function.runtime,
                 privacy=function.privacy or sdk.FunctionPrivacy.PUBLIC,
-                http_option=sdk.FunctionHttpOption.UNKNOWN_HTTP_OPTION,
+                http_option=sdk.FunctionHttpOption.REDIRECTED,
                 name=function.name,
                 environment_variables=function.environment_variables,
                 min_scale=function.min_scale,
@@ -62,7 +61,7 @@ class ScalewayApiBackend(ServerlessBackend):
                 function_id=created_function.id,
                 runtime=function.runtime,
                 privacy=function.privacy or sdk.FunctionPrivacy.PUBLIC,
-                http_option=sdk.FunctionHttpOption.UNKNOWN_HTTP_OPTION,
+                http_option=sdk.FunctionHttpOption.REDIRECTED,
                 environment_variables=function.environment_variables,
                 min_scale=function.min_scale,
                 max_scale=function.max_scale,
@@ -111,7 +110,7 @@ class ScalewayApiBackend(ServerlessBackend):
 
         func = self.api.wait_for_function(
             function_id,
-            options=WaitForOptions(
+            options=sdk.api.WaitForOptions(
                 timeout=DEPLOY_TIMEOUT,
                 min_delay=10,
                 stop=lambda f: (
@@ -179,7 +178,7 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         namespace = self.api.wait_for_namespace(
             namespace_id=namespace.id,
-            options=WaitForOptions(
+            options=sdk.api.WaitForOptions(
                 stop=lambda namespace: namespace.status != sdk.NamespaceStatus.PENDING
             ),
         )
