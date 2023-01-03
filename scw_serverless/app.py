@@ -3,25 +3,25 @@ from typing import Any, Callable, List, Optional, Union
 from typing_extensions import Unpack
 
 from scw_serverless.config.function import Function, FunctionKwargs
-from scw_serverless.events.schedule import CronSchedule
-from scw_serverless.utils.http import HTTPMethod
+from scw_serverless.config.route import HTTPMethod
+from scw_serverless.triggers import CronTrigger
 
 
 class Serverless:
     """Manage your Serverless Functions.
 
     :param service_name: name of the namespace
-    :param gateway_domains: domains to be supported by the gateway (default [])
-    :param env: namespace level environment variables (default {})
-    :param secret: namespace level secrets (default {})
+    :param env: namespace level environment variables
+    :param secret: namespace level secrets
+    :param gateway_domains: domains to be supported by the gatewas
     """
 
     def __init__(
         self,
         service_name: str,
-        gateway_domains: Optional[list[str]] = None,
         env: Optional[dict[str, Any]] = None,
         secret: Optional[dict[str, Any]] = None,
+        gateway_domains: Optional[list[str]] = None,
     ):
 
         self.functions: List[Function] = []
@@ -67,33 +67,24 @@ class Serverless:
 
     def schedule(
         self,
-        schedule: Union[str, CronSchedule],
+        schedule: Union[str, CronTrigger],
         inputs: Optional[dict[str, Any]] = None,
         **kwargs: Unpack[FunctionKwargs],
     ) -> Callable:
-        """Define a scheduled handler with Cron, passing input as parameters.
+        """Define a scheduled handler with Cron, passing inputs as parameters.
 
         :param schedule: Cron schedule to run with
-        :param inputs: parameters to be passed to the body (default to {})
+        :param inputs: parameters to be passed to the body
         """
-        inputs = inputs if inputs else {}
-
         if isinstance(schedule, str):
-            schedule = CronSchedule.from_expression(schedule, inputs)
+            schedule = CronTrigger(schedule, inputs)
+        elif inputs:
+            schedule.args = (schedule.args or {}) | inputs
+        if "triggers" in kwargs and kwargs["triggers"]:
+            kwargs["triggers"].append(schedule)
         else:
-            schedule.inputs |= inputs
-
-        def _decorator(handler: Callable):
-            self.functions.append(
-                Function.from_handler(handler, kwargs, events=[schedule])
-            )
-
-            def _inner(*args, **kwargs):
-                return handler(args, kwargs)
-
-            return _inner
-
-        return _decorator
+            kwargs |= {"triggers": [schedule]}
+        return self.func(**kwargs)
 
     def get(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
         """Define a routed handler which will respond to GET requests.

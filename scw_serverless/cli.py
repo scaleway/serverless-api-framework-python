@@ -1,14 +1,13 @@
 import importlib.util
 import inspect
-import os.path
+import os
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import click
 
-from scw_serverless.api import Api
 from scw_serverless.app import Serverless
-from scw_serverless.config.generators.serverlessframework import (
+from scw_serverless.config.generators.serverless_framework import (
     ServerlessFrameworkGenerator,
 )
 from scw_serverless.config.generators.terraform import TerraformGenerator
@@ -16,7 +15,7 @@ from scw_serverless.dependencies_manager import DependenciesManager
 from scw_serverless.deploy import backends, gateway
 from scw_serverless.logger import DEFAULT, get_logger
 from scw_serverless.utils.config import Config
-from scw_serverless.utils.credentials import find_scw_credentials
+from scw_serverless.utils.credentials import DEFAULT_REGION, get_scw_client
 
 CLICK_ARG_FILE = click.argument(
     "file",
@@ -28,7 +27,6 @@ CLICK_ARG_FILE = click.argument(
         readable=True,
         path_type=Path,
     ),
-    default="app.py",
 )
 
 
@@ -41,6 +39,13 @@ def cli() -> None:
 # pylint: disable=too-many-arguments,too-many-locals
 @cli.command()
 @CLICK_ARG_FILE
+@click.option(
+    "--profile",
+    "-p",
+    "profile_name",
+    default=None,
+    help="Scaleway profile to use when loading credentials.",
+)
 @click.option(
     "--secret-key",
     "secret_key",
@@ -59,7 +64,7 @@ WARNING: Please use environment variables instead""",
     "--region",
     "region",
     default=None,
-    help="Region to deploy to. Default: fr-par",
+    help=f"Region to deploy to. Default: {DEFAULT_REGION}",
 )
 @click.option(
     "--no-single-source",
@@ -80,22 +85,24 @@ WARNING: Please use environment variables instead""",
 @click.option(
     "--gw-id",
     "-g",
-    envvar="SCW_API_GW_ID",
+    "gateway_id",
+    envvar="SCW_APIGW_ID",
     help="API Gateway uuid to use with function endpoints",
 )
 @click.option(
     "--api_gw_host",
-    envvar="SCW_API_GW_HOST",
+    envvar="SCW_APIGW_HOST",
     help="Host of the API to manage gateways",
 )
 def deploy(
     file: Path,
-    backend: str,
+    backend: Literal["api", "serverless"],
     single_source: bool,
+    profile_name: Optional[str] = None,
     secret_key: Optional[str] = None,
     project_id: Optional[str] = None,
     region: Optional[str] = None,
-    gw_id: Optional[str] = None,
+    gateway_id: Optional[str] = None,
     api_gw_host: Optional[str] = None,
 ) -> None:
     """Deploy your functions to Scaleway.
@@ -107,69 +114,45 @@ def deploy(
     """
     logger = get_logger()
 
-    config = Config(api_gw_host=api_gw_host, gateway_id=gw_id)
-    config = config.update_from_config_file()
-
     # Get the serverless App instance
     app_instance = get_app_instance(file.resolve())
 
-    # If the credentials were not provided as option,
-    # look for them in configuration file or system environment variables
-    if not all([secret_key, project_id, region]):
-        secret, project, reg = find_scw_credentials()
-        # Update the missing values
-        secret_key = secret_key if secret_key else secret
-        project_id = project_id if project_id else project
-        region = region if region else reg
-
-    region = region if region else "fr-par"  # Defaults to to fr-par
-
-    if not all([secret_key, project_id]):
-        # No credentials were provided, abort
-        raise RuntimeError("Unable to find credentials for deployment.")
-
-    # Create the deploy configuration
-    deploy_config = backends.DeployConfig(project_id, secret_key, region)
+    client = get_scw_client(profile_name, secret_key, project_id, region)
 
     logger.default("Packaging dependencies...")
-    deps = DependenciesManager(file.parent, file.parent)
-    deps.generate_package_folder()
+    DependenciesManager(file.parent, Path("./")).generate_package_folder()
 
-    deploy_backend = None  # Select the request backend
+    deploy_backend: Optional[backends.ServerlessBackend] = None
     if backend == "api":
-        # Deploy using the scaleway api
         logger.info("Using the API backend")
         deploy_backend = backends.ScalewayApiBackend(
-            app_instance=app_instance,
-            single_source=single_source,
-            deploy_config=deploy_config,
+            app_instance, client, single_source=single_source
         )
     elif backend == "serverless":
-        # Deploy using the serverless framework
         logger.info("Using the Serverless Framework backend")
-        deploy_backend = backends.ServerlessFrameworkBackend(
-            app_instance=app_instance, deploy_config=deploy_config
-        )
+        deploy_backend = backends.ServerlessFrameworkBackend(app_instance, client)
     if not deploy_backend:
         logger.warning(f"Unknown backend selected: {backend}")
 
     deploy_backend.deploy()
+
+    needs_gateway = any(function.gateway_route for function in app_instance.functions)
+    if not needs_gateway:
+        return
+    config = Config(api_gw_host, gateway_id).update_from_config_file()
     # If gateway_id is not configured, gateway_domains needs to be set
     is_gateway_configured = config.gateway_id or app_instance.gateway_domains
-    contains_routed_func = any(filter(app_instance.functions, lambda f: f.get_path()))
-
-    if contains_routed_func and not is_gateway_configured:
+    if not is_gateway_configured:
         raise RuntimeError(
-            """Deploying a routed functions requires a
-                     gateway_id or a gateway_domain to be configured."""
+            "Deploying a routed functions requires a"
+            + "gateway_id or a gateway_domain to be configured"
         )
-
+    if not config.api_gw_host:
+        raise RuntimeError("No api gateway host was configured")
     # Update the gateway
-    api = Api(region=region, secret_key=secret_key)
     manager = gateway.GatewayManager(
         app_instance,
-        api,
-        project_id,
+        client,
         config.gateway_id,
         gateway.GatewayClient(config.api_gw_host),
     )
@@ -258,7 +241,8 @@ def main() -> int:
     # Set logging level to DEFAULT. (ignore debug)
     get_logger().set_level(DEFAULT)
     try:
-        return cli()
-    except Exception as ex:  # pylint: disable=broad-except
-        get_logger().critical(str(ex))
+        cli()
+        return 0
+    except Exception as exception:  # pylint: disable=broad-except
+        get_logger().critical(str(exception))
         return 2

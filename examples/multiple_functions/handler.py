@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from scw_serverless.app import Serverless
 
@@ -6,7 +7,7 @@ app = Serverless("multiple-functions")
 
 
 @app.func()
-def handle(event, content):
+def handle(_event: dict[str, Any], _context: dict[str, Any]) -> dict[str, Any]:
     """handle a request to the function
     Args:
         event (dict): request params
@@ -14,7 +15,8 @@ def handle(event, content):
     """
 
     return {
-        "message": "This function is handled by Scaleway functions using Serverless API Framework"
+        "message": "This function is handled by Scaleway"
+        + "functions using Serverless API Framework"
     }
 
 
@@ -22,14 +24,14 @@ def handle(event, content):
     description="Say hi",
     privacy="public",
     env={"CUSTOM_NAME": "everyone"},
-    secret={"SECRET_VALUE", "***"},
+    secret={"SECRET_VALUE": "***"},
     min_scale=0,
     max_scale=2,
     memory_limit=128,
     timeout="300s",
     custom_domains=["hello.functions.scaleway"],
 )
-def hello(event, content):
+def hello(_event: dict[str, Any], _context: dict[str, Any]) -> dict[str, Any]:
     """handle a request to the function
     Args:
         event (dict): request params
@@ -37,5 +39,6 @@ def hello(event, content):
     """
 
     return {
-        "message": f"Hello {os.getenv('CUSTOM_NAME')} from Scaleway functions using Serverless API Framework"
+        "message": f"Hello {os.getenv('CUSTOM_NAME')}"
+        + "from Scaleway functions using Serverless API Framework"
     }

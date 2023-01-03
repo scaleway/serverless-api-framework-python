@@ -1,28 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+
+from scaleway import Client
 
 from scw_serverless.app import Serverless
 from scw_serverless.logger import get_logger
 
 
-class DeployConfig:
-    def __init__(
-        self,
-        project_id: Optional[str] = None,
-        secret_key: Optional[str] = None,
-        region: Optional[str] = None,
-    ):
-        self.project_id = project_id
-        self.secret_key = secret_key
-        self.region = region
-
-
 class ServerlessBackend(ABC):
-    def __init__(self, app_instance: Serverless, deploy_config: DeployConfig):
+    """Backend to deploy functions with."""
+
+    def __init__(self, app_instance: Serverless, sdk_client: Client):
         self.app_instance = app_instance
-        self.deploy_config = deploy_config
+        self.sdk_client = sdk_client
         self.logger = get_logger()
 
     @abstractmethod
-    def deploy(self):
-        pass
+    def deploy(self) -> None:
+        """Deploy the functions defined in app_instance."""

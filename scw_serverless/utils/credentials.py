@@ -1,43 +1,48 @@
-import os
-from pathlib import Path
+from importlib.metadata import version
+from typing import Optional
 
-import yaml
+from scaleway import Client
 
 from scw_serverless.logger import get_logger
 
+DEFAULT_REGION: str = "fr-par"
 
-def find_scw_credentials():
-    if (
-        os.getenv("SCW_SECRET_KEY") is not None
-        and os.getenv("SCW_DEFAULT_PROJECT_ID") is not None
-    ):
-        get_logger().default("Using credentials from system environment")
-        return os.getenv("SCW_SECRET_KEY"), os.getenv("SCW_DEFAULT_PROJECT_ID"), None
-    elif os.path.exists(f"{str(Path.home())}/.config/scw/config.yaml"):
-        config = {
-            "secret_key": None,
-            "default_project_id": None,
-            "default_region": None,
-        }
-        with open(f"{str(Path.home())}/.config/scw/config.yaml", "r") as file:
-            config = yaml.safe_load(file)
 
-        if (
-            config["secret_key"] is not None
-            and config["default_project_id"] is not None
-        ):
-            get_logger().default(
-                f"Using credentials from {str(Path.home())}/.config/scw/config.yaml"
-            )
+def get_scw_client(
+    profile_name: Optional[str],
+    secret_key: Optional[str],
+    project_id: Optional[str],
+    region: Optional[str],
+) -> Client:
+    """Attempts to load the profile. Will raise on invalid profiles."""
+    client = Client.from_config_file_and_env(profile_name)
+    _update_client_from_cli(client, secret_key, project_id, region)
+    return _validate_client(client)
 
-            return (
-                config["secret_key"],
-                config["default_project_id"],
-                config["default_region"],
-            )
-    else:
-        get_logger().error(
-            "Unable to locate credentials",
-        )
 
-        return None, None, None
+def _validate_client(client: Client) -> Client:
+    """Validate a SDK profile to be used with scw_serverless.
+    Note: because we do not specify the project_id in API calls,
+    it needs to be defined in the client.
+    """
+    client.validate()  # Will throw
+    if not client.default_project_id:
+        # Client.validate will have already checked that it's an uuid if it exists
+        raise ValueError("Invalid config, project_id must be specified")
+    return client
+
+
+def _update_client_from_cli(
+    client: Client,
+    secret_key: Optional[str],
+    project_id: Optional[str],
+    region: Optional[str],
+):
+    """Update Client with defined CLI arguments."""
+    client.user_agent = f'scw-serverless/{version("scw_serverless")}'
+    client.secret_key = secret_key or client.secret_key
+    client.default_project_id = project_id or client.default_project_id
+    client.default_region = region or client.default_region
+    if not client.default_region:
+        get_logger().info(f"No region was configured, using {DEFAULT_REGION}")
+        client.default_region = DEFAULT_REGION
