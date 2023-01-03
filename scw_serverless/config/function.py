@@ -78,17 +78,16 @@ class Function(_SerializableDataClass):
 
     name: str
     handler: str  # Path to the handler
-    environment_variables: Optional[dict[str, str]]
-    min_scale: Optional[int]
-    max_scale: Optional[int]
     runtime: sdk.FunctionRuntime
-    memory_limit: Optional[int]
-    timeout: Optional[str]
-    secret_environment_variables: Optional[list[sdk.Secret]]
-    privacy: Optional[sdk.FunctionPrivacy]
-    description: Optional[str]
-    http_option: Optional[sdk.FunctionHttpOption]
-
+    environment_variables: Optional[dict[str, str]] = None
+    min_scale: Optional[int] = None
+    max_scale: Optional[int] = None
+    memory_limit: Optional[int] = None
+    timeout: Optional[str] = None
+    secret_environment_variables: Optional[list[sdk.Secret]] = None
+    privacy: Optional[sdk.FunctionPrivacy] = None
+    description: Optional[str] = None
+    http_option: Optional[sdk.FunctionHttpOption] = None
     gateway_route: Optional[GatewayRoute] = None
     domains: list[str] = field(default_factory=list)
     triggers: list[Trigger] = field(default_factory=list)

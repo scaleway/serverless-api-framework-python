@@ -4,6 +4,7 @@ import os
 import requests
 import scaleway.function.v1beta1 as sdk
 from scaleway import Client
+from scaleway_core.utils import WaitForOptions
 
 from scw_serverless.app import Serverless
 from scw_serverless.config.function import Function
@@ -90,20 +91,7 @@ class ScalewayApiBackend(ServerlessBackend):
             raise exception
 
         self.logger.default("Uploading function...")
-        with open(DEPLOYMENT_ZIP, mode="rb") as file:
-            # Upload function zip to S3 presigned URL
-            req = requests.put(
-                upload_url,
-                data=file,
-                headers={
-                    "Content-Type": "application/octet-stream",
-                    "Content-Length": str(zip_size),
-                },
-                timeout=UPLOAD_TIMEOUT,
-            )
-
-            if req.status_code != 200:
-                raise RuntimeError("Unable to upload function code... Aborting...")
+        self._upload_deployment_zip(upload_url, zip_size)
 
         self.logger.default("Deploying function...")
         # deploy the newly uploaded function
@@ -111,9 +99,8 @@ class ScalewayApiBackend(ServerlessBackend):
 
         return self.api.wait_for_function(
             function_id,
-            options=sdk.api.WaitForOptions(
+            options=WaitForOptions(
                 timeout=DEPLOY_TIMEOUT,
-                min_delay=10,
                 stop=lambda f: (f.status != sdk.FunctionStatus.PENDING),
             ),
         )
@@ -135,7 +122,7 @@ class ScalewayApiBackend(ServerlessBackend):
         return self.api.wait_for_cron(created_trigger.id)
 
     def _create_deployment_zip(self) -> int:
-        # Create a ZIP archive containing the entire project
+        """Create a ZIP archive containing the entire project."""
         self.logger.default("Creating a deployment archive...")
         if not os.path.exists(TEMP_DIR):
             os.mkdir(TEMP_DIR)
@@ -145,6 +132,21 @@ class ScalewayApiBackend(ServerlessBackend):
 
         create_zip_file(DEPLOYMENT_ZIP, "./")
         return os.path.getsize(DEPLOYMENT_ZIP)
+
+    def _upload_deployment_zip(self, upload_url: str, zip_size: int):
+        """Upload function zip to S3 presigned URL."""
+        with open(DEPLOYMENT_ZIP, mode="rb") as file:
+            req = requests.put(
+                upload_url,
+                data=file,
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "Content-Length": str(zip_size),
+                },
+                timeout=UPLOAD_TIMEOUT,
+            )
+            if req.status_code != 200:
+                raise RuntimeError("Unable to upload function code... Aborting...")
 
     def _remove_missing_functions(self, namespace_id: str):
         """Deletes functions no longer present in the code."""
@@ -199,7 +201,7 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         namespace = self.api.wait_for_namespace(
             namespace_id=namespace.id,
-            options=sdk.api.WaitForOptions(
+            options=WaitForOptions(
                 stop=lambda namespace: namespace.status != sdk.NamespaceStatus.PENDING
             ),
         )

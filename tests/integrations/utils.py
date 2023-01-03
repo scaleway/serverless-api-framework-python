@@ -11,7 +11,7 @@ import pytest
 import requests
 import yaml
 from requests import HTTPError
-from scaleway import Client, load_profile_from_env
+from scaleway import Client
 from scaleway.account.v2 import AccountV2API
 from scaleway.function.v1beta1 import FunctionV1Beta1API
 from scaleway.registry.v1 import RegistryV1API
@@ -131,10 +131,9 @@ def generate_scw_config():
 
 @pytest.fixture(name="serverless_project")
 def _create_serverless_project() -> Iterable[Tuple[str, str]]:
-    profile = load_profile_from_env()
-    if not profile.default_region:
-        profile.default_region = DEFAULT_REGION
-    client = Client.from_profile(profile)
+    client = Client.from_config_file_and_env()
+    if not client.default_region:
+        client.default_region = DEFAULT_REGION
     project_id = create_project(client, "dpl")
 
     print(f"Using project: {project_id}")
@@ -147,7 +146,7 @@ def _create_serverless_project() -> Iterable[Tuple[str, str]]:
     finally:
         cleanup(client, project_id)
         delete_project(client, project_id)
-        shutil.rmtree(project_dir)
+        # shutil.rmtree(project_dir)
 
 
 def deploy(app_file: str, backend: str, serverless_project: Tuple[str, str]):

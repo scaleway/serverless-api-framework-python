@@ -11,14 +11,6 @@ from scw_serverless.triggers import CronTrigger
 
 
 @pytest.fixture(autouse=True)
-def no_s3_upload(monkeypatch: Any):
-    """Prevents requests.put from executing."""
-    put = MagicMock()
-    put.return_value.status_code = 200
-    monkeypatch.setattr("requests.put", put)
-
-
-@pytest.fixture(autouse=True)
 def mock_pool_starmap(monkeypatch: Any):
     """Provides a simple starmap implementation which does not rely on pickling."""
     monkeypatch.setattr(
@@ -36,10 +28,11 @@ def test_scaleway_api_backend_deploy_function():
     app = Serverless("test-namespace")
     app.functions = [function]
     backend = ScalewayApiBackend(app, MagicMock(), True)
-    # This would otherwise create some massive side effects
+    # This would otherwise create some side effects
     create_zip = MagicMock()
     create_zip.return_value = "300"
     backend._create_deployment_zip = create_zip
+    backend._upload_deployment_zip = MagicMock()
 
     api = MagicMock()
     namespace = MagicMock()
@@ -81,6 +74,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger():
     create_zip = MagicMock()
     create_zip.return_value = "300"
     backend._create_deployment_zip = create_zip
+    backend._upload_deployment_zip = MagicMock()
 
     api = MagicMock()
     namespace = MagicMock()
