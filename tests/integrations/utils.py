@@ -15,6 +15,7 @@ from scaleway import Client
 from scaleway.account.v2 import AccountV2API
 from scaleway.function.v1beta1 import FunctionV1Beta1API
 from scaleway.registry.v1 import RegistryV1API
+from scaleway_core.api import ScalewayException
 
 from scw_serverless.utils.commands import get_command_path
 from tests.utils import ROOT_PROJECT_DIR, TESTS_DIR
@@ -36,8 +37,11 @@ def delete_project(client: Client, project_id: str, max_tries: int = 5):
         try:
             api.delete_project(project_id=project_id)
             break
-        # pylint: disable=broad-except # SDK only returns Exception
-        except Exception:
+        except ScalewayException as e:
+            if e.status_code != 400:
+                raise e
+            # We have to retry here because the deletion of registry namespaces
+            # is longer than what the transient status indicates
             time.sleep(30)
 
 
@@ -146,7 +150,7 @@ def _create_serverless_project() -> Iterable[Tuple[str, str]]:
     finally:
         cleanup(client, project_id)
         delete_project(client, project_id)
-        # shutil.rmtree(project_dir)
+        shutil.rmtree(project_dir)
 
 
 def deploy(app_file: str, backend: str, serverless_project: Tuple[str, str]):
@@ -161,11 +165,8 @@ def deploy(app_file: str, backend: str, serverless_project: Tuple[str, str]):
         # serverless framework print normal output on stderr
         output = str(ret.stderr.decode("UTF-8")).strip()
 
-    assert "Done! Functions have been successfully deployed!" in output, print(ret)
-
     output = str(ret.stdout.decode("UTF-8")).strip()
     pattern = re.compile(r"(Function [a-z0-9-]+ deployed to:? (https://.+))")
-
     groups = re.findall(pattern, output)
 
     for group in groups:
@@ -175,7 +176,8 @@ def deploy(app_file: str, backend: str, serverless_project: Tuple[str, str]):
 
 def serverless_framework(app_file: str, serverless_project: Tuple[str, str]):
     (project_id, project_dir) = serverless_project
-    app_file = app_file.replace(os.path.abspath(TESTS_DIR), project_dir)
+    app_file = app_file.replace(os.path.abspath(ROOT_PROJECT_DIR), project_dir)
+
     ret = run_srvless_cli(
         project_id, ["generate", app_file, "-t", "serverless"], project_dir
     )

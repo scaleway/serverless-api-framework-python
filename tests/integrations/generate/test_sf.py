@@ -1,8 +1,6 @@
-from pathlib import Path
 from typing import Tuple
 
 import tests.utils as test_utils
-from scw_serverless.dependencies_manager import DependenciesManager
 
 # pylint: disable=unused-import # fixture
 from tests.integrations.utils import (  # noqa: F401
@@ -13,9 +11,6 @@ from tests.integrations.utils import (  # noqa: F401
 
 
 def test_integration_serverless_framework(serverless_project: Tuple[str, str]):
-    deps = DependenciesManager(Path("./"), Path("./"))
-    deps.generate_package_folder()
-
     serverless_framework(test_utils.APP_PY_PATH, serverless_project=serverless_project)
 
 
