@@ -87,7 +87,7 @@ class ServerlessTestProject:
             ret = subprocess.run(
                 [node_path, serverless_path, "deploy"],
                 env={
-                    "SCW_SECRET_KEY": self.client,
+                    "SCW_SECRET_KEY": self.client.secret_key,
                     "SCW_DEFAULT_PROJECT_ID": self.project_id,
                     "SCW_REGION": self.client.default_region,
                 },  # type: ignore // client already validated
@@ -214,6 +214,7 @@ def call_function(url: str, max_retries: int = 5):
     retry_delay = 5
     raised_ex = None
     for _ in range(max_retries):
+        raised_ex = None
         try:  # Call the function
             req = requests.get(url, timeout=retry_delay)
             req.raise_for_status()
