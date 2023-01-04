@@ -182,9 +182,17 @@ class ServerlessTestProject:
         # All deletions have been scheduled,
         # we can wait for their completion sequentially
         for namespace in namespaces:
-            api.wait_for_namespace(namespace_id=namespace.id)
+            try:
+                api.wait_for_namespace(namespace_id=namespace.id)
+            except ScalewayException as e:
+                if e.status_code != 404:
+                    raise e
         for registry in registries:
-            registry_api.wait_for_namespace(namespace_id=registry.id)
+            try:
+                registry_api.wait_for_namespace(namespace_id=registry.id)
+            except ScalewayException as e:
+                if e.status_code != 404:
+                    raise e
 
     def _delete_project(self, max_tries: int = 5):
         if not self.project_id:
