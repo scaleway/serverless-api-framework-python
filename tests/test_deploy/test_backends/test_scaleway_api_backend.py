@@ -2,16 +2,27 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+import responses
 import scaleway.function.v1beta1 as sdk
+from responses import matchers
+from scaleway import Client
 
 from scw_serverless.app import Serverless
 from scw_serverless.config import Function
 from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
 from scw_serverless.triggers import CronTrigger
+from tests.utils import SCALEWAY_API_URL
+
+
+# pylint: disable=redefined-outer-name # fixture
+@pytest.fixture
+def mocked_responses():
+    with responses.RequestsMock() as rsps:
+        yield rsps
 
 
 @pytest.fixture(autouse=True)
-def mock_pool_starmap(monkeypatch: Any):
+def mocked_pool_starmap(monkeypatch: Any):
     """Provides a simple starmap implementation which does not rely on pickling."""
     monkeypatch.setattr(
         "multiprocessing.pool.Pool.starmap",
@@ -19,85 +30,208 @@ def mock_pool_starmap(monkeypatch: Any):
     )
 
 
-def test_scaleway_api_backend_deploy_function():
+FNC_API_URL = SCALEWAY_API_URL + "functions/v1beta1/regions/fr-par"
+
+
+def get_test_backend() -> ScalewayApiBackend:
+    app = Serverless("test-namespace")
+    client = Client(
+        access_key="SCWXXXXXXXXXXXXXXXXX",
+        # The uuid is validated
+        secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",
+        default_region="fr-par",
+    )
+    backend = ScalewayApiBackend(app, client, True)
+
+    # This would otherwise create some side effects
+    create_zip = MagicMock()
+    create_zip.return_value = 300
+    backend._create_deployment_zip = create_zip
+    # This is mocked because it reads the zip
+    backend._upload_deployment_zip = MagicMock()
+    return backend
+
+
+def test_scaleway_api_backend_deploy_function(mocked_responses: responses.RequestsMock):
     function = Function(
         name="test-function",
         handler="handler",
         runtime=sdk.FunctionRuntime("python311"),
     )
-    app = Serverless("test-namespace")
-    app.functions = [function]
-    backend = ScalewayApiBackend(app, MagicMock(), True)
-    # This would otherwise create some side effects
-    create_zip = MagicMock()
-    create_zip.return_value = "300"
-    backend._create_deployment_zip = create_zip
-    backend._upload_deployment_zip = MagicMock()
+    backend = get_test_backend()
+    backend.app_instance.functions = [function]
 
-    api = MagicMock()
-    namespace = MagicMock()
-    # pylint: disable=invalid-name,attribute-defined-outside-init
-    namespace.id = "namespace-id"
-    namespace.status = sdk.NamespaceStatus.READY
-    api.create_namespace.return_value = namespace
-    api.wait_for_namespace.return_value = namespace
-
-    deployed_func = MagicMock()
-    deployed_func.name = function.name
-    deployed_func.domain_name = "test-domain.fnc.fr-par.scw.cloud"
-    deployed_func.status = sdk.FunctionStatus.READY
-    api.wait_for_function.return_value = deployed_func
-
-    backend.api = api
+    # Looking for existing namespace
+    mocked_responses.get(
+        FNC_API_URL + "/namespaces",
+        json={"namespaces": []},
+    )
+    namespace = {
+        "id": "namespace-id",
+        "name": backend.app_instance.service_name,
+        "secret_environment_variables": [],  # Otherwise breaks the marshalling
+    }
+    # Creating namespace
+    mocked_responses.post(FNC_API_URL + "/namespaces", json=namespace)
+    # Polling its status
+    mocked_responses.get(
+        f'{FNC_API_URL}/namespaces/{namespace["id"]}',
+        json=namespace | {"status": "ready"},
+    )
+    # Looking for existing function
+    mocked_responses.get(
+        FNC_API_URL + "/functions",
+        match=[
+            matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
+        ],
+        json={"functions": []},
+    )
+    # Creating a function
+    mocked_fn = {
+        "id": "function-id",
+        "name": function.name,
+        "secret_environment_variables": [],
+    }
+    mocked_responses.post(
+        FNC_API_URL + "/functions",
+        match=[
+            matchers.json_params_matcher(
+                {
+                    "name": function.name,
+                    "privacy": "public",
+                    "http_option": "redirected",
+                    "handler": "handler",
+                    "runtime": "python311",
+                },
+                # Ignore None values which will be dropped by the marshalling
+                strict_match=False,
+            )
+        ],
+        json=mocked_fn,
+    )
+    test_fn_api_url = f'{FNC_API_URL}/functions/{mocked_fn["id"]}'
+    mocked_responses.get(
+        test_fn_api_url + "/upload-url",
+        json={"url": "https://url"},
+    )
+    mocked_responses.post(
+        test_fn_api_url + "/deploy",
+        json=mocked_fn,
+    )
+    # Poll the status
+    mocked_responses.get(
+        test_fn_api_url,
+        json=mocked_fn | {"status": "pending"},
+    )
+    mocked_responses.get(
+        test_fn_api_url,
+        json=mocked_fn | {"status": "ready"},
+    )
     backend.deploy()
 
-    backend.api.create_function.assert_called_once()
-    args = backend.api.create_function.call_args.kwargs
-    assert args["name"] == function.name
 
-
-def test_scaleway_api_backend_deploy_function_with_trigger():
-    trigger = CronTrigger(
-        schedule="* * * * * *",
-        name="test-cron",
-    )
+def test_scaleway_api_backend_deploy_function_with_trigger(
+    mocked_responses: responses.RequestsMock,
+):
+    trigger = CronTrigger(schedule="* * * * * *", name="test-cron", args={"foo": "bar"})
     function = Function(
         name="test-function-with-trigger",
         handler="handler",
-        runtime=sdk.FunctionRuntime("python311"),
+        runtime=sdk.FunctionRuntime("python310"),
         triggers=[trigger],
     )
-    app = Serverless("test-namespace")
-    app.functions = [function]
-    backend = ScalewayApiBackend(app, MagicMock(), True)
-    # This would otherwise create some massive side effects
-    create_zip = MagicMock()
-    create_zip.return_value = "300"
-    backend._create_deployment_zip = create_zip
-    backend._upload_deployment_zip = MagicMock()
 
-    api = MagicMock()
-    namespace = MagicMock()
-    # pylint: disable=invalid-name,attribute-defined-outside-init
-    namespace.id = "namespace-id"
-    namespace.status = sdk.NamespaceStatus.READY
-    api.create_namespace.return_value = namespace
-    api.wait_for_namespace.return_value = namespace
+    backend = get_test_backend()
+    backend.app_instance.functions = [function]
 
-    deployed_func = MagicMock()
-    deployed_func.name = function.name
-    deployed_func.id = function.name
-    deployed_func.domain_name = "test-domain.fnc.fr-par.scw.cloud"
-    deployed_func.status = sdk.FunctionStatus.READY
-    api.wait_for_function.return_value = deployed_func
-
-    backend.api = api
-    backend.deploy()
-
-    backend.api.create_function.assert_called_once()
-    args = backend.api.create_function.call_args.kwargs
-    assert args["name"] == function.name
-
-    backend.api.create_cron.assert_called_once_with(
-        function_id=deployed_func.id, schedule=trigger.schedule, name=trigger.name
+    # Looking for existing namespace
+    mocked_responses.get(
+        FNC_API_URL + "/namespaces",
+        json={"namespaces": []},
     )
+    namespace = {
+        "id": "namespace-id",
+        "name": backend.app_instance.service_name,
+        "secret_environment_variables": [],  # Otherwise breaks the marshalling
+    }
+    # Creating namespace
+    mocked_responses.post(FNC_API_URL + "/namespaces", json=namespace)
+    # Polling its status
+    mocked_responses.get(
+        f'{FNC_API_URL}/namespaces/{namespace["id"]}',
+        json=namespace | {"status": "ready"},
+    )
+    # Looking for existing function
+    mocked_responses.get(
+        FNC_API_URL + "/functions",
+        match=[
+            matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
+        ],
+        json={"functions": []},
+    )
+    # Creating a function
+    mocked_fn = {
+        "id": "function-id",
+        "name": function.name,
+        "secret_environment_variables": [],
+    }
+    mocked_responses.post(
+        FNC_API_URL + "/functions",
+        match=[
+            matchers.json_params_matcher(
+                {
+                    "name": function.name,
+                    "privacy": "public",
+                    "http_option": "redirected",
+                    "handler": "handler",
+                    "runtime": "python310",
+                },
+                # Ignore None values which will be dropped by the marshalling
+                strict_match=False,
+            )
+        ],
+        json=mocked_fn,
+    )
+    test_fn_api_url = f'{FNC_API_URL}/functions/{mocked_fn["id"]}'
+    mocked_responses.get(
+        test_fn_api_url + "/upload-url",
+        json={"url": "https://url"},
+    )
+    mocked_responses.post(
+        test_fn_api_url + "/deploy",
+        json=mocked_fn,
+    )
+    # Poll the status
+    mocked_responses.get(
+        test_fn_api_url,
+        json=mocked_fn | {"status": "ready"},
+    )
+    # Looking for existing cron
+    mocked_responses.get(
+        FNC_API_URL + "/crons",
+        match=[
+            matchers.query_param_matcher({"function_id": mocked_fn["id"], "page": 1})
+        ],
+        json={"crons": []},
+    )
+    cron = {"id": "cron-id"}
+    mocked_responses.post(
+        FNC_API_URL + "/crons",
+        match=[
+            matchers.json_params_matcher(
+                {
+                    "function_id": mocked_fn["id"],
+                    "name": trigger.name,
+                    "schedule": trigger.schedule,
+                    "args": trigger.args,
+                }
+            )
+        ],
+        json=cron,
+    )
+    # Poll the status
+    mocked_responses.get(
+        f'{FNC_API_URL}/crons/{cron["id"]}',
+        json=mocked_fn | {"status": "ready"},
+    )
+    backend.deploy()

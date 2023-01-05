@@ -11,7 +11,6 @@ if TYPE_CHECKING:
         from typing_extensions import NotRequired
 # pylint: disable=wrong-import-position # Conditional import considered a statement
 from scw_serverless.config.route import GatewayRoute, HTTPMethod
-from scw_serverless.config.utils import _SerializableDataClass
 from scw_serverless.logger import get_logger
 from scw_serverless.triggers import Trigger
 from scw_serverless.utils.string import module_to_path, to_valid_fn_name
@@ -73,7 +72,7 @@ class FunctionKwargs(TypedDict):
 
 # pylint: disable=too-many-instance-attributes
 @dataclass
-class Function(_SerializableDataClass):
+class Function:
     """Representation of a Scaleway function."""
 
     name: str

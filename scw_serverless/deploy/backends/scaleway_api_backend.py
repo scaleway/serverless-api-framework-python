@@ -55,8 +55,6 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         else:
             # Updating the function with the provided args
-            kwargs = function.asdict()
-            del kwargs["name"]
             created_function = self.api.update_function(
                 function_id=created_function.id,
                 runtime=function.runtime,
@@ -113,11 +111,16 @@ class ScalewayApiBackend(ServerlessBackend):
                 created_trigger = cron
         if not created_trigger:
             created_trigger = self.api.create_cron(
-                function_id=function_id, schedule=trigger.schedule, name=trigger.name
+                function_id=function_id,
+                schedule=trigger.schedule,
+                name=trigger.name,
+                args=trigger.args,
             )
         else:
             created_trigger = self.api.update_cron(
-                created_trigger.id, schedule=trigger.schedule
+                created_trigger.id,
+                schedule=trigger.schedule,
+                args=trigger.args,
             )
         return self.api.wait_for_cron(created_trigger.id)
 
