@@ -140,7 +140,7 @@ class ServerlessTestProject:
                 "SCW_SECRET_KEY": self.client.secret_key,
                 "SCW_ACCESS_KEY": self.client.access_key,
                 "SCW_DEFAULT_PROJECT_ID": self.project_id,
-                "SCW_REGION": self.client.default_region,
+                "SCW_DEFAULT_REGION": self.client.default_region,
                 "PATH": os.environ["PATH"],
             },  # type: ignore // client already validated
             capture_output=True,
