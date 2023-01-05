@@ -19,6 +19,8 @@ from scaleway.registry.v1 import RegistryV1API
 from scaleway_core.api import ScalewayException
 from typing_extensions import Self
 
+from scw_serverless.dependencies_manager import DependenciesManager
+
 DEFAULT_REGION = "pl-waw"
 CLI_COMMAND = "srvless"
 
@@ -76,6 +78,11 @@ class ServerlessTestProject:
         app_path = Path(app)
         app_dir = app_path.parent.resolve()
         with tempfile.TemporaryDirectory() as tmpdir:
+            # Even with a minimal example, packaging is required
+            # so that scw_serverless is available in the function env
+            deps = DependenciesManager(Path(tmpdir), Path(tmpdir))
+            deps.generate_package_folder()
+
             shutil.copytree(src=app_dir, dst=tmpdir, dirs_exist_ok=True)
             ret = self._run_srvless_cli(
                 tmpdir, ["generate", app_path.name, "-t", "serverless"]
