@@ -21,12 +21,11 @@ srvless = "scw_serverless.cli:main"
 
 [tool.setuptools]
 include-package-data = true
-
-[tool.setuptools.packages.find]
-exclude = ["tests*"]
+# See: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#flat-layout
+packages = ["scw_serverless"]
 
 [tool.setuptools.package-data]
-scw_serverless = ["*.py", "*.yml"]
+scw_serverless = ["**/*.json", "**/*.yml"]
 
 [tool.pylint]
 load-plugins = ["pylint_per_file_ignores"]

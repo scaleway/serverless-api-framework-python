@@ -181,14 +181,14 @@ class ScalewayApiBackend(ServerlessBackend):
         for deployed_namespace in self.api.list_namespaces_all():
             if deployed_namespace.name == self.app_instance.service_name:
                 namespace = deployed_namespace
-        self.logger.default(
-            f"Creating a new namespace {namespace_name} in {project_id}..."
-        )
         secrets = [
             sdk.Secret(key, value)
             for key, value in (self.app_instance.secret or {}).items()
         ]
         if not namespace:
+            self.logger.default(
+                f"Creating a new namespace {namespace_name} in {project_id}..."
+            )
             # Create a new namespace
             namespace = self.api.create_namespace(
                 name=namespace_name,
@@ -202,12 +202,7 @@ class ScalewayApiBackend(ServerlessBackend):
                 environment_variables=self.app_instance.env,
                 secret_environment_variables=secrets,
             )
-        namespace = self.api.wait_for_namespace(
-            namespace_id=namespace.id,
-            options=WaitForOptions(
-                stop=lambda namespace: namespace.status != sdk.NamespaceStatus.PENDING
-            ),
-        )
+        namespace = self.api.wait_for_namespace(namespace_id=namespace.id)
         if namespace.status != sdk.NamespaceStatus.READY:
             raise ValueError(
                 f"Namespace {namespace.name} is not ready: {namespace.error_message}"

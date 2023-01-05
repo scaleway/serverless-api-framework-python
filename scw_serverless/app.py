@@ -66,7 +66,7 @@ class Serverless:
             )
 
             def _inner(*args, **kwargs):
-                return handler(args, kwargs)
+                return handler(*args, **kwargs)
 
             return _inner
 

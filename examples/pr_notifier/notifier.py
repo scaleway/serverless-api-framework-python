@@ -365,7 +365,7 @@ def handle_github(event, _content):
     """
     response = {"statusCode": 200}
     try:
-        response = _handle_github_events(json.loads(event[0]["body"]))
+        response = _handle_github_events(json.loads(event["body"]))
     except Exception as exception:
         logging.error(exception)
         return {"statusCode": 500}
@@ -425,7 +425,7 @@ def handle_gitlab(event, _content):
     """
     response = {"statusCode": 200}
     try:
-        response = _handle_gitlab_events(json.loads(event[0]["body"]))
+        response = _handle_gitlab_events(json.loads(event["body"]))
     except Exception as exception:
         logging.error(exception)
         return {"statusCode": 500}
