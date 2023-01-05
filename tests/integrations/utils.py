@@ -210,12 +210,8 @@ class ServerlessTestProject:
                 api.delete_project(self.project_id)
                 return
             except ScalewayException as e:
-                # A 400 is returned when attempting to delete a project with resources.
-                if e.status_code != 400:
-                    raise e
-                # We retry here because the deletion of registry namespaces
-                # will sometimes prevent the project deletion even after being
-                # deleted properly.
+                # This is just very finicky, the account API is somewhat unstable.
+                print(e)
                 time.sleep(30)
 
 
