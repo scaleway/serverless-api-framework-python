@@ -3,9 +3,9 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   docs:
     runs-on: self-hosted
+    container: python:3.11-slim-bullseye
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
       - name: Install dependencies
         run: |
           pip install -r requirements-dev.txt
