@@ -9,6 +9,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements-dev.txt
+          pip install --editable .
       - name: Sphinx build
         run: |
           sphinx-build docs _build
