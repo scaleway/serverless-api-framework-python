@@ -37,7 +37,19 @@ class FunctionKwargs(TypedDict):
     """
     Typed arguments supported by Scaleway functions.
 
-    See also:
+    :param env: Environment variables to be made available in your function.
+    :param secret: Secret environment variables to be made available in your function.
+    :param min_scale: Minimum replicas for your function.
+    :param max_scale: Maximum replicas for your function.
+    :param memory_limit: Memory (in MB) allocated to your function.
+    :param timeout: Max duration to respond to a request.
+    :param description: Description. Defaults to the function docstring if defined.
+    :param http_option: Either "enabled" or "redirected".
+                        If "redirected" (default), redirects http traffic to your function.
+                        Blocked otherwise.
+
+    See Also:
+    ---------
     https://developers.scaleway.com/en/products/functions/api/#create-a-function
     """
 

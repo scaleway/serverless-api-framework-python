@@ -29,10 +29,10 @@ CLICK_ARG_FILE = click.argument(
     ),
 )
 
-
+# TODO: link to the doc
 @click.group()
 def cli() -> None:
-    """Main command group"""
+    """Deploy your Serverless functions on Scaleway's Cloud."""
 
 
 # TODO?: clean up the locals by introducing a class
@@ -180,7 +180,7 @@ def deploy(
     help="Select where to save the generated configuration file",
 )
 def generate(file: Path, target: str, save: str) -> None:
-    """Generate configuration files for your functions
+    """Generate configuration files to deploy your functions.
 
     FILE is the file containing your functions handlers
     """

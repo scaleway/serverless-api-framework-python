@@ -10,15 +10,14 @@ REQUIREMENTS_NAME = "requirements.txt"
 
 
 class DependenciesManager:
-    """
-    Dependencies Manager
+    """Dependencies Manager vendors the python dependencies.
 
     This class looks for a requirements file in a given input path and
     vendors the pip dependencies in a package folder within the provided output path.
 
     It does not currently handles native dependencies.
 
-    See also:
+    See Also:
         https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies
     """
 
@@ -65,7 +64,7 @@ class DependenciesManager:
         self._run_pip_install("-r", str(requirements_path.resolve()))
 
     def _check_for_scw_serverless(self):
-        """Checks for scw_serverless after vendoring the dependencies"""
+        """Checks for scw_serverless after vendoring the dependencies."""
         if (
             not self.pkg_path.exists()
             or not self.pkg_path.joinpath(__package__).exists()

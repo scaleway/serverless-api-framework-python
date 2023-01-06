@@ -1,55 +1,78 @@
-# Scaleway Serverless Python API
+# Serverless API Framework
 
-Serverless API Project is a python framework that let you write serverless apps in python.
+Serverless API Framework is a tool that lets you write and deploy serverless functions in python.
+It bridges your code with the deployment configuration to make it a breeze to work with serverless functions.
 
-You can create a simple function:
+Starts by defining a simple Python function:
 
 ```python
-from scw_serverless.app import Serverless
+from scw_serverless import Serverless
 
-app = Serverless("my_service_name")
+app = Serverless("hello-namespace")
 
-
-@app.func()
-def hello_world(event: dict, context: dict):
-    """handle a request to the function
-    Args:
-        event (dict): request params
-        context (dict): function call metadata
-    """
-
+@app.func(memory_limit=256)
+def hello_world(event, context):
     return "Hello World!"
+```
+
+Deploy it with `scw_serverless`:
+
+```console
+srvless deploy app.py
 ```
 
 ## Quickstart
 
-Initiate your python environment:
+### Install
 
-```shell
-python -m venv venv310
-. venv310/bin/activate
+```console
+pip install scw_serverless
 ```
 
-Install `serverless-api-project`
+This will install `srvless`:
 
-```shell
-python -m pip install scw-serverless-api-project
+```console
+srvless --help
 ```
 
-You can then now, create a python file and start coding using the example above.
+### Writing and configuring functions
 
-When you are ready, you can generate a `serverless.yml` configuration file using:
+You can transform your python functions into serverless functions by using decorators:
 
-```shell
-srvlss generate app.py
+```python
+import os
+import requests
+from scw_serverless import Serverless
+
+app = Serverless("hello-namespace")
+
+@app.func(memory_limit=256, env={"API_URL": os.environ["API_URL"]})
+def hello_world(event, context):
+    requests.get("")
 ```
+
+The configuration is done by passing arguments to the decorator.
+To view which arguments are supported, head over to this [documentation]() page.
+
+When you are ready, you can deploy your function with the `srvless` CLI tool:
+
+```console
+srvless deploy app.py
+```
+
+The tool will use your Scaleway credentials from your environment and config file.
+
+## What’s Next?
+
+To learn more about the framework, have a look at the [documentation]().
+If you want to see it action, we provide some [examples]() to get you started.
 
 ## Contributing
 
 We welcome all contributions.
 
-This project uses [pre-commit](https://pre-commit.com/) hooks to run code quality checks locally. It is highly recommended to install them before contributing.
+This project uses [pre-commit](https://pre-commit.com/) hooks to run code quality checks locally. We recommended installing them before contributing.
 
-```shell
+```console
 pre-commit install
 ```
