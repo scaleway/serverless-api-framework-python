@@ -10,9 +10,8 @@ jobs:
         run: |
           pip install -r requirements-dev.txt
       - name: Sphinx build
-        working-directory: docs
         run: |
-          make html
+          sphinx-build docs _build
       - name: Deploy
         uses: jakejarvis/s3-sync-action@master
         with:
@@ -23,4 +22,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           AWS_REGION: fr-par
           AWS_S3_ENDPOINT: "s3.fr-par.scw.cloud"
-          SOURCE_DIR: "docs/_build/html"
+          SOURCE_DIR: "_build/html"
