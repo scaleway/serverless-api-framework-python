@@ -1,10 +1,15 @@
 import sys
 from dataclasses import dataclass
-from typing import Callable, List, Literal, Optional, TypedDict
+from typing import TYPE_CHECKING, Callable, List, Literal, Optional, TypedDict
 
 import scaleway.function.v1beta1 as sdk
-from typing_extensions import NotRequired
 
+if TYPE_CHECKING:
+    try:
+        from typing import NotRequired
+    except ImportError:
+        from typing_extensions import NotRequired
+# pylint: disable=wrong-import-position # Conditional import considered a statement
 from scw_serverless.config.route import GatewayRoute, HTTPMethod
 from scw_serverless.config.utils import _SerializableDataClass
 from scw_serverless.logger import get_logger

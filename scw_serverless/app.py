@@ -1,7 +1,11 @@
-from typing import Any, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
-from typing_extensions import Unpack
-
+if TYPE_CHECKING:
+    try:
+        from typing import Unpack
+    except ImportError:
+        from typing_extensions import Unpack
+# pylint: disable=wrong-import-position # Conditional import considered a statement
 from scw_serverless.config.function import Function, FunctionKwargs
 from scw_serverless.config.route import HTTPMethod
 from scw_serverless.triggers import CronTrigger

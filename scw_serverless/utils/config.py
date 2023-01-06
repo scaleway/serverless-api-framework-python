@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
-from typing_extensions import Self
 
 DEFAULT_CONFIG_PATH = "~/.config/scw/py_api.yaml"
 
@@ -15,7 +14,7 @@ class Config:
     api_gw_host: Optional[str] = None  # Host for the API Gateway controller api
     gateway_id: Optional[str] = None  # Default API Gateway uuid
 
-    def update_from_config_file(self, config_path: Optional[str] = None) -> Self:
+    def update_from_config_file(self, config_path: Optional[str] = None) -> "Config":
         """Update an existing config instance whith values passed via a config file."""
         config_path = config_path if config_path else DEFAULT_CONFIG_PATH
         config_path = Path(DEFAULT_CONFIG_PATH).expanduser()
