@@ -14,10 +14,13 @@ jobs:
         run: |
           make html
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        uses: jakejarvis/s3-sync-action@master
         with:
-          publish_branch: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _build/
-          force_orphan: true
+          args: --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.DOCS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_REGION: fr-par
+          AWS_S3_ENDPOINT: "s3.fr-par.scw.cloud"
+          SOURCE_DIR: "docs/_build/html"
