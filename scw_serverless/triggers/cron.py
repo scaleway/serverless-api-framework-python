@@ -6,8 +6,7 @@ from typing import Any, Optional
 class CronTrigger:
     """Cron trigger which will execute a function periodically.
 
-    See also:
-    https://developers.scaleway.com/en/products/functions/api/#create-a-cron-trigger-for-your-function
+    .. seealso:: https://developers.scaleway.com/en/products/functions/api/#create-a-cron-trigger-for-your-function
     """
 
     schedule: str

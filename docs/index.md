@@ -5,6 +5,7 @@ caption: "Contents:"
 ---
 Home <self>
 config
+dependencies
 triggers
 examples
 ```

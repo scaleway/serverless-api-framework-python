@@ -23,3 +23,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "alabaster"
 html_static_path = ["_static"]
+
+html_theme_options = {
+    "description": "A Python framework to deploy Scaleway Serverless functions.",
+    "github_user": "scaleway",
+    "github_repo": "serverless-api-project",
+    "fixed_sidebar": True,
+}

@@ -1,6 +1,7 @@
-# Deploy your serverless project using Github Actions
+# [Deploying using Github Actions](https://github.com/scaleway/serverless-api-project/tree/main/examples/github_actions)
 
-With this example, you will be able to deploy your serverless project using our framework with Github Actions.
-To do so, simply copy the "deploy.yml" file in ".github/workflows".
+This example provides a simple Github Action configuration file to get you started on deploying with `scw_serverless` in your CI/CD pipelines.
 
-It will automatically run `srvless deploy` in the project route to deploy your project on Scaleway's Serverless Functions on each Tag.
+To do so, simply copy the `deploy.yml` file in `.github/workflows`.
+
+This example will automatically run `srvless deploy` in the project root to deploy your on each git tag.

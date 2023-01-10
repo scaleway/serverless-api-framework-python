@@ -1,4 +1,4 @@
-# Pull Requests Notifier
+# [Pull Requests Notifier](https://github.com/scaleway/serverless-api-project/tree/main/examples/pr_notifier)
 
 A simple Slack bot to notify on new pull requests using `scw_serverless` for deployment. Compatible with Github and Gitlab.
 

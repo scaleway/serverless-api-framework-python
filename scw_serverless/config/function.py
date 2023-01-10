@@ -34,8 +34,11 @@ def _get_current_runtime() -> sdk.FunctionRuntime:
 
 
 class FunctionKwargs(TypedDict):
-    """
-    Typed arguments supported by Scaleway functions.
+    """Typed arguments supported by Scaleway functions.
+
+    .. note::
+
+        Some parameters may not be supported by a specific backend.
 
     :param env: Environment variables to be made available in your function.
     :param secret: Secret environment variables to be made available in your function.
@@ -47,10 +50,8 @@ class FunctionKwargs(TypedDict):
     :param http_option: Either "enabled" or "redirected".
                         If "redirected" (default), redirects http traffic to your function.
                         Blocked otherwise.
+    .. seealso:: https://developers.scaleway.com/en/products/functions/api/#create-a-function
 
-    See Also:
-    ---------
-    https://developers.scaleway.com/en/products/functions/api/#create-a-function
     """
 
     env: NotRequired[dict[str, str]]
