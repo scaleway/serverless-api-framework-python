@@ -45,14 +45,15 @@ import requests
 from scw_serverless import Serverless
 
 app = Serverless("hello-namespace")
+API_URL = os.environ["API_URL"]
 
-@app.func(memory_limit=256, env={"API_URL": os.environ["API_URL"]})
+@app.func(memory_limit=256, env={"API_URL": API_URL})
 def hello_world(event, context):
-    requests.get("")
+    return requests.get(API_URL)
 ```
 
 The configuration is done by passing arguments to the decorator.
-To view which arguments are supported, head over to this [documentation]() page.
+To view which arguments are supported, head over to this [documentation](https://serverless-apifw-docs.s3-website.fr-par.scw.cloud/configuring.html) page.
 
 When you are ready, you can deploy your function with the `srvless` CLI tool:
 
@@ -64,8 +65,8 @@ The tool will use your Scaleway credentials from your environment and config fil
 
 ## What’s Next?
 
-To learn more about the framework, have a look at the [documentation]().
-If you want to see it action, we provide some [examples]() to get you started.
+To learn more about the framework, have a look at the [documentation](https://serverless-apifw-docs.s3-website.fr-par.scw.cloud/index.html).
+If you want to see it in action, we provide some [examples](https://github.com/scaleway/serverless-api-project/tree/main/examples) to get you started.
 
 ## Contributing
 

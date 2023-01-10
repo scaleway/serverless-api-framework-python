@@ -68,8 +68,7 @@ class _ServerlessFrameworkFunction(_SerializableDataClass):
 class ServerlessFrameworkGenerator(Generator):
     """Generates a serverless.yml config file.
 
-    See also:
-    https://github.com/scaleway/serverless-scaleway-functions
+    .. seealso:: https://github.com/scaleway/serverless-scaleway-functions
     """
 
     def __init__(self, instance: Serverless):

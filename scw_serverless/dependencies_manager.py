@@ -17,8 +17,7 @@ class DependenciesManager:
 
     It does not currently handles native dependencies.
 
-    See Also:
-        https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies
+    .. seealso:: https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies
     """
 
     def __init__(self, in_path: pathlib.Path, out_path: pathlib.Path) -> None:

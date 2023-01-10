@@ -4,9 +4,8 @@ maxdepth: 2
 caption: "Contents:"
 ---
 Home <self>
-config
-dependencies
-triggers
+configuring
+deploying
 examples
 ```
 
