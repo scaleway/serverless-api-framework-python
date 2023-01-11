@@ -8,8 +8,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install git
         run: |
-          apt-get update
-          apt get install git
+          apt-get update -y
+          apt-get install -y git
       - name: Install pip dependencies
         run: |
           pip install -r requirements-dev.txt
