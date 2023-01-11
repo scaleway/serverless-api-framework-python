@@ -5,11 +5,13 @@ jobs:
     runs-on: self-hosted
     container: python:3.11-slim-bullseye
     steps:
-      - uses: actions/checkout@v2
       - name: Install git
         run: |
           apt-get update -y
           apt-get install -y git
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
       - name: Install pip dependencies
         run: |
           pip install -r requirements-dev.txt
