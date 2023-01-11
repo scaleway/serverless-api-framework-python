@@ -18,7 +18,7 @@ jobs:
           pip install --editable .
       - name: Sphinx build
         run: |
-          sphinx-multiversion docs _build -D "smv_branch_whitelist = ${{ github.head_ref }}"
+          sphinx-multiversion docs _build -D "smv_branch_whitelist=${{ github.head_ref }}"
       - name: Deploy documentation version
         uses: jakejarvis/s3-sync-action@master
         with:
