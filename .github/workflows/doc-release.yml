@@ -1,0 +1,42 @@
+name: Documentation release
+on:
+  push:
+    tags:
+      - "*"
+jobs:
+  docs:
+    runs-on: self-hosted
+    container: python:3.11-slim-bullseye
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-dev.txt
+          pip install --editable .
+      - name: Sphinx build
+        run: |
+          sphinx-multiversion docs _build
+      - name: Deploy documentation version
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.DOCS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_REGION: fr-par
+          AWS_S3_ENDPOINT: "https://s3.fr-par.scw.cloud"
+          SOURCE_DIR: "_build/${{ github.ref_name }}"
+          DEST_DIR: "${{ github.ref_name }}"
+      - name: Deploy documentation latest
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.DOCS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_REGION: fr-par
+          AWS_S3_ENDPOINT: "https://s3.fr-par.scw.cloud"
+          SOURCE_DIR: "_build/${{ github.ref_name }}"
+          DEST_DIR: "latest"

@@ -13,7 +13,11 @@ author = "Scaleway Serverless Team"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.autodoc", "myst_parser"]
+extensions = [
+    "myst_parser",  # Markdown support
+    "sphinx.ext.autodoc",
+    "sphinx_multiversion",  # Versioning
+]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
@@ -29,4 +33,14 @@ html_theme_options = {
     "github_user": "scaleway",
     "github_repo": "serverless-api-project",
     "fixed_sidebar": True,
+}
+
+html_sidebars = {
+    "**": [
+        "about.html",
+        "navigation.html",
+        "relations.html",
+        "searchbox.html",
+        "versioning.html",
+    ],
 }
