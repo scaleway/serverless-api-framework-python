@@ -1,5 +1,5 @@
 name: Documentation development
-on: [pull_request, workflow_dispatch]
+on: [pull_request]
 jobs:
   docs:
     runs-on: self-hosted
@@ -18,7 +18,7 @@ jobs:
           pip install --editable .
       - name: Sphinx build
         run: |
-          sphinx-multiversion docs _build
+          sphinx-multiversion docs _build -D "smv_branch_whitelist = ${{ github.head_ref }}"
       - name: Deploy documentation version
         uses: jakejarvis/s3-sync-action@master
         with:
@@ -29,5 +29,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           AWS_REGION: fr-par
           AWS_S3_ENDPOINT: "https://s3.fr-par.scw.cloud"
-          SOURCE_DIR: "_build/${{ github.ref_name }}"
-          DEST_DIR: "${{ github.ref_name }}"
+          SOURCE_DIR: "_build/${{ github.head_ref }}"
+          DEST_DIR: "${{ github.head_ref }}"
