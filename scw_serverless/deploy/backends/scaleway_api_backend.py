@@ -88,10 +88,10 @@ class ScalewayApiBackend(ServerlessBackend):
             )
             raise exception
 
-        self.logger.default("Uploading function...")
+        self.logger.default(f"Uploading function {function.name}...")
         self._upload_deployment_zip(upload_url, zip_size)
 
-        self.logger.default("Deploying function...")
+        self.logger.default(f"Deploying function {function.name}...")
         # deploy the newly uploaded function
         self.api.deploy_function(function_id)
 

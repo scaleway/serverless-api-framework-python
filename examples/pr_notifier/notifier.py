@@ -435,16 +435,9 @@ def handle_gitlab(event, _content):
 @app.schedule(REMINDER_SCHEDULE)
 def pull_request_reminder(_event, _content):
     """Daily reminder to review opened pull-requests"""
-    bucket = s3.Bucket(S3_BUCKET)
-    opened_prs = (
-        bucket.objects.all()
-    )  # not worth using list_objects_v2 since there shouldn't be a lot of active MRs
-    if len(opened_prs) == 0:
-        logging.info("No PRs were found")
-        return {"statusCode": 200}
     blocks = [blks.HeaderBlock(text="PRs awaiting for review: "), blks.DividerBlock()]
     try:
-        for opened_pr in opened_prs:
+        for opened_pr in s3.Bucket(S3_BUCKET).objects.all():
             timestamp, pull = load_pr_from_bucket(opened_pr.key)
             if pull.should_be_reminded:
                 logging.info(
@@ -459,6 +452,9 @@ def pull_request_reminder(_event, _content):
                     pull.title,
                     pull.repository.full_name,
                 )
+        if len(blocks) <= 2:
+            logging.info("No PRs were found")
+            return {"statusCode": 200}
         response = client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
         if not response["ok"]:
             logging.error(response["error"])
