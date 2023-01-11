@@ -9,8 +9,9 @@ jobs:
         run: |
           apt-get update -y
           apt-get install -y git
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
       - name: Install pip dependencies
         run: |
@@ -18,7 +19,7 @@ jobs:
           pip install --editable .
       - name: Sphinx build
         run: |
-          sphinx-multiversion docs _build -D "smv_branch_whitelist=${{ github.head_ref }}"
+          sphinx-multiversion docs _build -D "sphinx_multiversion.smv_branch_whitelist=${{ github.head_ref }}"
       - name: Deploy documentation version
         uses: jakejarvis/s3-sync-action@master
         with:
