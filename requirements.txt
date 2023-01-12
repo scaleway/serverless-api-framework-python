@@ -1,7 +1,6 @@
 click==8.1.3
 PyYAML==6.0
-scaleway==0.0.12
-setuptools==65.3.0
+scaleway==0.2.0
+setuptools==65.6.3
 requests==2.28.1
-typing-extensions==4.3.0
-prettytable==3.4.1
+typing_extensions==4.4.0
