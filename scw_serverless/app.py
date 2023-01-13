@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
+from typing_extensions import Unpack
+
 if TYPE_CHECKING:
     try:
         from typing import Unpack
@@ -14,10 +16,12 @@ from scw_serverless.triggers import CronTrigger
 class Serverless:
     """Manage your Serverless Functions.
 
+    Maps to a function namespace. Parameters will be scoped to the namespace.
+
     :param service_name: name of the namespace
     :param env: namespace level environment variables
     :param secret: namespace level secrets
-    :param gateway_domains: domains to be supported by the gatewas
+    :param gateway_domains: domains to be supported by the gateway
     """
 
     def __init__(
@@ -40,14 +44,13 @@ class Serverless:
     ) -> Callable:
         """Define a Serverless handler and its parameters from the keyword arguments.
 
-        See ``FunctionKwargs`` for all possible parameters.
+        See :any:`FunctionKwargs` for all possible parameters.
 
-        *Note:* Some parameters may not be supported by a specific backend.
+        Example
+        -------
 
-        *Example:*
-
-        .. highlight:: python
         .. code-block:: python
+
             app = Serverless("example")
             app.func(privacy="public", env={"key": "value"})
             def handler(event, context)
@@ -77,8 +80,17 @@ class Serverless:
     ) -> Callable:
         """Define a scheduled handler with Cron, passing inputs as parameters.
 
-        :param schedule: Cron schedule to run with
+        :param schedule: cron schedule to use
         :param inputs: parameters to be passed to the body
+
+        Example
+        -------
+
+        .. code-block:: python
+
+            app.schedule(schedule="5 4 * * sun", inputs={"foo": "bar"}, memory=1024)
+            def handler(event, context)
+                ...
         """
         if isinstance(schedule, str):
             schedule = CronTrigger(schedule, inputs)
@@ -95,8 +107,9 @@ class Serverless:
 
         :param url: relative url to trigger the function
 
-        *Note:*
-            - Requires an API gateway
+        .. note::
+
+            Requires an API gateway
         """
         kwargs |= {"url": url, "methods": [HTTPMethod.GET]}
         return self.func(**kwargs)
@@ -106,8 +119,9 @@ class Serverless:
 
         :param url: relative url to trigger the function
 
-        *Note:*
-            - Requires an API gateway
+        .. note::
+
+            Requires an API gateway
         """
         kwargs |= {"url": url, "methods": [HTTPMethod.POST]}
         return self.func(**kwargs)
@@ -117,8 +131,9 @@ class Serverless:
 
         :param url: relative url to trigger the function
 
-        *Note:*
-            - Requires an API gateway
+        .. note::
+
+            Requires an API gateway
         """
         kwargs |= {"url": url, "methods": [HTTPMethod.PUT]}
         return self.func(**kwargs)
@@ -128,8 +143,9 @@ class Serverless:
 
         :param url: relative url to trigger the function
 
-        *Note:*
-            - Requires an API gateway
+        .. note::
+
+            Requires an API gateway
         """
         kwargs |= {"url": url, "methods": [HTTPMethod.DELETE]}
         return self.func(**kwargs)
@@ -139,8 +155,9 @@ class Serverless:
 
         :param url: relative url to trigger the function
 
-        *Note:*
-            - Requires an API gateway
+        .. note::
+
+            Requires an API gateway
         """
         kwargs |= {"url": url, "methods": [HTTPMethod.PATCH]}
         return self.func(**kwargs)

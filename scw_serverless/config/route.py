@@ -6,7 +6,7 @@ from typing import Optional
 class HTTPMethod(Enum):
     """Enum of supported HTTP methods.
 
-    See also: https://docs.python.org/3/library/http.html#http.HTTPMethod
+    .. seealso:: https://docs.python.org/3/library/http.html#http.HTTPMethod
     """
 
     GET = "GET"
