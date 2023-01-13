@@ -1,5 +1,4 @@
 # Configuration file for the Sphinx documentation builder.
-#
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
@@ -7,16 +6,18 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "scw_serverless"
-copyright = "2023, Scaleway Serverless Team"
 author = "Scaleway Serverless Team"
+project_copyright = f"2023, {author}"
+release = "0.0.1"
+version = release
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "sphinx_rtd_theme",
     "myst_parser",  # Markdown support
     "sphinx.ext.autodoc",
-    "sphinx_multiversion",  # Versioning
 ]
 
 templates_path = ["_templates"]
@@ -25,22 +26,5 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-
-html_theme_options = {
-    "description": "A Python framework to deploy Scaleway Serverless functions.",
-    "github_user": "scaleway",
-    "github_repo": "serverless-api-project",
-    "fixed_sidebar": True,
-}
-
-html_sidebars = {
-    "**": [
-        "about.html",
-        "navigation.html",
-        "relations.html",
-        "searchbox.html",
-        "versioning.html",
-    ],
-}
