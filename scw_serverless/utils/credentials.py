@@ -2,10 +2,11 @@ from importlib.metadata import version
 from typing import Optional
 
 from scaleway import Client
+from scaleway_core.bridge.region import REGION_FR_PAR
 
 from scw_serverless.logger import get_logger
 
-DEFAULT_REGION: str = "fr-par"
+DEFAULT_REGION: str = REGION_FR_PAR
 
 
 def get_scw_client(

@@ -6,12 +6,15 @@ import responses
 import scaleway.function.v1beta1 as sdk
 from responses import matchers
 from scaleway import Client
+from scaleway_core.bridge.region import REGION_FR_PAR
 
 from scw_serverless.app import Serverless
 from scw_serverless.config import Function
 from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
 from scw_serverless.triggers import CronTrigger
 from tests.utils import SCALEWAY_API_URL
+
+FNC_API_URL = SCALEWAY_API_URL + f"functions/v1beta1/regions/{REGION_FR_PAR}"
 
 
 # pylint: disable=redefined-outer-name # fixture
@@ -30,16 +33,13 @@ def mocked_pool_starmap(monkeypatch: Any):
     )
 
 
-FNC_API_URL = SCALEWAY_API_URL + "functions/v1beta1/regions/fr-par"
-
-
 def get_test_backend() -> ScalewayApiBackend:
     app = Serverless("test-namespace")
     client = Client(
         access_key="SCWXXXXXXXXXXXXXXXXX",
         # The uuid is validated
         secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",
-        default_region="fr-par",
+        default_region=REGION_FR_PAR,
     )
     backend = ScalewayApiBackend(app, client, True)
 
@@ -56,7 +56,7 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
     function = Function(
         name="test-function",
         handler="handler",
-        runtime=sdk.FunctionRuntime("python311"),
+        runtime=sdk.FunctionRuntime.PYTHON311,
     )
     backend = get_test_backend()
     backend.app_instance.functions = [function]
@@ -76,7 +76,7 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
     # Polling its status
     mocked_responses.get(
         f'{FNC_API_URL}/namespaces/{namespace["id"]}',
-        json=namespace | {"status": "ready"},
+        json=namespace | {"status": sdk.NamespaceStatus.READY},
     )
     # Looking for existing function
     mocked_responses.get(
@@ -98,10 +98,10 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
             matchers.json_params_matcher(
                 {
                     "name": function.name,
-                    "privacy": "public",
-                    "http_option": "redirected",
+                    "privacy": sdk.FunctionPrivacy.PUBLIC,
+                    "http_option": sdk.FunctionHttpOption.REDIRECTED,
                     "handler": "handler",
-                    "runtime": "python311",
+                    "runtime": sdk.FunctionRuntime.PYTHON311,
                 },
                 # Ignore None values which will be dropped by the marshalling
                 strict_match=False,
@@ -121,11 +121,11 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
     # Poll the status
     mocked_responses.get(
         test_fn_api_url,
-        json=mocked_fn | {"status": "pending"},
+        json=mocked_fn | {"status": sdk.FunctionStatus.PENDING},
     )
     mocked_responses.get(
         test_fn_api_url,
-        json=mocked_fn | {"status": "ready"},
+        json=mocked_fn | {"status": sdk.FunctionStatus.READY},
     )
     backend.deploy()
 
@@ -137,7 +137,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     function = Function(
         name="test-function-with-trigger",
         handler="handler",
-        runtime=sdk.FunctionRuntime("python310"),
+        runtime=sdk.FunctionRuntime.PYTHON311,
         triggers=[trigger],
     )
 
@@ -159,7 +159,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     # Polling its status
     mocked_responses.get(
         f'{FNC_API_URL}/namespaces/{namespace["id"]}',
-        json=namespace | {"status": "ready"},
+        json=namespace | {"status": sdk.NamespaceStatus.READY},
     )
     # Looking for existing function
     mocked_responses.get(
@@ -181,10 +181,10 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
             matchers.json_params_matcher(
                 {
                     "name": function.name,
-                    "privacy": "public",
-                    "http_option": "redirected",
+                    "privacy": sdk.FunctionPrivacy.PUBLIC,
+                    "http_option": sdk.FunctionHttpOption.REDIRECTED,
                     "handler": "handler",
-                    "runtime": "python310",
+                    "runtime": sdk.FunctionRuntime.PYTHON311,
                 },
                 # Ignore None values which will be dropped by the marshalling
                 strict_match=False,
@@ -204,7 +204,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     # Poll the status
     mocked_responses.get(
         test_fn_api_url,
-        json=mocked_fn | {"status": "ready"},
+        json=mocked_fn | {"status": sdk.FunctionStatus.READY},
     )
     # Looking for existing cron
     mocked_responses.get(
@@ -232,6 +232,6 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     # Poll the status
     mocked_responses.get(
         f'{FNC_API_URL}/crons/{cron["id"]}',
-        json=mocked_fn | {"status": "ready"},
+        json=mocked_fn | {"status": sdk.CronStatus.READY},
     )
     backend.deploy()

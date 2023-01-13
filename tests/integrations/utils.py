@@ -33,9 +33,10 @@ class ServerlessTestProject:
     For each test, we:
         - Create a Scaleway project.
         - Copy the target path to a temporary directory.
-          This avoids build artifacts pollution when running
-          the deploying the same app concurrently.
+          This avoids build artifacts pollution when
+          deploying the same app concurrently.
         - Run the test.
+        - Validate that the functions have been deployed.
         - Delete the temporary directory.
         - Clean up the project.
           We delete all remaining namespaces/functions/registries.
@@ -50,25 +51,36 @@ class ServerlessTestProject:
 
     def deploy(self, app: str, backend: str):
         """Run deploy command with a specific backend."""
+
         app_path = Path(app)
         app_dir = app_path.parent.resolve()
+
+        # Run the command inside a temporary directory
         with tempfile.TemporaryDirectory() as tmpdir:
             shutil.copytree(src=app_dir, dst=tmpdir, dirs_exist_ok=True)
             ret = self._run_srvless_cli(
                 tmpdir, ["deploy", app_path.name, "-b", backend]
             )
+
         assert ret.returncode == 0, f"Non-null {CLI_COMMAND} return code: {ret}"
+
         output = str(ret.stdout.decode("UTF-8")).strip()
         if backend == "serverless":
             # serverless framework print normal output on stderr
             output = str(ret.stderr.decode("UTF-8")).strip()
+
+        # Parse the functions URL from the program output
         pattern = re.compile(r"(Function [a-z0-9-]+ deployed to:? (https://.+))")
         groups = re.findall(pattern, output)
+
+        assert len(groups) > 0  # Avoids silent errors
         for group in groups:
             # Call the actual function
             call_function(group[1])
 
     def generate_serverless_framework(self, app: str):
+        """Run the generate command with the serverless backend."""
+
         # Verify that serverless and node are installed and available
         serverless_path = shutil.which("serverless")
         assert serverless_path
@@ -102,21 +114,28 @@ class ServerlessTestProject:
                 cwd=tmpdir,
                 check=False,
             )
+
         assert ret.returncode == 0, f"Non-null serverless return code: {ret}"
+
+        # Parse the functions URL from the program output
         output = str(ret.stderr.decode("UTF-8")).strip()
         pattern = re.compile("(Function [a-z0-9-]+ has been deployed to: (https://.+))")
         groups = re.findall(pattern, output)
-        assert len(groups) > 0
+
+        assert len(groups) > 0  # Avoids silent errors
         for group in groups:
             # Call the actual function
             call_function(group[1])
 
     def generate_terraform(self, app: str):
+        """Run the generate command with the serverless backend."""
+
         # Verify that terraform is installed and availabke
         terraform_path = shutil.which("terraform")
         assert terraform_path
         app_path = Path(app)
         app_dir = app_path.parent.resolve()
+
         with tempfile.TemporaryDirectory() as tmpdir:
             shutil.copytree(src=app_dir, dst=tmpdir, dirs_exist_ok=True)
             ret = self._run_srvless_cli(
