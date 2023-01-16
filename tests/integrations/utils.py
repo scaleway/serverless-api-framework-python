@@ -58,6 +58,7 @@ class ServerlessTestProject:
         # Run the command inside a temporary directory
         with tempfile.TemporaryDirectory() as tmpdir:
             shutil.copytree(src=app_dir, dst=tmpdir, dirs_exist_ok=True)
+
             ret = self._run_srvless_cli(
                 tmpdir, ["deploy", app_path.name, "-b", backend]
             )
@@ -70,10 +71,12 @@ class ServerlessTestProject:
             output = str(ret.stderr.decode("UTF-8")).strip()
 
         # Parse the functions URL from the program output
-        pattern = re.compile(r"(Function [a-z0-9-]+ deployed to:? (https://.+))")
+        pattern = re.compile(
+            r"(Function [a-z0-9-]+ (?:has been )?deployed to:? (https://.+))"
+        )
         groups = re.findall(pattern, output)
 
-        assert len(groups) > 0  # Avoids silent errors
+        assert len(groups) > 0, output  # Avoids silent errors
         for group in groups:
             # Call the actual function
             call_function(group[1])
