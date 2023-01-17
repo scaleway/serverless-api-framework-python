@@ -41,7 +41,6 @@ class ServerlessFrameworkBackend(ServerlessBackend):
                 "SCW_DEFAULT_PROJECT_ID": project_id,
                 "SCW_REGION": region,
             },
-            cwd="./",
             check=True,
         )
 

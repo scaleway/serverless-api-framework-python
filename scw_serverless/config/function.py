@@ -1,17 +1,15 @@
 import sys
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, List, Literal, Optional, TypedDict
+from dataclasses import dataclass, field
+from typing import Callable, List, Literal, Optional, TypedDict
 
 import scaleway.function.v1beta1 as sdk
 
-if TYPE_CHECKING:
-    try:
-        from typing import NotRequired
-    except ImportError:
-        from typing_extensions import NotRequired
+try:
+    from typing import NotRequired
+except ImportError:
+    from typing_extensions import NotRequired
 # pylint: disable=wrong-import-position # Conditional import considered a statement
 from scw_serverless.config.route import GatewayRoute, HTTPMethod
-from scw_serverless.config.utils import _SerializableDataClass
 from scw_serverless.logger import get_logger
 from scw_serverless.triggers import Trigger
 from scw_serverless.utils.string import module_to_path, to_valid_fn_name
@@ -73,25 +71,24 @@ class FunctionKwargs(TypedDict):
 
 # pylint: disable=too-many-instance-attributes
 @dataclass
-class Function(_SerializableDataClass):
+class Function:
     """Representation of a Scaleway function."""
 
     name: str
     handler: str  # Path to the handler
-    environment_variables: Optional[dict[str, str]]
-    min_scale: Optional[int]
-    max_scale: Optional[int]
     runtime: sdk.FunctionRuntime
-    memory_limit: Optional[int]
-    timeout: Optional[str]
-    secret_environment_variables: Optional[list[sdk.Secret]]
-    privacy: Optional[sdk.FunctionPrivacy]
-    description: Optional[str]
-    http_option: Optional[sdk.FunctionHttpOption]
-
-    gateway_route: Optional[GatewayRoute]
-    domains: list[str]
-    triggers: list[Trigger]
+    environment_variables: Optional[dict[str, str]] = None
+    min_scale: Optional[int] = None
+    max_scale: Optional[int] = None
+    memory_limit: Optional[int] = None
+    timeout: Optional[str] = None
+    secret_environment_variables: Optional[list[sdk.Secret]] = None
+    privacy: Optional[sdk.FunctionPrivacy] = None
+    description: Optional[str] = None
+    http_option: Optional[sdk.FunctionHttpOption] = None
+    gateway_route: Optional[GatewayRoute] = None
+    domains: list[str] = field(default_factory=list)
+    triggers: list[Trigger] = field(default_factory=list)
 
     @staticmethod
     def from_handler(

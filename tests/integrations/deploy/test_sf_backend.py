@@ -1,17 +1,13 @@
-from typing import Tuple
-
-import tests.utils as test_utils
-
-# pylint: disable=unused-import # fixture
-from tests.integrations.utils import _create_serverless_project, deploy  # noqa: F401
+# pylint: disable=unused-import,redefined-outer-name # fixture
+from tests.integrations.utils import serverless_test_project  # noqa: F401
+from tests.integrations.utils import ServerlessTestProject
+from tests.utils import APP_PY_PATH
 
 
-def test_integration_deploy_using_srvless_fw(serverless_project: Tuple[str, str]):
-    deploy(
-        test_utils.APP_PY_PATH,
-        serverless_project=serverless_project,
-        backend="serverless",
-    )
+def test_integration_deploy_using_srvless_fw(
+    serverless_test_project: ServerlessTestProject,  # noqa: F811
+):
+    serverless_test_project.deploy(APP_PY_PATH, backend="serverless")
 
 
 # Due to external factors these test will randomly fail.

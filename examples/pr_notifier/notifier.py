@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass
+from http import HTTPStatus
 from typing import Any, ClassVar, Literal, Tuple
 
 import boto3
@@ -50,7 +51,7 @@ client = WebClient(token=SLACK_TOKEN)
 
 @dataclass
 class Developer(JSONWizard):
-    """Generic representation of a user from GitHub/GitLab"""
+    """Generic representation of a user from GitHub/GitLab."""
 
     name: str
     avatar_url: str | None
@@ -68,7 +69,7 @@ class Developer(JSONWizard):
 
 @dataclass
 class Review(JSONWizard):
-    """Generic representation of a review from GitHub/GitLab"""
+    """Generic representation of a review from GitHub/GitLab."""
 
     state: Literal["approved", "dismissed", "changes_requested"]
     _slack_emojis: ClassVar[dict[str, str]] = {
@@ -79,14 +80,14 @@ class Review(JSONWizard):
 
     @staticmethod
     def from_github(review: dict[str, Any]):
-        """Creates from a GitHub review"""
+        """Creates from a GitHub review."""
         return Review(state=review["state"].lower())
 
     @staticmethod
     def from_gitlab_action(
         action: Literal["approval", "approved", "unapproval", "unapproved"]
     ):
-        """Creates from a GitLab action"""
+        """Creates from a GitLab action."""
         return Review(
             state="approved" if action.startswith("approv") else "changes_requested"
         )
@@ -98,19 +99,19 @@ class Review(JSONWizard):
 
 @dataclass
 class Repository(JSONWizard):
-    """Generic representation of a GitHub/GitLab repository"""
+    """Generic representation of a GitHub/GitLab repository."""
 
     name: str
     full_name: str
 
     @staticmethod
     def from_github(repository: dict[str, Any]):
-        """Creates from a GitHub repository"""
+        """Creates from a GitHub repository."""
         return Repository(name=repository["name"], full_name=repository["full_name"])
 
     @staticmethod
     def from_gitlab(repository: dict[str, Any]):
-        """Creates from a GitLab project"""
+        """Creates from a GitLab project."""
         return Repository(
             name=repository["name"], full_name=repository["path_with_namespace"]
         )
@@ -119,7 +120,7 @@ class Repository(JSONWizard):
 # pylint: disable=too-many-instance-attributes # unecessary work to split the attributes
 @dataclass
 class PullRequest(JSONWizard):
-    """Generic representation of a GitHub PR/Gitlab MR"""
+    """Generic representation of a GitHub PR/Gitlab MR."""
 
     number: int
     repository: Repository
@@ -137,14 +138,15 @@ class PullRequest(JSONWizard):
 
     @property
     def bucket_path(self) -> str:
-        """Get the path to store this PR in"""
+        """Get the path to store this PR in."""
         return f"pull_requests/{self.repository.full_name}/{self.number}.json"
 
     # pylint: disable=line-too-long # disabled to include links to documentation
     @staticmethod
     def from_github(repository: dict[str, Any], pull_request: dict[str, Any]):
-        """Creates from a GitHub PR
-        See: https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
+        """Creates from a GitHub PR.
+
+        .. seealso:: https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
         """
         return PullRequest(
             number=pull_request["number"],
@@ -172,7 +174,7 @@ class PullRequest(JSONWizard):
         user: dict[str, Any],
         reviewers: list[dict[str, Any]],
     ):
-        """Creates from a GitLab MR event"""
+        """Creates from a GitLab MR event."""
         return PullRequest(
             number=pull_request["id"],
             repository=Repository.from_gitlab(project),
@@ -190,11 +192,11 @@ class PullRequest(JSONWizard):
         )
 
     def on_draft(self):
-        """Saves a PR marked as a draft to notify when it's ready"""
+        """Saves a PR marked as a draft to notify when it's ready."""
         save_pr_to_bucket(self, "")
 
     def on_created(self):
-        """Sends a notification for a newly created PR"""
+        """Sends a notification for a newly created PR."""
         response = client.chat_postMessage(
             channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
         )
@@ -205,13 +207,13 @@ class PullRequest(JSONWizard):
         save_pr_to_bucket(self, timestamp)
 
     def on_updated(self):
-        """Performs the necessary changes when a PR is updated"""
+        """Performs the necessary changes when a PR is updated."""
         _timestamp, pull = load_pr_from_bucket(self.bucket_path)
         if pull.is_draft and not self.is_draft:
             self.on_created()
 
     def on_reviewed(self, review: Review, reviewer: Developer):
-        """Updates the notification when a new review is made"""
+        """Updates the notification when a new review is made."""
         timestamp, pull = load_pr_from_bucket(self.bucket_path)
         self.reviews = pull.reviews.copy()
         self.reviews[reviewer.name] = review
@@ -232,7 +234,7 @@ class PullRequest(JSONWizard):
             logging.warning(response["error"])
 
     def on_closed(self):
-        """Sends a message in the thread when the PR is merged"""
+        """Sends a message in the thread when the PR is merged."""
         if self.is_merged:
             timestamp, _pull = load_pr_from_bucket(self.bucket_path)
             response = client.chat_postMessage(
@@ -288,41 +290,47 @@ class PullRequest(JSONWizard):
         return blks.MarkdownTextObject(text=txt)
 
     def should_be_reminded(self) -> bool:
-        """Defines the rules to appear in the reminder"""
+        """Defines the rules to appear in the reminder."""
         return not self.is_draft and not self.mergeable
 
     def get_reminder_slack_blk(self, timestamp: str) -> blks.SectionBlock:
-        """Gets the message to be added to the reminder"""
-        reminder = f"*{self.title}*"
+        """Gets the message to be added to the reminder."""
+        url = self.url
         if SLACK_INSTANCE:
-            msg_url = f"https://{ SLACK_INSTANCE }.slack.com/archives/{ SLACK_CHANNEL }/p{ timestamp }"
-            reminder = f"*<{msg_url}|{self.title}>*"
+            url = f"https://{ SLACK_INSTANCE }.slack.com/archives/{ SLACK_CHANNEL }/p{ timestamp }"
+        reminder = f"*<{url}|{self.title}>*"
         return blks.SectionBlock(
             text=blks.MarkdownTextObject(text=reminder, verbatim=True),
         )
 
 
 def delete_pr_from_bucket(bucket_path: str):
-    """Deletes a PR"""
+    """Deletes a PR."""
     s3.Object(S3_BUCKET, bucket_path).delete()
 
 
 def save_pr_to_bucket(pull: PullRequest, timestamp: str):
-    """Saves a PR associated with a Slack timestamp"""
+    """Saves a PR associated with a Slack timestamp."""
     s3.Object(S3_BUCKET, pull.bucket_path).put(
         Body=json.dumps({"ts": timestamp, "pull_request": pull.to_dict()})
     )
 
 
 def load_pr_from_bucket(bucket_path: str) -> Tuple[str, PullRequest]:
-    """Loads a PR and the Slack timestamp of its notification"""
+    """Loads a PR and the Slack timestamp of its notification."""
     saved = json.loads(
         s3.Object(S3_BUCKET, bucket_path).get()["Body"].read().decode("utf-8")
     )
     return (saved["ts"], PullRequest.from_dict(saved["pull_request"]))
 
 
-def _handle_github_events(body: dict[str, Any]):
+@app.func()
+def handle_github(event, _content):
+    """Handles GitHub webhook request.
+
+    .. seealso:: https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
+    """
+    body = json.loads(event["body"])
     match body:
         case {
             "action": "opened" | "reopened",
@@ -352,27 +360,18 @@ def _handle_github_events(body: dict[str, Any]):
             pull = PullRequest.from_github(repository, pull_request)
             pull.on_closed()
         case _:
-            logging.info("could not match body")
-            return {"statusCode": 400}
-    return {"statusCode": 200}
+            logging.info("action %s is not supported", body.get("action"))
+            return {"statusCode": HTTPStatus.BAD_REQUEST}
+    return {"statusCode": HTTPStatus.OK}
 
 
-# pylint: disable=broad-except,line-too-long # disabled for convenience
-@app.func()
-def handle_github(event, _content):
-    """Handles GitHub webhook request
-    See: https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
+@app.func(min_scale=1, memory_limit=1024)
+def handle_gitlab(event, _content):
+    """Handles GitLab webhook request.
+
+    .. seealso:: https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#merge-request-events
     """
-    response = {"statusCode": 200}
-    try:
-        response = _handle_github_events(json.loads(event[0]["body"]))
-    except Exception as exception:
-        logging.error(exception)
-        return {"statusCode": 500}
-    return response
-
-
-def _handle_gitlab_events(body: dict[str, Any]):
+    body = json.loads(event["body"])
     match body:
         case {
             "event_type": "merge_request",
@@ -413,57 +412,35 @@ def _handle_gitlab_events(body: dict[str, Any]):
             pull = PullRequest.from_gitlab(project, pull_request, user, [])
             pull.on_closed()
         case _:
-            logging.info("could not match body")
-            return {"statusCode": 400}
-    return {"statusCode": 200}
-
-
-@app.func(min_scale=1, memory_limit=1024)
-def handle_gitlab(event, _content):
-    """Handles GitLab webhook request
-    See: https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#merge-request-events
-    """
-    response = {"statusCode": 200}
-    try:
-        response = _handle_gitlab_events(json.loads(event[0]["body"]))
-    except Exception as exception:
-        logging.error(exception)
-        return {"statusCode": 500}
-    return response
+            logging.info("event %s is not supported", body.get("event_type"))
+            return {"statusCode": HTTPStatus.BAD_REQUEST}
+    return {"statusCode": HTTPStatus.OK}
 
 
 @app.schedule(REMINDER_SCHEDULE)
 def pull_request_reminder(_event, _content):
-    """Daily reminder to review opened pull-requests"""
-    bucket = s3.Bucket(S3_BUCKET)
-    opened_prs = (
-        bucket.objects.all()
-    )  # not worth using list_objects_v2 since there shouldn't be a lot of active MRs
-    if len(opened_prs) == 0:
-        logging.info("No PRs were found")
-        return {"statusCode": 200}
+    """Daily reminder to review opened pull-requests."""
     blocks = [blks.HeaderBlock(text="PRs awaiting for review: "), blks.DividerBlock()]
-    try:
-        for opened_pr in opened_prs:
-            timestamp, pull = load_pr_from_bucket(opened_pr.key)
-            if pull.should_be_reminded:
-                logging.info(
-                    "PR %s on %s is waiting for review",
-                    pull.title,
-                    pull.repository.full_name,
-                )
-                blocks.append(pull.get_reminder_slack_blk(timestamp))
-            else:
-                logging.info(
-                    "PR %s on %s was not included in the reminder",
-                    pull.title,
-                    pull.repository.full_name,
-                )
-        response = client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
-        if not response["ok"]:
-            logging.error(response["error"])
-            return {"statusCode": 500}
-        return {"statusCode": 200}
-    except Exception as exception:
-        logging.error(exception)
-        return {"statusCode": 500}
+    for opened_pr in s3.Bucket(S3_BUCKET).objects.all():
+        timestamp, pull = load_pr_from_bucket(opened_pr.key)
+        if pull.should_be_reminded:
+            logging.info(
+                "pull request %s on %s is waiting for review",
+                pull.title,
+                pull.repository.full_name,
+            )
+            blocks.append(pull.get_reminder_slack_blk(timestamp))
+        else:
+            logging.info(
+                "pull request %s on %s was not included in the reminder",
+                pull.title,
+                pull.repository.full_name,
+            )
+    if len(blocks) <= 2:
+        logging.info("no pull request was found")
+        return {"statusCode": HTTPStatus.OK}
+    response = client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
+    if not response["ok"]:
+        logging.error(response["error"])
+        return {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR}
+    return {"statusCode": HTTPStatus.OK}

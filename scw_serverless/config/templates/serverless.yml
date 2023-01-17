@@ -2,8 +2,6 @@ service: service_name
 configValidationMode: 'off'
 
 provider:
-  env:
-    test: test
   name: scaleway
   runtime: python310
 

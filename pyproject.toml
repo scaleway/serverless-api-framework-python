@@ -21,19 +21,21 @@ srvless = "scw_serverless.cli:main"
 
 [tool.setuptools]
 include-package-data = true
-
-[tool.setuptools.packages.find]
-exclude = ["tests*"]
+# See: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#flat-layout
+packages = ["scw_serverless"]
 
 [tool.setuptools.package-data]
-scw_serverless = ["*.py", "*.yml"]
+scw_serverless = ["**/*.json", "**/*.yml"]
 
 [tool.pylint]
 load-plugins = ["pylint_per_file_ignores"]
 disable = "missing-module-docstring"
-# Commented Black formatted code
+# Commented Black formatted code.
 max-line-length = 89
-good-names = "i,fp"
+# Short and common names. e is commonly used for exceptions.
+good-names = "i,fp,e"
+# Classes with a single responsibility are fine.
+min-public-methods = 1
 
 [tool.pylint-per-file-ignores]
 "/tests/" = "missing-function-docstring,protected-access"

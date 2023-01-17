@@ -1,7 +1,6 @@
 from typing import Optional
 
 import scaleway.function.v1beta1 as sdk
-from prettytable import PrettyTable
 from scaleway import Client
 
 from scw_serverless.app import Serverless
@@ -79,28 +78,21 @@ class GatewayManager:
         self.logger.success(f"Successfully created gateway {gateway.uuid}")
         return self.app_instance.gateway_domains
 
-    def _display_routes(
-        self, domains: list[str], deployed_fns: dict[str, sdk.Function]
-    ):
+    def _display_routes(self, domains: list[str]):
         prefix = domains[0] if domains else ""
-        table = PrettyTable(["Name", "Methods", "From", "To"])
         routed = filter(
             lambda function: function.gateway_route, self.app_instance.functions
         )
+        self.logger.default("The following functions were configured: ")
         for function in routed:
             assert function.gateway_route
-            table.add_row(
-                [
-                    function.name,
-                    ",".join(
-                        [str(method) for method in function.gateway_route.methods or []]
-                    ),
-                    prefix + function.gateway_route.path,
-                    deployed_fns[function.name].domain_name,
-                ]
+            methods = ",".join(
+                [str(method) for method in function.gateway_route.methods or []]
             )
-        self.logger.success("The following functions were configured: ")
-        self.logger.success(table.get_string())
+            row = f"\t{function.name} on {prefix + function.gateway_route.path}"
+            if methods:
+                row += " with " + methods
+            self.logger.default(row)
 
     def update_gateway_routes(self) -> None:
         """Updates the configurations of the API gateway."""
@@ -114,4 +106,4 @@ class GatewayManager:
         else:
             domains = self._deploy_to_new(routes)
 
-        self._display_routes(domains, deployed_fns)
+        self._display_routes(domains)

@@ -1,0 +1,2 @@
+# Install scw_serverless from local
+./../../

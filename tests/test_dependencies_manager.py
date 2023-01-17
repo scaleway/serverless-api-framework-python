@@ -12,10 +12,8 @@ from scw_serverless.dependencies_manager import DependenciesManager
 @pytest.fixture(name="pkg_folder")
 def clean_up_pkg_folder() -> Iterable[Path]:
     folder = Path(tempfile.mkdtemp())
-    try:
-        yield folder
-    finally:
-        shutil.rmtree(folder)
+    yield folder
+    shutil.rmtree(folder)
 
 
 def test_dependencies_manager_generate_package_folder(pkg_folder: Path):

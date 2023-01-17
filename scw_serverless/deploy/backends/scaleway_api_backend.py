@@ -4,10 +4,12 @@ import os
 import requests
 import scaleway.function.v1beta1 as sdk
 from scaleway import Client
+from scaleway_core.utils import WaitForOptions
 
 from scw_serverless.app import Serverless
 from scw_serverless.config.function import Function
 from scw_serverless.deploy.backends.serverless_backend import ServerlessBackend
+from scw_serverless.triggers import Trigger
 from scw_serverless.utils.files import create_zip_file
 
 TEMP_DIR = "./.scw"
@@ -29,7 +31,7 @@ class ScalewayApiBackend(ServerlessBackend):
     def _get_or_create_function(self, function: Function, namespace_id: str) -> str:
         self.logger.default(f"Looking for an existing function {function.name}...")
         created_function = None
-        # Looking if a function is already existing
+        # Checking if a function already exists
         for func in self.api.list_functions_all(namespace_id):
             if func.name == function.name:
                 created_function = func
@@ -53,8 +55,6 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         else:
             # Updating the function with the provided args
-            kwargs = function.asdict()
-            del kwargs["name"]
             created_function = self.api.update_function(
                 function_id=created_function.id,
                 runtime=function.runtime,
@@ -71,7 +71,9 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         return created_function.id
 
-    def _deploy_function(self, function: Function, namespace_id: str, zip_size: int):
+    def _deploy_function(
+        self, function: Function, namespace_id: str, zip_size: int
+    ) -> sdk.Function:
         function_id = self._get_or_create_function(function, namespace_id)
 
         # Get an object storage pre-signed url
@@ -86,38 +88,44 @@ class ScalewayApiBackend(ServerlessBackend):
             )
             raise exception
 
-        self.logger.default("Uploading function...")
-        with open(DEPLOYMENT_ZIP, mode="rb") as file:
-            # Upload function zip to S3 presigned URL
-            req = requests.put(
-                upload_url,
-                data=file,
-                headers={
-                    "Content-Type": "application/octet-stream",
-                    "Content-Length": str(zip_size),
-                },
-                timeout=UPLOAD_TIMEOUT,
-            )
+        self.logger.default(f"Uploading function {function.name}...")
+        self._upload_deployment_zip(upload_url, zip_size)
 
-            if req.status_code != 200:
-                raise RuntimeError("Unable to upload function code... Aborting...")
-
-        self.logger.default("Deploying function...")
+        self.logger.default(f"Deploying function {function.name}...")
         # deploy the newly uploaded function
         self.api.deploy_function(function_id)
 
-        func = self.api.wait_for_function(
+        return self.api.wait_for_function(
             function_id,
-            options=sdk.api.WaitForOptions(
+            options=WaitForOptions(
                 timeout=DEPLOY_TIMEOUT,
-                min_delay=10,
                 stop=lambda f: (f.status != sdk.FunctionStatus.PENDING),
             ),
         )
-        return func
 
-    def _create_deployment_zip(self):
-        # Create a ZIP archive containing the entire project
+    def _deploy_trigger(self, function_id: str, trigger: Trigger) -> sdk.Cron:
+        created_trigger = None
+        # Checking if a trigger already exists
+        for cron in self.api.list_crons_all(function_id):
+            if cron.name == trigger.name:
+                created_trigger = cron
+        if not created_trigger:
+            created_trigger = self.api.create_cron(
+                function_id=function_id,
+                schedule=trigger.schedule,
+                name=trigger.name,
+                args=trigger.args,
+            )
+        else:
+            created_trigger = self.api.update_cron(
+                created_trigger.id,
+                schedule=trigger.schedule,
+                args=trigger.args,
+            )
+        return self.api.wait_for_cron(created_trigger.id)
+
+    def _create_deployment_zip(self) -> int:
+        """Create a ZIP archive containing the entire project."""
         self.logger.default("Creating a deployment archive...")
         if not os.path.exists(TEMP_DIR):
             os.mkdir(TEMP_DIR)
@@ -128,6 +136,21 @@ class ScalewayApiBackend(ServerlessBackend):
         create_zip_file(DEPLOYMENT_ZIP, "./")
         return os.path.getsize(DEPLOYMENT_ZIP)
 
+    def _upload_deployment_zip(self, upload_url: str, zip_size: int):
+        """Upload function zip to S3 presigned URL."""
+        with open(DEPLOYMENT_ZIP, mode="rb") as file:
+            req = requests.put(
+                upload_url,
+                data=file,
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "Content-Length": str(zip_size),
+                },
+                timeout=UPLOAD_TIMEOUT,
+            )
+            if req.status_code != 200:
+                raise RuntimeError("Unable to upload function code... Aborting...")
+
     def _remove_missing_functions(self, namespace_id: str):
         """Deletes functions no longer present in the code."""
         function_names = [func.name for func in self.app_instance.functions]
@@ -135,6 +158,17 @@ class ScalewayApiBackend(ServerlessBackend):
             if func.name not in function_names:
                 self.logger.info(f"Deleting function {func.name}...")
                 self.api.delete_function(func.id)
+
+    def _remove_missing_triggers(self, namespace_id: str, deployed_triggers: set[str]):
+        """Deletes triggers no longer present in the code."""
+        for function in self.api.list_functions_all(namespace_id=namespace_id):
+            unmanaged = filter(
+                lambda c: c.id not in deployed_triggers,
+                self.api.list_crons_all(function.id),
+            )
+            for cron in unmanaged:
+                self.logger.info(f"Deleting Cron {cron.name}...")
+                self.api.delete_cron(cron.id)
 
     def _get_or_create_namespace(self) -> str:
         project_id = self.api.client.default_project_id
@@ -147,14 +181,14 @@ class ScalewayApiBackend(ServerlessBackend):
         for deployed_namespace in self.api.list_namespaces_all():
             if deployed_namespace.name == self.app_instance.service_name:
                 namespace = deployed_namespace
-        self.logger.default(
-            f"Creating a new namespace {namespace_name} in {project_id}..."
-        )
         secrets = [
             sdk.Secret(key, value)
             for key, value in (self.app_instance.secret or {}).items()
         ]
         if not namespace:
+            self.logger.default(
+                f"Creating a new namespace {namespace_name} in {project_id}..."
+            )
             # Create a new namespace
             namespace = self.api.create_namespace(
                 name=namespace_name,
@@ -168,12 +202,7 @@ class ScalewayApiBackend(ServerlessBackend):
                 environment_variables=self.app_instance.env,
                 secret_environment_variables=secrets,
             )
-        namespace = self.api.wait_for_namespace(
-            namespace_id=namespace.id,
-            options=sdk.api.WaitForOptions(
-                stop=lambda namespace: namespace.status != sdk.NamespaceStatus.PENDING
-            ),
-        )
+        namespace = self.api.wait_for_namespace(namespace_id=namespace.id)
         if namespace.status != sdk.NamespaceStatus.READY:
             raise ValueError(
                 f"Namespace {namespace.name} is not ready: {namespace.error_message}"
@@ -189,6 +218,12 @@ class ScalewayApiBackend(ServerlessBackend):
             (function, namespace_id, file_size)
             for function in self.app_instance.functions
         ]
+        triggers_to_deploy = {
+            function.name: function.triggers
+            for function in self.app_instance.functions
+            if function.triggers
+        }
+        function_ids: dict[str, str] = {}
 
         n_proc = min(len(self.app_instance.functions), 3 * (os.cpu_count() or 1))
         with multiprocessing.Pool(processes=n_proc) as pool:
@@ -202,9 +237,27 @@ class ScalewayApiBackend(ServerlessBackend):
                     f"Function {function.name} deployed to: "
                     + f"https://{function.domain_name}"
                 )
+                function_ids[function.name] = function.id
+
+            if triggers_to_deploy:
+                self.logger.default("Deploying triggers...")
+
+            triggers_to_deploy = [
+                (function_ids[k], t)
+                for k, triggers in triggers_to_deploy.items()
+                for t in triggers
+            ]
+
+            deployed_triggers: set[str] = set()
+            for trigger in pool.starmap(self._deploy_trigger, triggers_to_deploy):
+                if trigger.status is sdk.CronStatus.ERROR:
+                    raise ValueError(f"Trigger {trigger.name} is in error state")
+                deployed_triggers.add(trigger.id)
 
         if self.single_source:
             # Remove functions no longer present in the code
             self._remove_missing_functions(namespace_id)
+            # Remove triggers
+            self._remove_missing_triggers(namespace_id, deployed_triggers)
 
         self.logger.success("Done! Functions have been successfully deployed!")

@@ -1,22 +1,13 @@
-from pathlib import Path
-from typing import Tuple
-
-import tests.utils as test_utils
-from scw_serverless.dependencies_manager import DependenciesManager
-
-# pylint: disable=unused-import # fixture
-from tests.integrations.utils import (  # noqa: F401
-    _create_serverless_project,
-    deploy,
-    serverless_framework,
-)
+# pylint: disable=unused-import,redefined-outer-name # fixture
+from tests.integrations.utils import serverless_test_project  # noqa: F401
+from tests.integrations.utils import ServerlessTestProject
+from tests.utils import APP_PY_PATH
 
 
-def test_integration_serverless_framework(serverless_project: Tuple[str, str]):
-    deps = DependenciesManager(Path("./"), Path("./"))
-    deps.generate_package_folder()
-
-    serverless_framework(test_utils.APP_PY_PATH, serverless_project=serverless_project)
+def test_integration_serverless_framework(
+    serverless_test_project: ServerlessTestProject,  # noqa: F811
+):
+    serverless_test_project.generate_serverless_framework(APP_PY_PATH)
 
 
 # Due to external factors these test will randomly fail.
