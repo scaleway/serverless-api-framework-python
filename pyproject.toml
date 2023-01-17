@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [project.urls]
-# documentation = "https://readthedocs.org"
+documentation = "https://serverless-api-project.readthedocs.io/en/latest/"
 repository = "https://github.com/scaleway/serverless-api-project"
 
 [project.scripts]
