@@ -22,7 +22,7 @@ from typing_extensions import Self
 from scw_serverless.dependencies_manager import DependenciesManager
 
 DEFAULT_REGION = "pl-waw"
-CLI_COMMAND = "srvless"
+CLI_COMMAND = "scw-serverless"
 
 
 class ServerlessTestProject:

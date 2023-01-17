@@ -24,4 +24,4 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Deploy to scaleway's serverless functions
       run: |
-        srvless deploy
+        scw-serverless deploy

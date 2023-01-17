@@ -5,7 +5,7 @@ Namespace
 ---------
 
 The first step is to create a Serverless instance, which maps to a function namespace.
-When deploying, the `srvless` CLI will look for a Serverless instance in the global scope.
+When deploying, the `scw-serverless` CLI will look for a Serverless instance in the global scope.
 
 .. code-block:: python
 
