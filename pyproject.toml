@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scw_serverless"
+version = "0.0.2"
 description = "An API framework to make it easy to work with Scaleway Serverless functions."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
 keywords = ["serverless", "scaleway", "functions", "cloud"]
-dynamic = ["version"]
 
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
@@ -49,9 +49,6 @@ packages = ["scw_serverless"]
 
 [tool.setuptools.package-data]
 scw_serverless = ["**/*.json", "**/*.yml"]
-
-[tool.setuptools.dynamic]
-version = { attr = "scw_serverless.__version__" }
 
 [tool.pylint]
 load-plugins = ["pylint_per_file_ignores"]
