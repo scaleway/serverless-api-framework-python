@@ -12,7 +12,7 @@ Deployment can be done with `scw_serverless`:
 
 ```console
 pip install scw_serverless
-srvless deploy notifier.py
+scw-serverless deploy notifier.py
 ```
 
 Once you have deployed the functions, they can be setup as webhooks on your repositories:

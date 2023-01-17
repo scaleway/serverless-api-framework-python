@@ -18,7 +18,7 @@ def hello_world(event, context):
 Deploy it with `scw_serverless`:
 
 ```console
-srvless deploy app.py
+scw-serverless deploy app.py
 ```
 
 ## Quickstart
@@ -29,10 +29,10 @@ srvless deploy app.py
 pip install scw_serverless
 ```
 
-This will install `srvless`:
+This will install `scw-serverless`:
 
 ```console
-srvless --help
+scw-serverless --help
 ```
 
 ### Writing and configuring functions
@@ -55,10 +55,10 @@ def hello_world(event, context):
 The configuration is done by passing arguments to the decorator.
 To view which arguments are supported, head over to this [documentation](https://serverless-apifw-docs.s3-website.fr-par.scw.cloud/configuring.html) page.
 
-When you are ready, you can deploy your function with the `srvless` CLI tool:
+When you are ready, you can deploy your function with the `scw-serverless` CLI tool:
 
 ```console
-srvless deploy app.py
+scw-serverless deploy app.py
 ```
 
 The tool will use your Scaleway credentials from your environment and config file.

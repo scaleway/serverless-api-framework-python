@@ -1,7 +1,7 @@
 Deploying
 =========
 
-After writing your functions, the included CLI tool `srvless` helps deploy your application on Scaleway.
+After writing your functions, the included CLI tool `scw-serverless` helps deploy your application on Scaleway.
 
 Deploy
 ------
@@ -10,7 +10,7 @@ The `deploy` command will deploy your functions directly.
 
 .. code-block:: console
 
-    srvless deploy --help
+    scw-serverless deploy --help
 
 The command will wait until all functions are deployed and ready to be called. It will also deploy the corresponding triggers.
 
@@ -24,7 +24,7 @@ Config file generation is done with the `generate` command:
 
 .. code-block:: console
 
-    srvless generate -b serverless
+    scw-serverless generate -b serverless
 
 Serverless Generator
 ^^^^^^^^^^^^^^^^^^^^

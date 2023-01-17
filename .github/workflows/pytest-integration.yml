@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test:
     runs-on: self-hosted
     container: nikolaik/python-nodejs:python3.10-nodejs18
     steps:

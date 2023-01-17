@@ -4,8 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scw_serverless"
-version = "0.0.1"
+version = "0.0.2"
+description = "An API framework to make it easy to work with Scaleway Serverless functions."
+readme = "README.md"
 requires-python = ">=3.9"
+license = { file = "LICENSE" }
+keywords = ["serverless", "scaleway", "functions", "cloud"]
+
+# Should be one of:
+# 'Development Status :: 3 - Alpha'
+# 'Development Status :: 4 - Beta'
+# 'Development Status :: 5 - Production/Stable'
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Internet",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+]
+
 dependencies = [
     "click >= 8",
     "PyYAML >= 6",
@@ -16,8 +35,12 @@ dependencies = [
     "typing_extensions; python_version<'3.11'",
 ]
 
+[project.urls]
+documentation = "https://serverless-api-project.readthedocs.io/en/latest/"
+repository = "https://github.com/scaleway/serverless-api-project"
+
 [project.scripts]
-srvless = "scw_serverless.cli:main"
+scw-serverless = "scw_serverless.cli:main"
 
 [tool.setuptools]
 include-package-data = true

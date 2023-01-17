@@ -27,11 +27,11 @@ Installation
 
     pip install scw_serverless
 
-This will install `srvless`:
+This will install `scw-serverless`:
 
 .. code-block:: console
 
-    srvless --help
+    scw-serverless --help
 
 The tool uses the same configuration_ as the Scaleway CLI to access your account.
 This includes the environment variables.
@@ -53,11 +53,11 @@ Annotate your Python functions with the func decorator:
     def hello_world(event, context):
         return "Hello World!"
 
-Deploy with the `srvless` tool:
+Deploy with the `scw-serverless` tool:
 
 .. code-block:: console
 
-    srvless deploy handler.py
+    scw-serverless deploy handler.py
 
 To learn more about the different configuration options, check out :doc:`configuring`.
 

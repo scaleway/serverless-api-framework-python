@@ -4,4 +4,4 @@ This example provides a simple Github Action configuration file to get you start
 
 To do so, simply copy the `deploy.yml` file in `.github/workflows`.
 
-This example will automatically run `srvless deploy` in the project root to deploy your on each git tag.
+This example will automatically run `scw-serverless deploy` in the project root to deploy your on each git tag.
