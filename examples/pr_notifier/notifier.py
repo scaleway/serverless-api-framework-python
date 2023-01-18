@@ -146,7 +146,10 @@ class PullRequest(JSONWizard):
     def from_github(repository: dict[str, Any], pull_request: dict[str, Any]):
         """Creates from a GitHub PR.
 
-        .. seealso:: https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
+        .. seealso::
+
+            GitHub Documentation
+            https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
         """
         return PullRequest(
             number=pull_request["number"],
@@ -191,11 +194,11 @@ class PullRequest(JSONWizard):
             deletions=None,
         )
 
-    def on_draft(self):
+    def on_draft(self) -> None:
         """Saves a PR marked as a draft to notify when it's ready."""
         save_pr_to_bucket(self, "")
 
-    def on_created(self):
+    def on_created(self) -> None:
         """Sends a notification for a newly created PR."""
         response = client.chat_postMessage(
             channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
@@ -206,13 +209,13 @@ class PullRequest(JSONWizard):
         timestamp = str(response["ts"])
         save_pr_to_bucket(self, timestamp)
 
-    def on_updated(self):
+    def on_updated(self) -> None:
         """Performs the necessary changes when a PR is updated."""
         _timestamp, pull = load_pr_from_bucket(self.bucket_path)
         if pull.is_draft and not self.is_draft:
             self.on_created()
 
-    def on_reviewed(self, review: Review, reviewer: Developer):
+    def on_reviewed(self, review: Review, reviewer: Developer) -> None:
         """Updates the notification when a new review is made."""
         timestamp, pull = load_pr_from_bucket(self.bucket_path)
         self.reviews = pull.reviews.copy()
@@ -233,7 +236,7 @@ class PullRequest(JSONWizard):
         if not response["ok"]:
             logging.warning(response["error"])
 
-    def on_closed(self):
+    def on_closed(self) -> None:
         """Sends a message in the thread when the PR is merged."""
         if self.is_merged:
             timestamp, _pull = load_pr_from_bucket(self.bucket_path)
@@ -297,19 +300,20 @@ class PullRequest(JSONWizard):
         """Gets the message to be added to the reminder."""
         url = self.url
         if SLACK_INSTANCE:
-            url = f"https://{ SLACK_INSTANCE }.slack.com/archives/{ SLACK_CHANNEL }/p{ timestamp }"
+            instance_url = f"https://{SLACK_INSTANCE}.slack.com"
+            url = f"{instance_url}/archives/{SLACK_CHANNEL}/p{timestamp}"
         reminder = f"*<{url}|{self.title}>*"
         return blks.SectionBlock(
             text=blks.MarkdownTextObject(text=reminder, verbatim=True),
         )
 
 
-def delete_pr_from_bucket(bucket_path: str):
+def delete_pr_from_bucket(bucket_path: str) -> None:
     """Deletes a PR."""
     s3.Object(S3_BUCKET, bucket_path).delete()
 
 
-def save_pr_to_bucket(pull: PullRequest, timestamp: str):
+def save_pr_to_bucket(pull: PullRequest, timestamp: str) -> None:
     """Saves a PR associated with a Slack timestamp."""
     s3.Object(S3_BUCKET, pull.bucket_path).put(
         Body=json.dumps({"ts": timestamp, "pull_request": pull.to_dict()})
@@ -325,7 +329,7 @@ def load_pr_from_bucket(bucket_path: str) -> Tuple[str, PullRequest]:
 
 
 @app.func()
-def handle_github(event: dict[str, Any], _content: dict[str, Any]):
+def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, Any]:
     """Handles GitHub webhook request.
 
     .. seealso::
@@ -369,7 +373,7 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]):
 
 
 @app.func(min_scale=1, memory_limit=1024)
-def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]):
+def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, Any]:
     """Handles GitLab webhook request.
 
     .. seealso::
@@ -424,7 +428,9 @@ def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]):
 
 
 @app.schedule(REMINDER_SCHEDULE)
-def pull_request_reminder(_event, _content):
+def pull_request_reminder(
+    _event: dict[str, Any], _content: dict[str, Any]
+) -> dict[str, Any]:
     """Daily reminder to review opened pull-requests."""
     blocks = [blks.HeaderBlock(text="PRs awaiting for review: "), blks.DividerBlock()]
     for opened_pr in s3.Bucket(S3_BUCKET).objects.all():
