@@ -49,9 +49,8 @@ repository = "https://github.com/scaleway/serverless-api-project"
 scw-serverless = "scw_serverless.cli:main"
 
 [tool.setuptools]
+# Using: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#flat-layout
 include-package-data = true
-# See: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#flat-layout
-packages = ["scw_serverless"]
 
 [tool.setuptools.package-data]
 scw_serverless = ["**/*.json", "**/*.yml"]
