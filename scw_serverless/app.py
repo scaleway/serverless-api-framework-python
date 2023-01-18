@@ -1,10 +1,9 @@
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
-if TYPE_CHECKING:
-    try:
-        from typing import Unpack
-    except ImportError:
-        from typing_extensions import Unpack
+try:
+    from typing import Unpack
+except ImportError:
+    from typing_extensions import Unpack
 # pylint: disable=wrong-import-position # Conditional import considered a statement
 
 from scw_serverless.config.function import Function, FunctionKwargs

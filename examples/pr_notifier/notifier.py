@@ -325,7 +325,7 @@ def load_pr_from_bucket(bucket_path: str) -> Tuple[str, PullRequest]:
 
 
 @app.func()
-def handle_github(event, _content):
+def handle_github(event: dict[str, Any], _content: dict[str, Any]):
     """Handles GitHub webhook request.
 
     .. seealso::
@@ -369,7 +369,7 @@ def handle_github(event, _content):
 
 
 @app.func(min_scale=1, memory_limit=1024)
-def handle_gitlab(event, _content):
+def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]):
     """Handles GitLab webhook request.
 
     .. seealso::

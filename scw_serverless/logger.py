@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 import click
 
 DEBUG = 0
@@ -11,66 +13,75 @@ CRITICAL = 60
 _LOGGER_SINGLETON = None
 
 
-def get_logger():
-    """Get"""
-    global _LOGGER_SINGLETON
+def get_logger() -> "Logger":
+    """Gets the global logger instance."""
+    # pylint: disable=global-statement # Known issue FIXME
+    global _LOGGER_SINGLETON  # noqa
     # This is the first time we call get_logger, init the singleton
     if not _LOGGER_SINGLETON:
         _LOGGER_SINGLETON = Logger()
     return _LOGGER_SINGLETON
 
 
-class _LogRecord:
-    def __init__(self, message: str = None, level: int = 0):
-        self.message = message
-        self.level = level
+_LogRecord = NamedTuple("LogRecord", [("level", int), ("message", str)])
 
 
 class Logger:
+    """A logger built on top of click.echo."""
+
     def __init__(self):
         self.level = DEFAULT
 
-    def set_level(self, level: int):
+    def set_level(self, level: int) -> None:
+        """Sets the log level."""
         self.level = level
 
-    def critical(self, message: str):
+    def critical(self, message: str) -> None:
+        """Logs a critical message."""
         self.log(CRITICAL, message)
 
-    def error(self, message: str):
+    def error(self, message: str) -> None:
+        """Logs an error message."""
         self.log(ERROR, message)
 
-    def warning(self, message: str):
+    def warning(self, message: str) -> None:
+        """Logs a warning message."""
         self.log(WARNING, message)
 
-    def success(self, message: str):
+    def success(self, message: str) -> None:
+        """Logs a success message."""
         self.log(SUCCESS, message)
 
-    def info(self, message: str):
+    def info(self, message: str) -> None:
+        """Logs an info message."""
         self.log(INFO, message)
 
-    def default(self, message: str):
+    def default(self, message: str) -> None:
+        """Logs a message."""
         self.log(DEFAULT, message)
 
-    def debug(self, message: str):
+    def debug(self, message: str) -> None:
+        """Logs a debug message."""
         self.log(DEBUG, message)
 
-    def log(self, level: int, message: str):
-        self.emit(_LogRecord(message=message, level=level))
+    def log(self, level: int, message: str) -> None:
+        """Logs a message with a specific level."""
+        self._emit(_LogRecord(message=message, level=level))
 
-    def emit(self, record: _LogRecord):
+    def _emit(self, record: _LogRecord):
         if record.level < self.level:
             return
 
         err = False
-        fg = ""
-        if record.level == ERROR or record.level == CRITICAL:
+        color = ""
+        if record.level in [ERROR, CRITICAL]:
             err = True
-            fg = "red"
+            color = "red"
         elif record.level == WARNING:
-            fg = "yellow"
+            color = "yellow"
         elif record.level == INFO:
-            fg = "cyan"
+            color = "cyan"
         elif record.level == SUCCESS:
-            fg = "green"
+            color = "green"
 
-        click.echo(click.style(record.message, fg=fg), err=err)
+        click.echo(click.style(record.message, fg=color), err=err)
