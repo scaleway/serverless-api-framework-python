@@ -34,7 +34,7 @@ classifiers = [
 dependencies = [
     "click >= 8",
     "PyYAML >= 6",
-    "scaleway >= 0.2",
+    "scaleway >= 0.5",
     # Requires support for pyproject.toml
     "setuptools >= 61",
     "requests >= 2",
