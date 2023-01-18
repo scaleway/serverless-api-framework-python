@@ -186,7 +186,7 @@ class ServerlessTestProject:
         sha = os.getenv("GITHUB_SHA", "local")
         name = f"apifw-{sha[:7]}-{random.randint(0, 9999)}"
         project = AccountV2API(self.client).create_project(
-            name,
+            name=name,
             description="Created by the Serverless API Framework integration suite.",
         )
         return project.id
@@ -229,7 +229,7 @@ class ServerlessTestProject:
         api = AccountV2API(self.client)
         for _ in range(max_tries):
             try:
-                api.delete_project(self.project_id)
+                api.delete_project(project_id=self.project_id)
                 return
             except ScalewayException as e:
                 # This is just very finicky, the account API is somewhat unstable.

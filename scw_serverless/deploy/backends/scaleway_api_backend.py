@@ -32,7 +32,7 @@ class ScalewayApiBackend(ServerlessBackend):
         self.logger.default(f"Looking for an existing function {function.name}...")
         created_function = None
         # Checking if a function already exists
-        for func in self.api.list_functions_all(namespace_id):
+        for func in self.api.list_functions_all(namespace_id=namespace_id):
             if func.name == function.name:
                 created_function = func
         if not created_function:
@@ -93,10 +93,10 @@ class ScalewayApiBackend(ServerlessBackend):
 
         self.logger.default(f"Deploying function {function.name}...")
         # deploy the newly uploaded function
-        self.api.deploy_function(function_id)
+        self.api.deploy_function(function_id=function_id)
 
         return self.api.wait_for_function(
-            function_id,
+            function_id=function_id,
             options=WaitForOptions(
                 timeout=DEPLOY_TIMEOUT,
                 stop=lambda f: (f.status != sdk.FunctionStatus.PENDING),
@@ -106,7 +106,7 @@ class ScalewayApiBackend(ServerlessBackend):
     def _deploy_trigger(self, function_id: str, trigger: Trigger) -> sdk.Cron:
         created_trigger = None
         # Checking if a trigger already exists
-        for cron in self.api.list_crons_all(function_id):
+        for cron in self.api.list_crons_all(function_id=function_id):
             if cron.name == trigger.name:
                 created_trigger = cron
         if not created_trigger:
@@ -118,11 +118,11 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         else:
             created_trigger = self.api.update_cron(
-                created_trigger.id,
+                cron_id=created_trigger.id,
                 schedule=trigger.schedule,
                 args=trigger.args,
             )
-        return self.api.wait_for_cron(created_trigger.id)
+        return self.api.wait_for_cron(cron_id=created_trigger.id)
 
     def _create_deployment_zip(self) -> int:
         """Create a ZIP archive containing the entire project."""
@@ -154,21 +154,21 @@ class ScalewayApiBackend(ServerlessBackend):
     def _remove_missing_functions(self, namespace_id: str):
         """Deletes functions no longer present in the code."""
         function_names = [func.name for func in self.app_instance.functions]
-        for func in self.api.list_functions_all(namespace_id=namespace_id):
-            if func.name not in function_names:
-                self.logger.info(f"Deleting function {func.name}...")
-                self.api.delete_function(func.id)
+        for function in self.api.list_functions_all(namespace_id=namespace_id):
+            if function.name not in function_names:
+                self.logger.info(f"Deleting function {function.name}...")
+                self.api.delete_function(function_id=function.id)
 
     def _remove_missing_triggers(self, namespace_id: str, deployed_triggers: set[str]):
         """Deletes triggers no longer present in the code."""
         for function in self.api.list_functions_all(namespace_id=namespace_id):
             unmanaged = filter(
                 lambda c: c.id not in deployed_triggers,
-                self.api.list_crons_all(function.id),
+                self.api.list_crons_all(function_id=function.id),
             )
             for cron in unmanaged:
                 self.logger.info(f"Deleting Cron {cron.name}...")
-                self.api.delete_cron(cron.id)
+                self.api.delete_cron(cron_id=cron.id)
 
     def _get_or_create_namespace(self) -> str:
         project_id = self.api.client.default_project_id
