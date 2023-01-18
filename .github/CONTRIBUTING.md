@@ -49,7 +49,7 @@ The goal of the following guidelines is to have Pull Requests (PRs) that are fai
 
 - **Pull Request title should respect [conventional commits](https://www.conventionalcommits.org/en/v1.0.0) specifications** and be clear on what is being changed.
 - **Keep it readable for human reviewers** and prefer a subset of functionality (code) with tests and documentation over delivering them separately
-- **Don't forget commenting code** to help reviewers understand 
+- **Don't forget commenting code** to help reviewers understand
 - **Notify Work In Progress PRs** by prefixing the title with `[WIP]`
 - **Please, keep us updated.**
   We will try our best to merge your PR, but please notice that PRs may be closed after 30 days of inactivity.
@@ -63,4 +63,3 @@ Keep in mind only the **pull request title** will be used as commit message as w
 See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 Thank you for reading through all of this, if you have any question feel free to [reach us](README.md#reach-us)!
-
