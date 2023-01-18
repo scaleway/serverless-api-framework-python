@@ -119,7 +119,10 @@ class _TerraformNamespaceResource(_SerializableDataClass):
 class TerraformGenerator(Generator):
     """Generates the Terraform configuration to deploy the functions.
 
-    .. seealso:: https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/function
+    .. seealso::
+
+        Scaleway Terraform Provider Documentation:
+        https://registry.terraform.io/providers/scaleway/scaleway/latest/docs/resources/function
     """
 
     def __init__(self, instance: Serverless, deps_manager: DependenciesManager):

@@ -328,7 +328,10 @@ def load_pr_from_bucket(bucket_path: str) -> Tuple[str, PullRequest]:
 def handle_github(event, _content):
     """Handles GitHub webhook request.
 
-    .. seealso:: https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
+    .. seealso::
+
+        GitHub Events Documentation
+        https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
     """
     body = json.loads(event["body"])
     match body:
@@ -369,7 +372,10 @@ def handle_github(event, _content):
 def handle_gitlab(event, _content):
     """Handles GitLab webhook request.
 
-    .. seealso:: https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#merge-request-events
+    .. seealso::
+
+        GitLab Events Documentation
+        https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#merge-request-events
     """
     body = json.loads(event["body"])
     match body:

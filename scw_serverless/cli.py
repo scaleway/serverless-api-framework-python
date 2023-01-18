@@ -29,10 +29,14 @@ CLICK_ARG_FILE = click.argument(
     ),
 )
 
-# TODO: link to the doc
+
 @click.group()
 def cli() -> None:
-    """Deploy your Serverless functions on Scaleway's Cloud."""
+    """Deploy your Serverless functions on Scaleway's Cloud.
+
+    Documentation:
+    https://serverless-api-project.readthedocs.io/en/latest/
+    """
 
 
 # TODO?: clean up the locals by introducing a class

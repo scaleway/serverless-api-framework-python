@@ -46,10 +46,12 @@ class FunctionKwargs(TypedDict):
     :param timeout: Max duration to respond to a request.
     :param description: Description. Defaults to the function docstring if defined.
     :param http_option: Either "enabled" or "redirected".
-                        If "redirected" (default), redirects http traffic to your function.
+                        If "redirected" (default), allow http traffic to your function.
                         Blocked otherwise.
-    .. seealso:: https://developers.scaleway.com/en/products/functions/api/#create-a-function
+    .. seealso::
 
+        Scaleway Developers Documentation
+        https://developers.scaleway.com/en/products/functions/api/#create-a-function
     """
 
     env: NotRequired[dict[str, str]]

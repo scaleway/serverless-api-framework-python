@@ -10,7 +10,10 @@ class CronTrigger:
     :param args: Data to be sent in the body.
     :param name: Name to give to your resource.
 
-    .. seealso:: https://developers.scaleway.com/en/products/functions/api/#create-a-cron-trigger-for-your-function
+    .. seealso::
+
+        Scaleway Documentation
+        <https://developers.scaleway.com/en/products/functions/api/#create-a-cron-trigger-for-your-function>
     """
 
     schedule: str

@@ -17,15 +17,13 @@ class DependenciesManager:
 
     It does not currently handles native dependencies.
 
-    .. seealso:: https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies
+    .. seealso::
+
+        Scaleway Documentation
+        <https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies>
     """
 
     def __init__(self, in_path: pathlib.Path, out_path: pathlib.Path) -> None:
-        if type(in_path) == str:
-            in_path = pathlib.Path(in_path)
-        if type(out_path) == str:
-            out_path = pathlib.Path(out_path)
-
         self.in_path = in_path
         self.out_path = out_path
         self.logger = get_logger()

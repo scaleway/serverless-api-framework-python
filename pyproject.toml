@@ -6,10 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "scw_serverless"
 version = "0.0.2"
 description = "An API framework to make it easy to work with Scaleway Serverless functions."
+authors = [
+    { name = "Scaleway Serverless Team", email = "opensource@scaleway.com" },
+]
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
-keywords = ["serverless", "scaleway", "functions", "cloud"]
+keywords = ["serverless", "scaleway", "functions", "cloud", "faas"]
 
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
@@ -23,6 +26,9 @@ classifiers = [
     "Topic :: Internet",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 dependencies = [
