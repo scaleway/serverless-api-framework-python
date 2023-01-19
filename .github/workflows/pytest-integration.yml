@@ -15,12 +15,16 @@ jobs:
     container: nikolaik/python-nodejs:python3.10-nodejs18
     steps:
       - uses: actions/checkout@v3
+
       - name: Install terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_wrapper: false
+
       - uses: ./.github/actions/setup-serverless-framework
+
       - uses: ./.github/actions/setup-poetry
+
       - name: Test with pytest
         working-directory: tests
         run: poetry run pytest integrations -n $(nproc --all)

@@ -15,7 +15,9 @@ jobs:
     container: nikolaik/python-nodejs:python3.10-nodejs18
     steps:
       - uses: actions/checkout@v3
+
       - uses: ./.github/actions/setup-poetry
+
       - name: Test with pytest
         working-directory: tests
         run: poetry run pytest -s --ignore=integrations

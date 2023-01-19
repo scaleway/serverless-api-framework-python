@@ -1,5 +1,5 @@
-name: Set up development
-description: Install required dependencies
+name: Set up Serverless Framework
+description: Install Serverless Framework & Scaleway Plugin
 runs:
   using: "composite"
   steps:
