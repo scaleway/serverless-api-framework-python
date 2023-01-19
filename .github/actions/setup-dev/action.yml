@@ -1,0 +1,41 @@
+name: Set up development
+description: Install required dependencies
+runs:
+  using: "composite"
+  steps:
+    - name: Install terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - uses: actions/cache@v3
+      id: npm-cache
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+
+    - name: Install npm dependencies
+      shell: bash
+      run: npm install -g serverless serverless-scaleway-functions
+
+    - uses: snok/install-poetry@v1
+      with:
+        version: 1.3.2
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Cache poetry dependencies
+      id: cache-poetry-deps
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: pydeps-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install poetry dependencies
+      shell: bash
+      run: poetry install --no-interaction --no-root --with=dev
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+
+    - name: Install scw_serverless
+      shell: bash
+      run: poetry install --no-interaction
