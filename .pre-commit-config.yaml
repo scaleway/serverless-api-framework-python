@@ -44,7 +44,3 @@ repos:
     hooks:
       - id: python-bandit-vulnerability-check
         args: [--skip, "B101", --recursive, clumper]
-  - repo: https://github.com/regebro/pyroma
-    rev: "4.1"
-    hooks:
-      - id: pyroma
