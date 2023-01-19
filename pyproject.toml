@@ -75,8 +75,8 @@ min-public-methods = 1
 profile = "black"
 
 [tool.pyright]
-# include = ["scw_serverless", "examples"]
-# exclude = ["**/node_modules", "**/__pycache__", "**/package/**"]
+include = ["scw_serverless", "examples"]
+exclude = ["**/node_modules", "**/__pycache__", "**/package/**"]
 
 [tool.pydocstyle]
 # Compatible with Sphinx
