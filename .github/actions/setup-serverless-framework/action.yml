@@ -1,0 +1,14 @@
+name: Set up development
+description: Install required dependencies
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/cache@v3
+      id: npm-cache
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+
+    - name: Install npm dependencies
+      shell: bash
+      run: npm install -g serverless serverless-scaleway-functions
