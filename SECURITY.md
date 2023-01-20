@@ -11,4 +11,3 @@ We will follow up with you promptly with more information and a plan for remedia
 We currently do not offer a paid security bounty program, but we would love to send some
 Scaleway swag your way along with our deepest gratitude for your assistance in making
 Scaleway a more secure Cloud ecosystem.
-

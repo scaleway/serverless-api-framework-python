@@ -6,10 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "scw_serverless"
 version = "0.0.2"
 description = "An API framework to make it easy to work with Scaleway Serverless functions."
+authors = [
+    { name = "Scaleway Serverless Team", email = "opensource@scaleway.com" },
+]
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
-keywords = ["serverless", "scaleway", "functions", "cloud"]
+keywords = ["serverless", "scaleway", "functions", "cloud", "faas"]
 
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
@@ -23,12 +26,15 @@ classifiers = [
     "Topic :: Internet",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 
 dependencies = [
     "click >= 8",
     "PyYAML >= 6",
-    "scaleway >= 0.2",
+    "scaleway >= 0.5",
     # Requires support for pyproject.toml
     "setuptools >= 61",
     "requests >= 2",
@@ -43,9 +49,8 @@ repository = "https://github.com/scaleway/serverless-api-project"
 scw-serverless = "scw_serverless.cli:main"
 
 [tool.setuptools]
+# Using: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#flat-layout
 include-package-data = true
-# See: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#flat-layout
-packages = ["scw_serverless"]
 
 [tool.setuptools.package-data]
 scw_serverless = ["**/*.json", "**/*.yml"]

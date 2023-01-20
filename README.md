@@ -15,7 +15,7 @@ def hello_world(event, context):
     return "Hello World!"
 ```
 
-Deploy it with `scw_serverless`:
+Deploy it with `scw-serverless`:
 
 ```console
 scw-serverless deploy app.py
@@ -26,10 +26,10 @@ scw-serverless deploy app.py
 ### Install
 
 ```console
-pip install scw_serverless
+pip install scw-serverless
 ```
 
-This will install `scw-serverless`:
+This will install the `scw-serverless` CLI:
 
 ```console
 scw-serverless --help
@@ -53,7 +53,7 @@ def hello_world(event, context):
 ```
 
 The configuration is done by passing arguments to the decorator.
-To view which arguments are supported, head over to this [documentation](https://serverless-apifw-docs.s3-website.fr-par.scw.cloud/configuring.html) page.
+To view which arguments are supported, head over to this [documentation](https://serverless-api-project.readthedocs.io/) page.
 
 When you are ready, you can deploy your function with the `scw-serverless` CLI tool:
 
@@ -65,7 +65,7 @@ The tool will use your Scaleway credentials from your environment and config fil
 
 ## What’s Next?
 
-To learn more about the framework, have a look at the [documentation](https://serverless-apifw-docs.s3-website.fr-par.scw.cloud/index.html).
+To learn more about the framework, have a look at the [documentation](https://serverless-api-project.readthedocs.io/).
 If you want to see it in action, we provide some [examples](https://github.com/scaleway/serverless-api-project/tree/main/examples) to get you started.
 
 ## Contributing

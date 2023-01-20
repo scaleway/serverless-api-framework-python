@@ -21,4 +21,3 @@ If the change is not user facing, just write "NONE" in the release-note block be
 
 - [ ] I have added unit test covering every changes I have made
 - [ ] I have updated the relevant documentation
-

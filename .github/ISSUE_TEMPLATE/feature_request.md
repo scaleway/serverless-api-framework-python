@@ -23,4 +23,3 @@ labels: enhancement
 <!-- e.g. @app.resource -->
 
 ### References
-

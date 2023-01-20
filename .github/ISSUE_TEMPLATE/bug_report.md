@@ -29,4 +29,3 @@ labels: bug
 ## More info
 
 <!-- verion of serverless-api-project used, your python version, your OS version, steps to reproduce, etc. -->
-

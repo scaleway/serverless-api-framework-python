@@ -14,7 +14,7 @@ logger.setLevel(logging.INFO)
     inputs={"myname": "Georges"},
     privacy="public",
 )
-def hello_cron(event: dict[str, Any], _context: dict[str, Any]):
+def hello_cron(event: dict[str, Any], _context: dict[str, Any]) -> dict[str, Any]:
     """A simple cron that regularly greets you during business days."""
     body = json.loads(event["body"])
     my_name = body["myname"]

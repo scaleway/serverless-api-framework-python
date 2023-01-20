@@ -1,4 +1,4 @@
 boto3~=1.26
 dataclass-wizard~=0.22
-scw_serverless==0.0.1b0
+scw-serverless~=0.0.2
 slack_sdk~=3.19
