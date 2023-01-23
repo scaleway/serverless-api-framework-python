@@ -22,5 +22,5 @@ def test_multiple_function_export():
 
 
 def test_get_command_path():
-    assert get_command_path("serverless")
+    assert get_command_path("python")
     assert get_command_path("node")

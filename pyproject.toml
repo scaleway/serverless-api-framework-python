@@ -1,23 +1,18 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "scw_serverless"
+[tool.poetry]
+name = "scw-serverless"
 version = "0.0.2"
-description = "An API framework to make it easy to work with Scaleway Serverless functions."
-authors = [
-    { name = "Scaleway Serverless Team", email = "opensource@scaleway.com" },
-]
+description = "Framework for writing serverless APIs in Python, using Scaleway functions and containers."
+authors = ["Scaleway Serverless Team <opensource@scaleway.com>"]
 readme = "README.md"
-requires-python = ">=3.9"
-license = { file = "LICENSE" }
+license = "MIT"
+repository = "https://github.com/scaleway/serverless-api-project"
+documentation = "https://serverless-api-project.readthedocs.io/en/latest/"
 keywords = ["serverless", "scaleway", "functions", "cloud", "faas"]
 
 # Should be one of:
-# 'Development Status :: 3 - Alpha'
-# 'Development Status :: 4 - Beta'
-# 'Development Status :: 5 - Production/Stable'
+# "Development Status :: 3 - Alpha"
+# "Development Status :: 4 - Beta"
+# "Development Status :: 5 - Production/Stable"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -31,29 +26,35 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
-dependencies = [
-    "click >= 8",
-    "PyYAML >= 6",
-    "scaleway >= 0.5",
-    # Requires support for pyproject.toml
-    "setuptools >= 61",
-    "requests >= 2",
-    "typing_extensions; python_version<'3.11'",
-]
+packages = [{include = "scw_serverless"}]
+include = ["scw_serverless/**/*.yaml", "scw_serverless/**/*.json"]
 
-[project.urls]
-documentation = "https://serverless-api-project.readthedocs.io/en/latest/"
-repository = "https://github.com/scaleway/serverless-api-project"
-
-[project.scripts]
+[tool.poetry.scripts]
 scw-serverless = "scw_serverless.cli:main"
 
-[tool.setuptools]
-# Using: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#flat-layout
-include-package-data = true
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "^8.1.3"
+scaleway = "^0.5.0"
+requests = "^2.28.2"
+typing-extensions = { version = "^4.4.0", python = "<3.11" }
+pyyaml = "^6.0"
 
-[tool.setuptools.package-data]
-scw_serverless = ["**/*.json", "**/*.yml"]
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^2.21.0"
+pytest = "^7.2.0"
+pytest-xdist = "^3.1.0"
+pylint = "^2.15.10"
+pylint-per-file-ignores = "^1.1.0"
+responses = "^0.22"
+
+[tool.poetry.group.doc]
+optional = true
+
+[tool.poetry.group.doc.dependencies]
+myst_parser = "^0.18.1"
+sphinx = "^5.3.0"
+sphinx_rtd_theme = "^1.1.1"
 
 [tool.pylint]
 load-plugins = ["pylint_per_file_ignores"]
@@ -81,3 +82,7 @@ exclude = ["**/node_modules", "**/__pycache__", "**/package/**"]
 # Compatible with Sphinx
 convention = "google"
 add_ignore = ["D100", "D107"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -15,19 +15,9 @@ jobs:
     container: nikolaik/python-nodejs:python3.10-nodejs18
     steps:
       - uses: actions/checkout@v3
-      - name: Setup terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_wrapper: false
-      - name: Install dependencies
-        run: |
-          pip install --editable .
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          npm install -g serverless serverless-scaleway-functions
+
+      - uses: ./.github/actions/setup-poetry
+
       - name: Test with pytest
         working-directory: tests
-        run: pytest -s --ignore=integrations
-        env:
-          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        run: poetry run pytest -s --ignore=integrations
