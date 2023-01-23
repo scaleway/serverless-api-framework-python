@@ -18,7 +18,7 @@ permissions:
 jobs:
   deploy:
     runs-on: self-hosted
-    container: python:3.10-slim-bullseye
+    container: nikolaik/python-nodejs:python3.10-nodejs18
     steps:
       - uses: actions/checkout@v3
 
