@@ -1,5 +1,8 @@
 # Serverless API Framework
 
+[![Documentation Status](https://readthedocs.org/projects/serverless-api-project/badge/?version=latest)](https://serverless-api-project.readthedocs.io/en/latest/?badge=latest)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/scaleway/serverless-api-project/main.svg)](https://results.pre-commit.ci/latest/github/scaleway/serverless-api-project/main)
+
 Serverless API Framework is a tool that lets you write and deploy serverless functions in python.
 It bridges your code with the deployment configuration to make it a breeze to work with serverless functions.
 
