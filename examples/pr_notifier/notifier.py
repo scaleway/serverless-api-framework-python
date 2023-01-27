@@ -27,6 +27,7 @@ app = Serverless(
     env={
         "S3_BUCKET": S3_BUCKET,
         "SLACK_CHANNEL": SLACK_CHANNEL,
+        "PYTHONUNBUFFERED": 1,
     },
     secret={
         "SLACK_TOKEN": SLACK_TOKEN,
@@ -211,13 +212,29 @@ class PullRequest(JSONWizard):
 
     def on_updated(self) -> None:
         """Performs the necessary changes when a PR is updated."""
-        _timestamp, pull = load_pr_from_bucket(self.bucket_path)
+        try:
+            _, pull = load_pr_from_bucket(self.bucket_path)
+        except s3.meta.client.exceptions.NoSuchKey:
+            logging.info(
+                "Pull request: %s in %s not found in bucket",
+                self.title,
+                self.repository,
+            )
+            return
         if pull.is_draft and not self.is_draft:
             self.on_created()
 
     def on_reviewed(self, review: Review, reviewer: Developer) -> None:
         """Updates the notification when a new review is made."""
-        timestamp, pull = load_pr_from_bucket(self.bucket_path)
+        try:
+            timestamp, pull = load_pr_from_bucket(self.bucket_path)
+        except s3.meta.client.exceptions.NoSuchKey:
+            logging.info(
+                "Pull request: %s in %s not found in bucket",
+                self.title,
+                self.repository,
+            )
+            return
         self.reviews = pull.reviews.copy()
         self.reviews[reviewer.name] = review
         self.owner = pull.owner
