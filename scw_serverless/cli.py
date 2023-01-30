@@ -14,7 +14,6 @@ from scw_serverless.config.generators.terraform import TerraformGenerator
 from scw_serverless.dependencies_manager import DependenciesManager
 from scw_serverless.deploy import backends, gateway
 from scw_serverless.logger import DEFAULT, get_logger
-from scw_serverless.utils.config import Config
 from scw_serverless.utils.credentials import DEFAULT_REGION, get_scw_client
 
 CLICK_ARG_FILE = click.argument(
@@ -86,18 +85,6 @@ WARNING: Please use environment variables instead""",
     show_default=True,
     help="Select the backend used to deploy",
 )
-@click.option(
-    "--gw-id",
-    "-g",
-    "gateway_id",
-    envvar="SCW_APIGW_ID",
-    help="API Gateway uuid to use with function endpoints",
-)
-@click.option(
-    "--api-gw-host",
-    envvar="SCW_API_GW_HOST",
-    help="Host of the API to manage gateways",
-)
 def deploy(
     file: Path,
     backend: Literal["api", "serverless"],
@@ -106,8 +93,6 @@ def deploy(
     secret_key: Optional[str] = None,
     project_id: Optional[str] = None,
     region: Optional[str] = None,
-    gateway_id: Optional[str] = None,
-    api_gw_host: Optional[str] = None,
 ) -> None:
     """Deploy your functions to Scaleway.
 
@@ -138,29 +123,13 @@ def deploy(
     if not deploy_backend:
         logger.warning(f"Unknown backend selected: {backend}")
 
-    deploy_backend.deploy()
+    # deploy_backend.deploy()
 
     needs_gateway = any(function.gateway_route for function in app_instance.functions)
     if not needs_gateway:
         return
-    config = Config(api_gw_host, gateway_id).update_from_config_file()
-    # If gateway_id is not configured, gateway_domains needs to be set
-    is_gateway_configured = config.gateway_id or app_instance.gateway_domains
-    if not is_gateway_configured:
-        raise RuntimeError(
-            "Deploying a routed functions requires a"
-            + "gateway_id or a gateway_domain to be configured"
-        )
-    if not config.api_gw_host:
-        raise RuntimeError("No api gateway host was configured")
     # Update the gateway
-    manager = gateway.GatewayManager(
-        app_instance,
-        client,
-        config.gateway_id,
-        gateway.GatewayClient(config.api_gw_host),
-    )
-    manager.update_gateway_routes()
+    gateway.NginxGateway(app_instance, client).deploy()
 
 
 @cli.command()

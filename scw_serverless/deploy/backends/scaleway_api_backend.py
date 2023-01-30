@@ -179,7 +179,7 @@ class ScalewayApiBackend(ServerlessBackend):
         )
         # Search in the user's namespace if one is matching the same name and region
         for deployed_namespace in self.api.list_namespaces_all():
-            if deployed_namespace.name == self.app_instance.service_name:
+            if deployed_namespace.name == namespace_name:
                 namespace = deployed_namespace
         secrets = [
             sdk.Secret(key, value)

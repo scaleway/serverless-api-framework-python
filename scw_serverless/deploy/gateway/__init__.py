@@ -1,2 +1,3 @@
-from .client import GatewayClient
-from .manager import GatewayManager
+from .nginx_gateway import NginxGateway
+
+__all__ = ["NginxGateway"]

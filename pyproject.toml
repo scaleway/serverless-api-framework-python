@@ -39,6 +39,7 @@ scaleway = "^0.5.0"
 requests = "^2.28.2"
 typing-extensions = { version = "^4.4.0", python = "<3.11" }
 pyyaml = "^6.0"
+jinja2 = "^3.1.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^2.21.0"
@@ -47,6 +48,7 @@ pytest-xdist = "^3.1.0"
 pylint = "^2.15.10"
 pylint-per-file-ignores = "^1.1.0"
 responses = "^0.22"
+hypothesis = "^6.65.0"
 
 [tool.poetry.group.doc]
 optional = true
