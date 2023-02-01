@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: self-hosted
-    container: nikolaik/python-nodejs:python3.10-nodejs18
+    container: nikolaik/python-nodejs:python3.10-nodejs18-alpine
     steps:
       - uses: actions/checkout@v3
 
