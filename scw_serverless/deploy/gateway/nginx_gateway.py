@@ -82,6 +82,7 @@ class NginxGateway:
             if deployed_container.name == container_name:
                 container = deployed_container
         if container:
+            self.logger.default(f"Updating gateway {container.id}...")
             container = self.container_api.update_container(
                 container_id=container.id,
                 privacy=sdk.ContainerPrivacy.PUBLIC,
@@ -94,6 +95,7 @@ class NginxGateway:
                 port=8080,
             )
         else:
+            self.logger.default("Creating gateway...")
             container = self.container_api.create_container(
                 name=container_name,
                 namespace_id=namespace_id,
@@ -135,10 +137,6 @@ class NginxGateway:
 
         nginx_config = generate_nginx_config(routes=routes)
         nginx_config = base64.b64encode(nginx_config.encode("utf-8"))
-
-        with tempfile.NamedTemporaryFile(delete=False) as fp:
-            fp.write(nginx_config)
-            print(fp.name)
 
         container = self._get_or_create_container(
             namespace_id, nginx_config.decode("utf-8")
