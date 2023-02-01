@@ -24,6 +24,10 @@ http {
         ""      close;
     }
 
+    {%- filter indent(width=4) %}
+    {% include "method_maps.conf.jinja2" %}
+    {%- endfilter %}
+
     include /etc/nginx/conf.d/*.conf;
 
     server {
@@ -39,38 +43,25 @@ http {
         # Robots
         include /etc/nginx/helpers/robots.conf;
 
-        {% for route in routes %}
-        location {{ route.path }} {
-            {% if route.methods %}
-            if ($request_method !~ ^({{ route.methods | map(attribute='value') | join('|') }})$) {
+        {% for location in locations recursive %}
+        location {{ location.path }} {
+            {%- if location.sublocations %}
+                {{ loop(location.sublocations) }}
+            {%- endif %}
+
+            {%- if location.unallowed_methods %}
+            if ($request_method ~ ^({{ location.unallowed_methods | join('|') }})$) {
                 return 405;
             }
-            {% endif %}
+            {%- endif %}
 
-            set $target {{ route.target }};
+            set $target {{ location.target }};
             proxy_pass $target;
-            proxy_http_version                 1.1;
-            proxy_cache_bypass                 $http_upgrade;
 
-            # Proxy headers
-            proxy_set_header Upgrade           $http_upgrade;
-            proxy_set_header Connection        $connection_upgrade;
-            # proxy_set_header Host              $target_host;
-            proxy_set_header X-Real-IP         $remote_addr;
-            # proxy_set_header Forwarded         $proxy_add_forwarded;
-            # proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-Host  $host;
-            proxy_set_header X-Forwarded-Port  $server_port;
-
-            # Proxy timeouts
-            proxy_connect_timeout              60s;
-            proxy_send_timeout                 60s;
-            proxy_read_timeout                 60s;
-
-            # Disable buffering to minimize latency
-            proxy_buffering off;
+            {%- filter indent(width=4*loop.depth + 4) %}
+            {% include "proxy.conf.jinja2" %}
+            {%- endfilter %}
         }
-        {% endfor %}
+        {%- endfor %}
     }
 }
