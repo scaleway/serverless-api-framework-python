@@ -123,7 +123,7 @@ def deploy(
     if not deploy_backend:
         logger.warning(f"Unknown backend selected: {backend}")
 
-    # deploy_backend.deploy()
+    deploy_backend.deploy()
 
     needs_gateway = any(function.gateway_route for function in app_instance.functions)
     if not needs_gateway:
