@@ -1,7 +1,7 @@
 {% for method_map in method_maps %}
 map $request_method {{ method_map.var_name }} {
     {%- for method, target in method_map.methods_to_targets.items() %}
-    {{method}} {{target}};
+    {{method}} "{{target}}";
     {%- endfor %}
 }
 {% endfor %}

@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -29,8 +28,8 @@ class GatewayRoute:
         """Validates the route."""
         if self.path == "":
             raise ValueError("No path specified")
-        if not re.match(r"[A-Za-z0-9:.]*[\/]{1}.*\/?$", self.path):
-            raise ValueError(f"Invalid path: {self.path}")
         for method in self.methods or []:
             if method not in HTTPMethod:
                 raise ValueError(f"Unsupported method: {method}")
+        if self.target and "$" in self.target:
+            raise ValueError("Unsupported char in target: $")

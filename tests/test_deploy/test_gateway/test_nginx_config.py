@@ -1,21 +1,43 @@
+import shutil
+import string
 import subprocess
 import tempfile
-import time
+from pathlib import Path
 
-import requests
-from hypothesis import given, provisional
+import pytest
+from hypothesis import example, given, provisional
 from hypothesis import strategies as st
 
 from scw_serverless.config.route import GatewayRoute, HTTPMethod
 from scw_serverless.deploy.gateway.nginx_config import generate_nginx_config
 
-from ...utils import COLD_START_TIMEOUT, DEPLOYED_TEST_FUNCS, requires_nginx
+from ...utils import TESTS_DIR, requires_nginx
 
-METHODS = [method.value for method in HTTPMethod]
+PATH_STRATEGY = st.lists(
+    st.text(alphabet=string.ascii_lowercase, min_size=1), max_size=20
+)
+ROUTE_STRATEGY = st.builds(
+    GatewayRoute,
+    path=st.builds("/".join, PATH_STRATEGY),
+    methods=st.lists(
+        st.builds(HTTPMethod, st.sampled_from(list(HTTPMethod))), unique=True
+    ),
+    target=provisional.urls(),
+)
+TEST_TARGET = "https://scaleway.com"
+
+
+# pylint: disable=redefined-outer-name # fixture
+@pytest.fixture(scope="session")
+def helpers_temp_dir():
+    helpers_dir = Path(TESTS_DIR).parent.joinpath("deploying/gateway/helpers")
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        shutil.copytree(helpers_dir, tmp_dir, dirs_exist_ok=True)
+        yield tmp_dir
 
 
 def check_nginx_config(config: str):
-    with tempfile.NamedTemporaryFile(mode="wt", encoding="utf-8") as fp:
+    with tempfile.NamedTemporaryFile(mode="wt", encoding="utf-8", delete=False) as fp:
         fp.write(config)
         fp.flush()
         try:
@@ -26,55 +48,32 @@ def check_nginx_config(config: str):
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
+            print(e.stderr)
             print(config)
             raise e
 
 
 @requires_nginx
-@given(
-    path=st.text(),
-    methods=st.lists(st.sampled_from(METHODS)),
-    target=provisional.urls(),
+@given(routes=st.lists(ROUTE_STRATEGY, max_size=20))
+# Example where methods are None
+@example(routes=[GatewayRoute("/", None, TEST_TARGET)])
+# Example with a route that contains a "-"
+@example(
+    routes=[
+        GatewayRoute("/messages", [HTTPMethod.GET], TEST_TARGET),
+        GatewayRoute("/messages", [HTTPMethod.POST], TEST_TARGET),
+        GatewayRoute(
+            "/messages/by-length/", [HTTPMethod.GET, HTTPMethod.PUT], TEST_TARGET
+        ),
+    ]
 )
-def test_generate_nginx_config_check_single_route(path, methods, target):
-    route = GatewayRoute(path=path, methods=methods, target=target)
+def test_generate_nginx_config_check(routes: list[GatewayRoute], helpers_temp_dir: str):
     try:
-        config = generate_nginx_config(routes=[route])
+        config = generate_nginx_config(routes=routes)
     except ValueError as e:
         print(e)
         return
 
+    # We running it locally, the helpers must
+    config = config.replace("/etc/nginx/helpers", helpers_temp_dir)
     check_nginx_config(config)
-
-
-@requires_nginx
-def test_generate_nginx_config_local_nginx():
-    """A simple integration test that runs a Nginx server locally.
-    Runs against already deployed functions for simplicity.
-    """
-
-    routes = []
-    for path, url in DEPLOYED_TEST_FUNCS.items():
-        # try:
-        #     requests.post(url, timeout=COLD_START_TIMEOUT)
-        # except requests.exceptions.RequestException as e:
-        #     print(e)
-        #     pytest.skip(reason=f"target {url} is unresponsive")
-        routes.append(
-            GatewayRoute(path="/" + path, methods=[HTTPMethod.GET], target=url)
-        )
-
-    config = generate_nginx_config(routes=routes)
-
-    with tempfile.NamedTemporaryFile(mode="wt", encoding="utf-8", delete=False) as fp:
-        fp.write(config)
-        fp.flush()
-        with subprocess.Popen(
-            args=["nginx", "-c", fp.name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ):
-            base_url = "http://localhost:8080"
-            time.sleep(1)
-            for route in routes:
-                requests.get(base_url + route.path, timeout=COLD_START_TIMEOUT)

@@ -123,7 +123,10 @@ def generate_config_from_trie(
             unallowed_methods = [m.value for m in HTTPMethod if m != method]
         else:
             # Target will be bound to a map that assign depending on the method
-            var_name = f'${node.path.replace("/", "_").lstrip("_")}_target'
+            var_name = "$" + node.path
+            for char in "/-":
+                var_name = var_name.replace(char, "_")
+            var_name = var_name.lstrip("_") + "_target"
             target = var_name
             unallowed_methods = [
                 method.value for method in HTTPMethod if method not in node.targets
