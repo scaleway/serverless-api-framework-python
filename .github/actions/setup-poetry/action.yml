@@ -3,6 +3,12 @@ description: Install poetry and python dependencies
 runs:
   using: "composite"
   steps:
+    - name: Install bash
+      shell: sh
+      run: |
+        apk update
+        apk add bash
+
     - uses: snok/install-poetry@v1
       with:
         version: 1.3.2

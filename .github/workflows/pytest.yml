@@ -20,7 +20,6 @@ jobs:
 
       - name: Install nginx
         run: |
-          apk update
           apk add nginx
 
       - name: Test with pytest
