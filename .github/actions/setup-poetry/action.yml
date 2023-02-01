@@ -3,7 +3,7 @@ description: Install poetry and python dependencies
 runs:
   using: "composite"
   steps:
-    - name: Install bash
+    - name: Install bash and curl
       shell: sh
       run: |
         apk update
