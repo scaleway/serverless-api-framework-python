@@ -20,7 +20,7 @@ jobs:
 
       - name: Install nginx
         run: |
-          apk add nginx
+          apk --no-cache add nginx
 
       - name: Test with pytest
         working-directory: tests

@@ -7,7 +7,7 @@ runs:
       shell: sh
       run: |
         apk update
-        apk add bash
+        apk add --no-cache bash curl
 
     - uses: snok/install-poetry@v1
       with:
