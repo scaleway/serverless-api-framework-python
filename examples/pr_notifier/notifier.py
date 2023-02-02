@@ -294,6 +294,9 @@ class PullRequest(JSONWizard):
         # On GitLab the owner is not sent on review events
         # We extract the owner from what's been saved
         self.owner = pull.owner
+        if review.state == "left_note":
+            # Reviewer block is not sent on note events
+            self.reviewers = pull.reviewers
         save_pr_to_bucket(self, timestamp)
         response = client.chat_update(
             channel=SLACK_CHANNEL, ts=timestamp, blocks=self._as_slack_notification()
