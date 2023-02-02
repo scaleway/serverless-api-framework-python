@@ -26,7 +26,7 @@ app = Serverless(
     env={
         "S3_BUCKET": S3_BUCKET,
         "SLACK_CHANNEL": SLACK_CHANNEL,
-        "PYTHONUNBUFFERED": 1,
+        "PYTHONUNBUFFERED": "1",
     },
     secret={
         "SLACK_TOKEN": SLACK_TOKEN,
