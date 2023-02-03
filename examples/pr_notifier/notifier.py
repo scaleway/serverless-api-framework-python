@@ -444,7 +444,7 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
             "zen": _,  # GitHub trivia included only on ping events
             "repository": repository,
         }:
-            logging.info("Hook is now active on repository: %s", repository)
+            logging.info("Hook is now active on repository: %s", repository["full_name"])
             return {"statusCode": HTTPStatus.OK}
         case {
             "action": "opened" | "reopened",
