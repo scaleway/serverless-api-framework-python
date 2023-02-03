@@ -438,7 +438,7 @@ def load_pr_from_bucket(bucket_path: str) -> Tuple[str, PullRequest]:
     return (saved["ts"], PullRequest.from_dict(saved["pull_request"]))
 
 
-@app.func()
+@app.func(description="GitHub webhook to notify on new PRs")
 def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, Any]:
     """Handles GitHub webhook request.
 
@@ -490,7 +490,9 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
     return {"statusCode": HTTPStatus.OK}
 
 
-@app.func(min_scale=1, memory_limit=1024)
+@app.func(
+    min_scale=1, memory_limit=1024, description="GitLab webhook to notify on new MRs"
+)
 def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, Any]:
     """Handles GitLab webhook request.
 
