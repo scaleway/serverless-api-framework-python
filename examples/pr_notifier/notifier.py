@@ -78,10 +78,12 @@ class Developer(JSONWizard):
         """Gets the name that should be used on Slack."""
         if not self.email:
             return self.name
+
         response = client.users_lookupByEmail(email=self.email)
         if not response["ok"]:
             logging.error("Getting slack id for %s: %s", self.name, response["error"])
             return self.name
+
         return f'<@{response["user"]["id"]}>'  # type: ignore
 
 
@@ -279,10 +281,11 @@ class PullRequest(JSONWizard):
                 self.repository,
             )
             return
+
         self.reviews = pull.reviews.copy()
-        # Ignore note "reviews" if there is an actual review
-        # Also avoids spam when someone leaves multiple comments
         if review.state == "left_note" and reviewer.name in self.reviews:
+            # Ignore note "reviews" if there is an actual review
+            # Also avoids spam when someone leaves multiple comments
             logging.info(
                 "User %s left a note on a reviewed PR #%s in %s",
                 reviewer.name,
@@ -290,6 +293,7 @@ class PullRequest(JSONWizard):
                 self.repository,
             )
             return
+
         self.reviews[reviewer.name] = review
         # On GitLab the owner is not sent on review events
         # We extract the owner from what's been saved
@@ -297,7 +301,9 @@ class PullRequest(JSONWizard):
         if review.state == "left_note":
             # Reviewer block is not sent on note events
             self.reviewers = pull.reviewers
+
         save_pr_to_bucket(self, timestamp)
+
         response = client.chat_update(
             channel=SLACK_CHANNEL, ts=timestamp, blocks=self._as_slack_notification()
         )
@@ -308,7 +314,7 @@ class PullRequest(JSONWizard):
                 self.repository,
                 response["error"],
             )
-            return
+
         response = client.chat_postMessage(
             channel=SLACK_CHANNEL,
             thread_ts=timestamp,
@@ -338,6 +344,7 @@ class PullRequest(JSONWizard):
                     self.repository,
                     response["error"],
                 )
+
         delete_pr_from_bucket(self.bucket_path)
 
     def _as_slack_notification(self) -> list[blks.Block]:
@@ -392,6 +399,7 @@ class PullRequest(JSONWizard):
             return None
         if self.mergeable:
             return f"Mergeable: {self.owner.get_slack_username()}"
+
         missing_reviewers = [
             reviewer.get_slack_username()
             for name, reviewer in self.reviewers.items()
@@ -399,6 +407,7 @@ class PullRequest(JSONWizard):
         ]
         if not missing_reviewers:
             return None
+
         return f'Missing reviews: {", ".join(missing_reviewers)}'
 
     def get_reminder_slack_blk(self, reminder_message: str) -> blks.SectionBlock:
@@ -568,9 +577,11 @@ def pull_request_reminder(
                 pull.number,
                 pull.repository.name,
             )
+
     if len(blocks) <= 2:
         logging.info("No pull request was included in reminder")
         return {"statusCode": HTTPStatus.OK}
+
     response = client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
     if not response["ok"]:
         logging.error(
