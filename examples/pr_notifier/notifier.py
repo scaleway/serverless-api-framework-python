@@ -1,3 +1,4 @@
+import functools
 import json
 import logging
 import os
@@ -17,9 +18,7 @@ SCW_SECRET_KEY = os.environ["SCW_SECRET_KEY"]
 S3_BUCKET = os.environ["S3_BUCKET"]
 SLACK_TOKEN = os.environ["SLACK_TOKEN"]
 SLACK_CHANNEL = os.environ["SLACK_CHANNEL"]
-SLACK_INSTANCE = os.getenv(
-    "SLACK_INSTANCE", ""
-)  # used to generate archive links to slack messages
+GITLAB_EMAIL_DOMAIN = os.getenv("GITLAB_EMAIL_DOMAIN")
 REMINDER_SCHEDULE = os.getenv("REMINDER_SCHEDULE", "0 9 * * 1-5")
 
 app = Serverless(
@@ -27,6 +26,7 @@ app = Serverless(
     env={
         "S3_BUCKET": S3_BUCKET,
         "SLACK_CHANNEL": SLACK_CHANNEL,
+        "PYTHONUNBUFFERED": "1",
     },
     secret={
         "SLACK_TOKEN": SLACK_TOKEN,
@@ -45,7 +45,10 @@ s3 = boto3.resource(
 )
 
 # Enable info logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    format="%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
+    level=logging.INFO,
+)
 client = WebClient(token=SLACK_TOKEN)
 
 
@@ -54,28 +57,52 @@ class Developer(JSONWizard):
     """Generic representation of a user from GitHub/GitLab."""
 
     name: str
+    email: str | None
     avatar_url: str | None
 
     @staticmethod
     def from_github(user: dict[str, Any]):
         """Creates from a GitHub user"""
-        return Developer(name=user["login"], avatar_url=user["avatar_url"])
+        return Developer(name=user["login"], email=None, avatar_url=user["avatar_url"])
 
     @staticmethod
     def from_gitlab(user: dict[str, Any]):
         """Creates from a GitLab user"""
-        return Developer(name=user["username"], avatar_url=user["avatar_url"])
+        email = user["username"] + GITLAB_EMAIL_DOMAIN if GITLAB_EMAIL_DOMAIN else None
+        return Developer(
+            name=user["username"], email=email, avatar_url=user["avatar_url"]
+        )
+
+    @functools.lru_cache(maxsize=10)
+    def get_slack_username(self) -> str:
+        """Gets the name that should be used on Slack."""
+        if not self.email:
+            return self.name
+
+        response = client.users_lookupByEmail(email=self.email)
+        if not response["ok"]:
+            logging.error("Getting slack id for %s: %s", self.name, response["error"])
+            return self.name
+
+        return f'<@{response["user"]["id"]}>'  # type: ignore
 
 
 @dataclass
 class Review(JSONWizard):
     """Generic representation of a review from GitHub/GitLab."""
 
-    state: Literal["approved", "dismissed", "changes_requested"]
+    state: Literal["approved", "dismissed", "changes_requested", "left_note"]
     _slack_emojis: ClassVar[dict[str, str]] = {
         "approved": ":heavy_check_mark:",
         "dismissed": ":put_litter_in_its_place:",
         "changes_requested": ":x:",
+        "left_note": ":x:",
+    }
+    _slack_message: ClassVar[dict[str, str]] = {
+        "approved": "approved the pull request",
+        "dismissed": "dismissed the pull request",
+        "changes_requested": "requested some changes",
+        "left_note": "left a comment",
     }
 
     @staticmethod
@@ -92,9 +119,24 @@ class Review(JSONWizard):
             state="approved" if action.startswith("approv") else "changes_requested"
         )
 
-    def get_slack_emoji(self) -> str:
-        """Gets the corresponding slack emoji"""
+    @staticmethod
+    def from_gitlab_note():
+        """Creates from a GitLab note.
+
+        This is different than an actual review but it's the only event
+        sent by GitLab when someone requests some changes.
+        """
+        return Review(state="left_note")
+
+    @property
+    def slack_emoji(self) -> str:
+        """Gets the corresponding slack emoji."""
         return self._slack_emojis.get(self.state, "")
+
+    @property
+    def slack_message(self) -> str:
+        """Gets the corresponding slack message."""
+        return self._slack_message.get(self.state, "")
 
 
 @dataclass
@@ -204,37 +246,87 @@ class PullRequest(JSONWizard):
             channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
         )
         if not response["ok"]:
-            logging.warning(response["error"])
+            logging.error(
+                "Sending created message for #%s in %s: %s",
+                self.number,
+                self.repository,
+                response["error"],
+            )
             return
         timestamp = str(response["ts"])
         save_pr_to_bucket(self, timestamp)
 
     def on_updated(self) -> None:
         """Performs the necessary changes when a PR is updated."""
-        _timestamp, pull = load_pr_from_bucket(self.bucket_path)
+        try:
+            _, pull = load_pr_from_bucket(self.bucket_path)
+        except s3.meta.client.exceptions.NoSuchKey:
+            logging.warning(
+                "Pull request #%s in %s not found",
+                self.number,
+                self.repository,
+            )
+            return
         if pull.is_draft and not self.is_draft:
             self.on_created()
 
     def on_reviewed(self, review: Review, reviewer: Developer) -> None:
         """Updates the notification when a new review is made."""
-        timestamp, pull = load_pr_from_bucket(self.bucket_path)
+        try:
+            timestamp, pull = load_pr_from_bucket(self.bucket_path)
+        except s3.meta.client.exceptions.NoSuchKey:
+            logging.warning(
+                "Pull request #%s in %s not found",
+                self.number,
+                self.repository,
+            )
+            return
+
         self.reviews = pull.reviews.copy()
+        if review.state == "left_note" and reviewer.name in self.reviews:
+            # Ignore note "reviews" if there is an actual review
+            # Also avoids spam when someone leaves multiple comments
+            logging.info(
+                "User %s left a note on a reviewed PR #%s in %s",
+                reviewer.name,
+                self.number,
+                self.repository,
+            )
+            return
+
         self.reviews[reviewer.name] = review
+        # On GitLab the owner is not sent on review events
+        # We extract the owner from what's been saved
         self.owner = pull.owner
+        if review.state == "left_note":
+            # Reviewer block is not sent on note events
+            self.reviewers = pull.reviewers
+
         save_pr_to_bucket(self, timestamp)
+
         response = client.chat_update(
             channel=SLACK_CHANNEL, ts=timestamp, blocks=self._as_slack_notification()
         )
         if not response["ok"]:
-            logging.warning(response["error"])
-            return
+            logging.error(
+                "Updating review message for #%s in %s: %s",
+                self.number,
+                self.repository,
+                response["error"],
+            )
+
         response = client.chat_postMessage(
             channel=SLACK_CHANNEL,
             thread_ts=timestamp,
-            text=f"{reviewer.name} left a review: {review.state}",
+            text=f"{reviewer.name} {review.slack_message}",
         )
         if not response["ok"]:
-            logging.warning(response["error"])
+            logging.warning(
+                "Sending review notification for #%s in %s: %s",
+                self.number,
+                self.repository,
+                response["error"],
+            )
 
     def on_closed(self) -> None:
         """Sends a message in the thread when the PR is merged."""
@@ -246,7 +338,13 @@ class PullRequest(JSONWizard):
                 text="Pull request was merged! :tada:",
             )
             if not response["ok"]:
-                logging.warning(response["error"])
+                logging.error(
+                    "Sending merge notification for #%s in %s: %s",
+                    self.number,
+                    self.repository,
+                    response["error"],
+                )
+
         delete_pr_from_bucket(self.bucket_path)
 
     def _as_slack_notification(self) -> list[blks.Block]:
@@ -282,27 +380,39 @@ class PullRequest(JSONWizard):
 
     def _get_reviews_slack_blk(self) -> blks.MarkdownTextObject:
         txt = "*Reviews*\n"
-        for name, _reviewer in self.reviewers.items():
-            txt += f"{name}"
+        for name, reviewer in self.reviewers.items():
+            txt += reviewer.get_slack_username()
             if review := self.reviews.get(name):
-                txt += ": " + review.get_slack_emoji()
+                txt += ": " + review.slack_emoji
             txt += "\n"
         for name, review in self.reviews.items():
             if name not in self.reviewers:
-                txt += f"{name}: " + review.get_slack_emoji() + "\n"
+                txt += f"{name}: " + review.slack_emoji + "\n"
         return blks.MarkdownTextObject(text=txt)
 
-    def should_be_reminded(self) -> bool:
-        """Defines the rules to appear in the reminder."""
-        return not self.is_draft and not self.mergeable
+    def reminder_message(self) -> str | None:
+        """Gets the message to add in the reminder.
 
-    def get_reminder_slack_blk(self, timestamp: str) -> blks.SectionBlock:
+        Returns None if the PR should not appear in the reminder.
+        """
+        if self.is_draft:
+            return None
+        if self.mergeable:
+            return f"Mergeable: {self.owner.get_slack_username()}"
+
+        missing_reviewers = [
+            reviewer.get_slack_username()
+            for name, reviewer in self.reviewers.items()
+            if name not in self.reviews
+        ]
+        if not missing_reviewers:
+            return None
+
+        return f'Missing reviews: {", ".join(missing_reviewers)}'
+
+    def get_reminder_slack_blk(self, reminder_message: str) -> blks.SectionBlock:
         """Gets the message to be added to the reminder."""
-        url = self.url
-        if SLACK_INSTANCE:
-            instance_url = f"https://{SLACK_INSTANCE}.slack.com"
-            url = f"{instance_url}/archives/{SLACK_CHANNEL}/p{timestamp}"
-        reminder = f"*<{url}|{self.title}>*"
+        reminder = f"*<{self.url}|{self.title}>* {reminder_message}"
         return blks.SectionBlock(
             text=blks.MarkdownTextObject(text=reminder, verbatim=True),
         )
@@ -340,6 +450,14 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
     body = json.loads(event["body"])
     match body:
         case {
+            "zen": _,  # GitHub trivia included only on ping events
+            "repository": repository,
+        }:
+            logging.info(
+                "Hook is now active on repository: %s", repository["full_name"]
+            )
+            return {"statusCode": HTTPStatus.OK}
+        case {
             "action": "opened" | "reopened",
             "pull_request": pull_request,
             "repository": repository,
@@ -367,7 +485,7 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
             pull = PullRequest.from_github(repository, pull_request)
             pull.on_closed()
         case _:
-            logging.info("action %s is not supported", body.get("action"))
+            logging.warning("Action %s is not supported", body.get("action"))
             return {"statusCode": HTTPStatus.BAD_REQUEST}
     return {"statusCode": HTTPStatus.OK}
 
@@ -380,6 +498,9 @@ def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
 
         GitLab Events Documentation
         https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html#merge-request-events
+
+        GitLab Webhook Guidelines
+        https://docs.gitlab.com/ee/user/project/integrations/webhooks.html
     """
     body = json.loads(event["body"])
     match body:
@@ -421,9 +542,17 @@ def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
             pull_request = body["object_attributes"]
             pull = PullRequest.from_gitlab(project, pull_request, user, [])
             pull.on_closed()
+        case {
+            "event_type": "note",
+            "user": user,
+            "project": project,
+            "merge_request": pull_request,
+            "object_attributes": _,  # The note object itself
+        }:
+            pull = PullRequest.from_gitlab(project, pull_request, user, [])
+            pull.on_reviewed(Review.from_gitlab_note(), pull.owner)
         case _:
-            logging.info("event %s is not supported", body.get("event_type"))
-            return {"statusCode": HTTPStatus.BAD_REQUEST}
+            logging.warning("Event %s is not supported", body.get("event_type"))
     return {"statusCode": HTTPStatus.OK}
 
 
@@ -434,25 +563,30 @@ def pull_request_reminder(
     """Daily reminder to review opened pull-requests."""
     blocks = [blks.HeaderBlock(text="PRs awaiting for review: "), blks.DividerBlock()]
     for opened_pr in s3.Bucket(S3_BUCKET).objects.all():
-        timestamp, pull = load_pr_from_bucket(opened_pr.key)
-        if pull.should_be_reminded:
+        _, pull = load_pr_from_bucket(opened_pr.key)
+        if message := pull.reminder_message():
             logging.info(
-                "pull request %s on %s is waiting for review",
-                pull.title,
-                pull.repository.full_name,
+                "Pull request #%s in %s is waiting for review",
+                pull.number,
+                pull.repository.name,
             )
-            blocks.append(pull.get_reminder_slack_blk(timestamp))
+            blocks.append(pull.get_reminder_slack_blk(message))
         else:
             logging.info(
-                "pull request %s on %s was not included in the reminder",
-                pull.title,
-                pull.repository.full_name,
+                "Pull request #%s on %s was not included in the reminder",
+                pull.number,
+                pull.repository.name,
             )
+
     if len(blocks) <= 2:
-        logging.info("no pull request was found")
+        logging.info("No pull request was included in reminder")
         return {"statusCode": HTTPStatus.OK}
+
     response = client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
     if not response["ok"]:
-        logging.error(response["error"])
+        logging.error(
+            "Sending daily reminder: %s",
+            response["error"],
+        )
         return {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR}
     return {"statusCode": HTTPStatus.OK}

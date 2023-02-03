@@ -42,12 +42,13 @@ Here's all the environments variables that needs to be passed when deploying:
 
 | Variable | Description  | Required |
 | :---:   | :---: | :---: |
+| `SCW_SECRET_KEY` | Secret key to use for S3 operations |  :heavy_check_mark: |
 | `SCW_ACCESS_KEY` | Access key to use for S3 operations |  :heavy_check_mark: |
 | `SCW_SECRET_KEY` | Secret key to use for S3 operations |  :heavy_check_mark: |
 | `S3_BUCKET` | Name of the bucket to store opened PRs into. |  :heavy_check_mark: |
 | `SLACK_TOKEN` | Slack token. See below for details on scope. |  :heavy_check_mark: |
 | `SLACK_CHANNEL` | Channel ID of the Slack channel to send messages to |  :heavy_check_mark: |
-| `SLACK_INSTANCE` | Name of your Slack workspace to link previous messages in the recap |   |
+| `GITLAB_EMAIL_DOMAIN` | Will be appended to GitLab usernames to create a valid email. Emails are converted to Slack IDs to ping developers in the reminder |   |
 | `REMINDER_SCHEDULE` | CRON schedule to trigger the reminder |   |
 
 ### Creating the Slack application
