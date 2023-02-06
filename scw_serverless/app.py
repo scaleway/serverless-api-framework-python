@@ -29,7 +29,6 @@ class Serverless:
         secret: Optional[dict[str, Any]] = None,
         gateway_domains: Optional[list[str]] = None,
     ):
-
         self.functions: List[Function] = []
         self.service_name: str = service_name
         self.gateway_domains: list[str] = gateway_domains if gateway_domains else []
