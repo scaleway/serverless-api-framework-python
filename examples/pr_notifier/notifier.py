@@ -57,7 +57,7 @@ class Developer(JSONWizard):
     """Generic representation of a user from GitHub/GitLab."""
 
     name: str
-    email: str | None
+    email: str | None = None
     avatar_url: str | None
 
     @staticmethod
