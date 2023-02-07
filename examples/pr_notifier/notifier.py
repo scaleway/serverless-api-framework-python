@@ -1,4 +1,3 @@
-import functools
 import json
 import logging
 import os
@@ -73,7 +72,6 @@ class Developer(JSONWizard):
             name=user["username"], email=email, avatar_url=user["avatar_url"]
         )
 
-    @functools.lru_cache(maxsize=10)
     def get_slack_username(self) -> str:
         """Gets the name that should be used on Slack."""
         if not self.email:
