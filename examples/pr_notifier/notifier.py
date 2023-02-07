@@ -57,8 +57,8 @@ class Developer(JSONWizard):
     """Generic representation of a user from GitHub/GitLab."""
 
     name: str
-    email: str | None = None
     avatar_url: str | None
+    email: str | None = None
 
     @staticmethod
     def from_github(user: dict[str, Any]):
