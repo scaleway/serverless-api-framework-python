@@ -11,7 +11,7 @@ from typing import Iterable, Optional
 import pytest
 import requests
 import yaml
-from requests import HTTPError
+from requests.adapters import HTTPAdapter, Retry
 from scaleway import Client
 from scaleway.account.v2 import AccountV2API
 from scaleway.function.v1beta1 import FunctionV1Beta1API
@@ -20,6 +20,8 @@ from scaleway_core.api import ScalewayException
 from typing_extensions import Self
 
 from scw_serverless.dependencies_manager import DependenciesManager
+
+from ..utils import COLD_START_TIMEOUT
 
 DEFAULT_REGION = "pl-waw"
 CLI_COMMAND = "scw-serverless"
@@ -244,25 +246,11 @@ def serverless_test_project() -> Iterable[ServerlessTestProject]:
 
 
 def call_function(url: str, max_retries: int = 5):
-    retry_delay = 5
-    raised_ex = None
-    for _ in range(max_retries):
-        raised_ex = None
-        try:  # Call the function
-            req = requests.get(url, timeout=retry_delay)
-            req.raise_for_status()
-            break
-        except ConnectionError as exception:
-            time.sleep(retry_delay)
-            raised_ex = exception
-        except HTTPError as exception:
-            raised_ex = exception
-            # If the request as timed out
-            if exception.response.status_code != 408:
-                break
-            time.sleep(retry_delay)
-    if raised_ex:
-        raise raised_ex
+    session = requests.Session()
+    retries = Retry(total=max_retries, backoff_factor=0.1)
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    req = session.get(url, timeout=COLD_START_TIMEOUT)
+    req.raise_for_status()
 
 
 def write_scw_config(client: Client, config_path: str):

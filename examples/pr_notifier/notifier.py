@@ -224,7 +224,7 @@ class PullRequest(JSONWizard):
             title=pull_request["title"],
             url=pull_request["url"],
             is_draft=pull_request["work_in_progress"],
-            is_merged=(pull_request["action"] == "merge"),
+            is_merged=("action" in pull_request and pull_request["action"] == "merge"),
             owner=Developer.from_gitlab(user),  # only true when action is create
             reviewers={d["username"]: Developer.from_gitlab(d) for d in reviewers},
             reviews={},
