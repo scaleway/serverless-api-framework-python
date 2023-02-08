@@ -19,7 +19,6 @@ class GatewayManager:
         gateway_uuid: Optional[str],
         gateway_client: GatewayClient,
     ):
-
         self.api = sdk.FunctionV1Beta1API(sdk_client)
         self.app_instance = app_instance
         self.gateway_client = gateway_client
