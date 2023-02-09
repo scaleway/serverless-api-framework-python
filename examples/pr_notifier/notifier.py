@@ -25,6 +25,7 @@ app = Serverless(
     env={
         "S3_BUCKET": S3_BUCKET,
         "SLACK_CHANNEL": SLACK_CHANNEL,
+        "GITLAB_EMAIL_DOMAIN": GITLAB_EMAIL_DOMAIN,
         "PYTHONUNBUFFERED": "1",
     },
     secret={
@@ -67,7 +68,7 @@ class Developer(JSONWizard):
     @staticmethod
     def from_gitlab(user: dict[str, Any]):
         """Creates from a GitLab user"""
-        email = user["username"] + GITLAB_EMAIL_DOMAIN if GITLAB_EMAIL_DOMAIN else None
+        email = user["username"] + GITLAB_EMAIL_DOMAIN if GITLAB_EMAIL_DOMAIN else ""
         return Developer(
             name=user["username"], email=email, avatar_url=user["avatar_url"]
         )
@@ -262,7 +263,7 @@ class PullRequest(JSONWizard):
             logging.warning(
                 "Pull request #%s in %s not found",
                 self.number,
-                self.repository,
+                self.repository.full_name,
             )
             return
         if pull.is_draft and not self.is_draft:
@@ -276,7 +277,7 @@ class PullRequest(JSONWizard):
             logging.warning(
                 "Pull request #%s in %s not found",
                 self.number,
-                self.repository,
+                self.repository.full_name,
             )
             return
 
@@ -288,7 +289,7 @@ class PullRequest(JSONWizard):
                 "User %s left a note on a reviewed PR #%s in %s",
                 reviewer.name,
                 self.number,
-                self.repository,
+                self.repository.full_name,
             )
             return
 
@@ -300,6 +301,16 @@ class PullRequest(JSONWizard):
             # Reviewer block is not sent on note events
             self.reviewers = pull.reviewers
 
+        # Prevents self-reviews from triggering a notification
+        if self.owner.name == reviewer.name:
+            logging.info(
+                "User %s reviewed their own PR #%s in %s",
+                reviewer.name,
+                self.number,
+                self.repository.full_name,
+            )
+            return
+
         save_pr_to_bucket(self, timestamp)
 
         response = client.chat_update(
@@ -309,7 +320,7 @@ class PullRequest(JSONWizard):
             logging.error(
                 "Updating review message for #%s in %s: %s",
                 self.number,
-                self.repository,
+                self.repository.full_name,
                 response["error"],
             )
 
@@ -322,7 +333,7 @@ class PullRequest(JSONWizard):
             logging.warning(
                 "Sending review notification for #%s in %s: %s",
                 self.number,
-                self.repository,
+                self.repository.full_name,
                 response["error"],
             )
 
@@ -339,7 +350,7 @@ class PullRequest(JSONWizard):
                 logging.error(
                     "Sending merge notification for #%s in %s: %s",
                     self.number,
-                    self.repository,
+                    self.repository.full_name,
                     response["error"],
                 )
 
@@ -568,14 +579,14 @@ def pull_request_reminder(
             logging.info(
                 "Pull request #%s in %s is waiting for review",
                 pull.number,
-                pull.repository.name,
+                pull.repository.full_name,
             )
             blocks.append(pull.get_reminder_slack_blk(message))
         else:
             logging.info(
                 "Pull request #%s on %s was not included in the reminder",
                 pull.number,
-                pull.repository.name,
+                pull.repository.full_name,
             )
 
     if len(blocks) <= 2:
