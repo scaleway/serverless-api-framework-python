@@ -914,14 +914,14 @@ tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asy
 
 [[package]]
 name = "scaleway"
-version = "0.5.0"
+version = "0.6.0"
 description = "Scaleway SDK for Python"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "scaleway-0.5.0-py3-none-any.whl", hash = "sha256:dbaf05a88ed8c4aaf5e50f2350b181bec2cbd19a66d30c97bf7ee6ea8a7586ac"},
-    {file = "scaleway-0.5.0.tar.gz", hash = "sha256:ef6a3abb3454cbcfff0775819508cc3da73cd46e1c50df4ed4b6cc51760ecbca"},
+    {file = "scaleway-0.6.0-py3-none-any.whl", hash = "sha256:476411e9334ef184916795279e100f25b1a3b1171dc48764b20ef95f1a91acac"},
+    {file = "scaleway-0.6.0.tar.gz", hash = "sha256:dbacdfd0a6986671f0552101bed8bee4b9695fc8cd25e83ebeb45bbe00e8da7b"},
 ]
 
 [package.dependencies]
@@ -1342,4 +1342,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "ca4385d05287a32790017ca91fc7eb3f90cde2b2f373fc0a399cdd7a9fe56dd7"
+content-hash = "5e2bcb2c5181d2dfe772a967e57edd054d0b70db55f4c1dbeaa4495350caa0e0"
