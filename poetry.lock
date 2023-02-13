@@ -914,14 +914,14 @@ tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asy
 
 [[package]]
 name = "scaleway"
-version = "0.6.0"
+version = "0.7.0"
 description = "Scaleway SDK for Python"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "scaleway-0.6.0-py3-none-any.whl", hash = "sha256:476411e9334ef184916795279e100f25b1a3b1171dc48764b20ef95f1a91acac"},
-    {file = "scaleway-0.6.0.tar.gz", hash = "sha256:dbacdfd0a6986671f0552101bed8bee4b9695fc8cd25e83ebeb45bbe00e8da7b"},
+    {file = "scaleway-0.7.0-py3-none-any.whl", hash = "sha256:93b4b3d3a95ca56ebff3696e01f31c4895eaf0a59df062811c946d4da4a9b1de"},
+    {file = "scaleway-0.7.0.tar.gz", hash = "sha256:dda952657ed203b64bef750f2e217179c6d159d366434db376b401d95e60ea13"},
 ]
 
 [package.dependencies]
@@ -929,14 +929,14 @@ scaleway-core = ">=0,<1"
 
 [[package]]
 name = "scaleway-core"
-version = "0.5.0"
+version = "0.7.0"
 description = "Scaleway SDK for Python"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "scaleway_core-0.5.0-py3-none-any.whl", hash = "sha256:c26e5a1ebc3516f952af9ce8bd578f00a9e649bace8e2065e532481285685033"},
-    {file = "scaleway_core-0.5.0.tar.gz", hash = "sha256:2f10221f85f6adb9f3cb59f653e7da3b855c2e45bedd81a400bfeaee6940a051"},
+    {file = "scaleway_core-0.7.0-py3-none-any.whl", hash = "sha256:bc00182fda851970ecc7ec3769a9c8cb8df47962dc46c5c814aba88579a41b50"},
+    {file = "scaleway_core-0.7.0.tar.gz", hash = "sha256:9298a8e82aa4575d46331b4bc68dbc13e5ff99ed77f4a74018964f13a2e89882"},
 ]
 
 [package.dependencies]
@@ -1342,4 +1342,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "5e2bcb2c5181d2dfe772a967e57edd054d0b70db55f4c1dbeaa4495350caa0e0"
+content-hash = "2d310d0b50920f941b9665ef7d63c3355198daff111c9fbb4d947dc3bae78b25"
