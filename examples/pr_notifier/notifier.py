@@ -8,6 +8,7 @@ from typing import Any, ClassVar, Literal, Tuple
 import boto3
 from dataclass_wizard import JSONWizard
 from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 from slack_sdk.models import blocks as blks
 
 from scw_serverless.app import Serverless
@@ -78,9 +79,10 @@ class Developer(JSONWizard):
         if not self.email:
             return self.name
 
-        response = client.users_lookupByEmail(email=self.email)
-        if not response["ok"]:
-            logging.error("Getting slack id for %s: %s", self.name, response["error"])
+        try:
+            response = client.users_lookupByEmail(email=self.email)
+        except SlackApiError as e:
+            logging.error("Getting slack id for %s: %s", self.name, e.response["error"])
             return self.name
 
         return f'<@{response["user"]["id"]}>'  # type: ignore
@@ -95,7 +97,7 @@ class Review(JSONWizard):
         "approved": ":heavy_check_mark:",
         "dismissed": ":put_litter_in_its_place:",
         "changes_requested": ":x:",
-        "left_note": ":x:",
+        "left_note": ":speech_balloon:",
     }
     _slack_message: ClassVar[dict[str, str]] = {
         "approved": "approved the pull request",
@@ -241,24 +243,26 @@ class PullRequest(JSONWizard):
 
     def on_created(self) -> None:
         """Sends a notification for a newly created PR."""
-        response = client.chat_postMessage(
-            channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
-        )
-        if not response["ok"]:
+        try:
+            response = client.chat_postMessage(
+                channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
+            )
+        except SlackApiError as e:
             logging.error(
                 "Sending created message for #%s in %s: %s",
                 self.number,
                 self.repository,
-                response["error"],
+                e.response["error"],
             )
-            return
+            raise e
+
         timestamp = str(response["ts"])
         save_pr_to_bucket(self, timestamp)
 
     def on_updated(self) -> None:
         """Performs the necessary changes when a PR is updated."""
         try:
-            _, pull = load_pr_from_bucket(self.bucket_path)
+            timestamp, pull = load_pr_from_bucket(self.bucket_path)
         except s3.meta.client.exceptions.NoSuchKey:
             logging.warning(
                 "Pull request #%s in %s not found",
@@ -266,8 +270,30 @@ class PullRequest(JSONWizard):
                 self.repository.full_name,
             )
             return
+
+        # Handle draft PRs
         if pull.is_draft and not self.is_draft:
-            self.on_created()
+            return self.on_created()
+
+        self.owner = pull.owner
+        self.reviews = pull.reviews.copy()
+
+        save_pr_to_bucket(self, timestamp)
+
+        try:
+            client.chat_update(
+                channel=SLACK_CHANNEL,
+                ts=timestamp,
+                blocks=self._as_slack_notification(),
+            )
+        except SlackApiError as e:
+            logging.warning(
+                "Updating message for #%s in %s: %s",
+                self.number,
+                self.repository.full_name,
+                e.response["error"],
+            )
+            raise e
 
     def on_reviewed(self, review: Review, reviewer: Developer) -> None:
         """Updates the notification when a new review is made."""
@@ -281,8 +307,7 @@ class PullRequest(JSONWizard):
             )
             return
 
-        self.reviews = pull.reviews.copy()
-        if review.state == "left_note" and reviewer.name in self.reviews:
+        if review.state == "left_note" and reviewer.name in pull.reviews:
             # Ignore note "reviews" if there is an actual review
             # Also avoids spam when someone leaves multiple comments
             logging.info(
@@ -293,6 +318,7 @@ class PullRequest(JSONWizard):
             )
             return
 
+        self.reviews = pull.reviews.copy()
         self.reviews[reviewer.name] = review
         # On GitLab the owner is not sent on review events
         # We extract the owner from what's been saved
@@ -313,52 +339,49 @@ class PullRequest(JSONWizard):
 
         save_pr_to_bucket(self, timestamp)
 
-        response = client.chat_update(
-            channel=SLACK_CHANNEL, ts=timestamp, blocks=self._as_slack_notification()
-        )
-        if not response["ok"]:
-            logging.error(
-                "Updating review message for #%s in %s: %s",
-                self.number,
-                self.repository.full_name,
-                response["error"],
+        try:
+            client.chat_update(
+                channel=SLACK_CHANNEL,
+                ts=timestamp,
+                blocks=self._as_slack_notification(),
             )
 
-        response = client.chat_postMessage(
-            channel=SLACK_CHANNEL,
-            thread_ts=timestamp,
-            text=f"{reviewer.name} {review.slack_message}",
-        )
-        if not response["ok"]:
+            client.chat_postMessage(
+                channel=SLACK_CHANNEL,
+                thread_ts=timestamp,
+                text=f"{review.slack_emoji} {reviewer.name} {review.slack_message}",
+            )
+        except SlackApiError as e:
             logging.warning(
                 "Sending review notification for #%s in %s: %s",
                 self.number,
                 self.repository.full_name,
-                response["error"],
+                e.response["error"],
             )
 
     def on_closed(self) -> None:
         """Sends a message in the thread when the PR is merged."""
         if self.is_merged:
             timestamp, _pull = load_pr_from_bucket(self.bucket_path)
-            response = client.chat_postMessage(
-                channel=SLACK_CHANNEL,
-                thread_ts=timestamp,
-                text="Pull request was merged! :tada:",
-            )
-            if not response["ok"]:
+            try:
+                client.chat_postMessage(
+                    channel=SLACK_CHANNEL,
+                    thread_ts=timestamp,
+                    text="Pull request was merged! :tada:",
+                )
+            except SlackApiError as e:
                 logging.error(
                     "Sending merge notification for #%s in %s: %s",
                     self.number,
                     self.repository.full_name,
-                    response["error"],
+                    e.response["error"],
                 )
 
         delete_pr_from_bucket(self.bucket_path)
 
     def _as_slack_notification(self) -> list[blks.Block]:
         return [
-            blks.HeaderBlock(text=f"New MR on {self.repository.name}: {self.title}"),
+            blks.HeaderBlock(text=f"New PR on {self.repository.name}: {self.title}"),
             blks.DividerBlock(),
             blks.ContextBlock(
                 elements=[
@@ -367,7 +390,7 @@ class PullRequest(JSONWizard):
                         image_url=self.owner.avatar_url,
                         alt_text=f"avatar of {self.owner.name}",
                     ),
-                    blks.MarkdownTextObject(text=f"*{self.owner.name}*"),
+                    blks.MarkdownTextObject(text=self.owner.get_slack_username()),
                 ]
             ),
             blks.SectionBlock(
@@ -593,11 +616,12 @@ def pull_request_reminder(
         logging.info("No pull request was included in reminder")
         return {"statusCode": HTTPStatus.OK}
 
-    response = client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
-    if not response["ok"]:
+    try:
+        client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
+    except SlackApiError as e:
         logging.error(
             "Sending daily reminder: %s",
-            response["error"],
+            e.response["error"],
         )
         return {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR}
     return {"statusCode": HTTPStatus.OK}
