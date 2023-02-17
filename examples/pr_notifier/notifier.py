@@ -69,7 +69,12 @@ class Developer(JSONWizard):
     @staticmethod
     def from_gitlab(user: dict[str, Any]):
         """Creates from a GitLab user"""
-        email = user["username"] + GITLAB_EMAIL_DOMAIN if GITLAB_EMAIL_DOMAIN else ""
+        email = user.get("email")
+        if not email:
+            logging.error("Email not in user for: %s", json.dumps(user))
+            email = (
+                user["username"] + GITLAB_EMAIL_DOMAIN if GITLAB_EMAIL_DOMAIN else ""
+            )
         return Developer(
             name=user["username"], email=email, avatar_url=user["avatar_url"]
         )
@@ -92,18 +97,18 @@ class Developer(JSONWizard):
 class Review(JSONWizard):
     """Generic representation of a review from GitHub/GitLab."""
 
-    state: Literal["approved", "dismissed", "changes_requested", "left_note"]
+    state: Literal["approved", "dismissed", "changes_requested", "commented"]
     _slack_emojis: ClassVar[dict[str, str]] = {
         "approved": ":heavy_check_mark:",
         "dismissed": ":put_litter_in_its_place:",
         "changes_requested": ":x:",
-        "left_note": ":speech_balloon:",
+        "commented": ":speech_balloon:",
     }
     _slack_message: ClassVar[dict[str, str]] = {
         "approved": "approved the pull request",
         "dismissed": "dismissed the pull request",
         "changes_requested": "requested some changes",
-        "left_note": "left a comment",
+        "commented": "left a comment",
     }
 
     @staticmethod
@@ -127,7 +132,7 @@ class Review(JSONWizard):
         This is different than an actual review but it's the only event
         sent by GitLab when someone requests some changes.
         """
-        return Review(state="left_note")
+        return Review(state="commented")
 
     @property
     def slack_emoji(self) -> str:
@@ -273,7 +278,8 @@ class PullRequest(JSONWizard):
 
         # Handle draft PRs
         if pull.is_draft and not self.is_draft:
-            return self.on_created()
+            self.on_created()
+            return
 
         self.owner = pull.owner
         self.reviews = pull.reviews.copy()
@@ -509,6 +515,13 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
             review = Review.from_github(review)
             reviewer = Developer.from_github(reviewer)
             pull.on_reviewed(review, reviewer)
+        case {
+            "action": "review_requested",
+            "pull_request": pull_request,
+            "repository": repository,
+        }:
+            pull = PullRequest.from_github(repository, pull_request)
+            pull.on_updated()
         case {
             "action": "closed",
             "pull_request": pull_request,
