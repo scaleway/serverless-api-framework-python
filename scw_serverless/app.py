@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 try:
     from typing import Unpack
@@ -29,7 +29,7 @@ class Serverless:
         secret: Optional[dict[str, Any]] = None,
         gateway_domains: Optional[list[str]] = None,
     ):
-        self.functions: List[Function] = []
+        self.functions: list[Function] = []
         self.service_name: str = service_name
         self.gateway_domains: list[str] = gateway_domains if gateway_domains else []
         self.env = env
@@ -96,7 +96,7 @@ class Serverless:
         if "triggers" in kwargs and kwargs["triggers"]:
             kwargs["triggers"].append(schedule)
         else:
-            kwargs |= {"triggers": [schedule]}
+            kwargs["triggers"] = [schedule]
         return self.func(**kwargs)
 
     def get(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:

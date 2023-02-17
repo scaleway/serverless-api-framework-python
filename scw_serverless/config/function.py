@@ -1,14 +1,9 @@
 import sys
 from dataclasses import dataclass, field
-from typing import Callable, List, Literal, Optional, TypedDict
+from typing import Callable, Literal, Optional, TypedDict
 
 import scaleway.function.v1beta1 as sdk
 
-try:
-    from typing import NotRequired
-except ImportError:
-    from typing_extensions import NotRequired
-# pylint: disable=wrong-import-position # Conditional import considered a statement
 from scw_serverless.config.route import GatewayRoute, HTTPMethod
 from scw_serverless.logger import get_logger
 from scw_serverless.triggers import Trigger
@@ -31,7 +26,7 @@ def _get_current_runtime() -> sdk.FunctionRuntime:
     return runtime
 
 
-class FunctionKwargs(TypedDict):
+class FunctionKwargs(TypedDict, total=False):
     """Typed arguments supported by Scaleway functions.
 
     .. note::
@@ -54,21 +49,21 @@ class FunctionKwargs(TypedDict):
         https://developers.scaleway.com/en/products/functions/api/#create-a-function
     """
 
-    env: NotRequired[dict[str, str]]
-    secret: NotRequired[dict[str, str]]
-    min_scale: NotRequired[int]
-    max_scale: NotRequired[int]
-    memory_limit: NotRequired[MemoryLimit]
-    timeout: NotRequired[str]
-    custom_domains: NotRequired[List[str]]
-    privacy: NotRequired[Privacy]
-    description: NotRequired[str]
-    http_option: NotRequired[HTTPOption]
+    env: dict[str, str]
+    secret: dict[str, str]
+    min_scale: int
+    max_scale: int
+    memory_limit: MemoryLimit
+    timeout: str
+    custom_domains: list[str]
+    privacy: Privacy
+    description: str
+    http_option: HTTPOption
     # Parameters for the Gateway
-    url: NotRequired[str]
-    methods: NotRequired[list[HTTPMethod]]
+    url: str
+    methods: list[HTTPMethod]
     # Triggers
-    triggers: NotRequired[list[Trigger]]
+    triggers: list[Trigger]
 
 
 # pylint: disable=too-many-instance-attributes
