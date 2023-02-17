@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass
+from datetime import date
 from http import HTTPStatus
 from typing import Any, ClassVar, Literal, Tuple
 
@@ -628,9 +629,13 @@ def pull_request_reminder(
     if len(blocks) <= 2:
         logging.info("No pull request was included in reminder")
         return {"statusCode": HTTPStatus.OK}
-
+    today = date.today()
     try:
-        client.chat_postMessage(channel=SLACK_CHANNEL, blocks=blocks)
+        client.chat_postMessage(
+            channel=SLACK_CHANNEL,
+            blocks=blocks,
+            text=f'PR reminder for {today.strftime("%d/%m/%Y")}',
+        )
     except SlackApiError as e:
         logging.error(
             "Sending daily reminder: %s",
