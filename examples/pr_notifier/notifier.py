@@ -70,12 +70,12 @@ class Developer(JSONWizard):
     @staticmethod
     def from_gitlab(user: dict[str, Any]):
         """Creates from a GitLab user"""
-        email = user.get("email")
+        email: str | None = user.get("email")
+        # See: https://gitlab.com/gitlab-org/gitlab/-/issues/344230
+        if GITLAB_EMAIL_DOMAIN and not (email and email.endswith(GITLAB_EMAIL_DOMAIN)):
+            email = user["username"] + GITLAB_EMAIL_DOMAIN
         if not email:
-            logging.error("Email not in user for: %s", json.dumps(user))
-            email = (
-                user["username"] + GITLAB_EMAIL_DOMAIN if GITLAB_EMAIL_DOMAIN else ""
-            )
+            logging.error("Email not found for user: %s", user["username"])
         return Developer(
             name=user["username"], email=email, avatar_url=user["avatar_url"]
         )
