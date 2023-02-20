@@ -98,17 +98,21 @@ class Developer(JSONWizard):
 class Review(JSONWizard):
     """Generic representation of a review from GitHub/GitLab."""
 
-    state: Literal["approved", "dismissed", "changes_requested", "commented"]
+    state: Literal[
+        "approved", "dismissed", "changes_requested", "commented", "left_note"
+    ]
     _slack_emojis: ClassVar[dict[str, str]] = {
         "approved": ":heavy_check_mark:",
         "dismissed": ":put_litter_in_its_place:",
         "changes_requested": ":x:",
+        "left_note": ":speech_balloon:",
         "commented": ":speech_balloon:",
     }
     _slack_message: ClassVar[dict[str, str]] = {
         "approved": "approved the pull request",
         "dismissed": "dismissed the pull request",
         "changes_requested": "requested some changes",
+        "left_note": "left a comment",
         "commented": "left a comment",
     }
 
@@ -144,6 +148,10 @@ class Review(JSONWizard):
     def slack_message(self) -> str:
         """Gets the corresponding slack message."""
         return self._slack_message.get(self.state, "")
+
+    def is_comment(self) -> bool:
+        """Is the review a comment."""
+        return self.state in ["left_note", "commented"]
 
 
 @dataclass
@@ -314,7 +322,7 @@ class PullRequest(JSONWizard):
             )
             return
 
-        if review.state == "left_note" and reviewer.name in pull.reviews:
+        if review.is_comment() and reviewer.name in pull.reviews:
             # Ignore note "reviews" if there is an actual review
             # Also avoids spam when someone leaves multiple comments
             logging.info(
@@ -330,7 +338,7 @@ class PullRequest(JSONWizard):
         # On GitLab the owner is not sent on review events
         # We extract the owner from what's been saved
         self.owner = pull.owner
-        if review.state == "left_note":
+        if review.is_comment():
             # Reviewer block is not sent on note events
             self.reviewers = pull.reviewers
 
