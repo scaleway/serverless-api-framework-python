@@ -16,7 +16,7 @@ def get_scw_client(
     region: Optional[str],
 ) -> Client:
     """Attempts to load the profile. Will raise on invalid profiles."""
-    client = Client.from_config_file_and_env(profile_name)
+    client = Client.from_env()
     _update_client_from_cli(client, secret_key, project_id, region)
     return _validate_client(client)
 
