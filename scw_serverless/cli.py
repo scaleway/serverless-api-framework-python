@@ -1,12 +1,9 @@
-import importlib.util
-import inspect
 import os
 from pathlib import Path
 from typing import Literal, Optional
 
 import click
 
-from scw_serverless.app import Serverless
 from scw_serverless.config.generators.serverless_framework import (
     ServerlessFrameworkGenerator,
 )
@@ -16,6 +13,7 @@ from scw_serverless.deploy import backends, gateway
 from scw_serverless.logger import DEFAULT, get_logger
 from scw_serverless.utils.config import Config
 from scw_serverless.utils.credentials import DEFAULT_REGION, get_scw_client
+from scw_serverless.utils.loader import get_app_instance
 
 CLICK_ARG_FILE = click.argument(
     "file",
@@ -211,42 +209,13 @@ def generate(file: Path, target: str, save: str) -> None:
     get_logger().success(f"Done! Generated configuration file saved in {save}")
 
 
-def get_app_instance(file: Path) -> Serverless:
-    """Load the app instance from the client module."""
-
-    file = file.resolve()
-    module_name = (
-        str(file.relative_to(Path(".").resolve())).removesuffix(".py").replace("/", ".")
-    )
-
-    # Importing user's app
-    spec = importlib.util.spec_from_file_location(module_name, file)
-    user_app = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(user_app)
-
-    app_instance = None
-
-    for member in inspect.getmembers(user_app):
-        if isinstance(member[1], Serverless):
-            # Ok. Found the variable now, need to use it
-            app_instance = member[1]
-
-    if not app_instance:  # No variable with type "Serverless" found
-        raise RuntimeError(
-            f"""Unable to locate an instance of serverless App
-            in the provided file: {file}."""
-        )
-
-    return app_instance
-
-
 def main() -> int:
     """Entrypoint for click"""
     # Set logging level to DEFAULT. (ignore debug)
     get_logger().set_level(DEFAULT)
-    try:
-        cli()
-        return 0
-    except Exception as exception:  # pylint: disable=broad-except
-        get_logger().critical(str(exception))
-        return 2
+
+    cli()
+    return 0
+    # except Exception as exception:  # pylint: disable=broad-except
+    #     get_logger().critical(str(exception))
+    #     return 2
