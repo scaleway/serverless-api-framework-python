@@ -24,7 +24,7 @@ Config file generation is done with the `generate` command:
 
 .. code-block:: console
 
-    scw-serverless generate -b serverless
+    scw-serverless generate -t serverless
 
 Serverless Generator
 ^^^^^^^^^^^^^^^^^^^^
