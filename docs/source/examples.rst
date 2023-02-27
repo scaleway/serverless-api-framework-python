@@ -9,6 +9,9 @@ To showcase the framework and how it can used to deploy serverless applications,
 :doc:`../examples/cron`
     Function that gets triggered periodically.
 
+:doc:`../examples/multiple_modules`
+    An application with multiple handlers organized in different modules.
+
 :doc:`../examples/github_actions`
     A GitHub action workflow to deploy your application with `scw_serverless`.
 
@@ -23,5 +26,6 @@ To showcase the framework and how it can used to deploy serverless applications,
 
     ../examples/hello_world
     ../examples/cron
+    ../examples/multiple_modules
     ../examples/github_actions
     ../examples/pr_notifier
