@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scw-serverless"
-version = "0.0.3"
+version = "0.0.4"
 description = "Framework for writing serverless APIs in Python, using Scaleway functions and containers."
 authors = ["Scaleway Serverless Team <opensource@scaleway.com>"]
 readme = "README.md"
@@ -26,8 +26,12 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
-packages = [{include = "scw_serverless"}]
-include = ["scw_serverless/**/*.yaml", "scw_serverless/**/*.json"]
+packages = [{ include = "scw_serverless" }]
+include = [
+    "scw_serverless/**/*.yaml",
+    "scw_serverless/**/*.json",
+    "CHANGELOG.md",
+]
 
 [tool.poetry.scripts]
 scw-serverless = "scw_serverless.cli:main"
