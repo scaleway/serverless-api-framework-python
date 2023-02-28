@@ -286,8 +286,9 @@ class PullRequest(JSONWizard):
             return
 
         # Handle draft PRs
-        if pull.is_draft and not self.is_draft:
-            self.on_created()
+        if pull.is_draft:
+            if not self.is_draft:
+                self.on_created()
             return
 
         self.owner = pull.owner
