@@ -1,6 +1,6 @@
 ---
-name: Bug Report
-about: Unexpected or broken behavior of serverless-api-project
+name: 🐛 Bug Report
+about: Unexpected or broken behavior of the framework 🤔
 labels: bug
 ---
 
@@ -8,24 +8,26 @@ labels: bug
 
 ### Community Note
 
-* Please vote on this issue by adding a 👍 [reaction](https://blog.github.com/2016-03-10-add-reactions-to-pull-requests-issues-and-comments/) to the original issue to help the community and maintainers prioritize this request
-* Please do not leave "+1" or other comments that do not add relevant new information or questions, they generate extra noise for issue followers and do not help prioritize the request
-* If you are interested in working on this issue or have submitted a pull request, please leave a comment
+- Please vote on this issue by adding a 👍 [reaction](https://blog.github.com/2016-03-10-add-reactions-to-pull-requests-issues-and-comments/) to the original issue to help the community and maintainers prioritize this request
+- Please do not leave "+1" or other comments that do not add relevant new information or questions, they generate extra noise for issue followers and do not help prioritize the request
+- If you are interested in working on this issue or have submitted a pull request, please leave a comment
 
 <!--- Thank you for keeping this note for the community --->
 
-## What did you perfomed
 
-<!-- e.g. create a simple get route -->
+### What did you do?
 
-### Expected Behavior
+### What did you expect to see?
 
-<!--- What should have happened? --->
+### What did you see instead?
 
-### Actual Behavior
+### What version of Python are you using (`python --version`)?
 
-<!--- What actually happened? --->
+```sh
+$ python --version
 
-## More info
+# Optionnally, provide the version of your dependencies
+$ pip freeze
+```
 
-<!-- verion of serverless-api-project used, your python version, your OS version, steps to reproduce, etc. -->
+### Does this issue reproduce with the latest release?

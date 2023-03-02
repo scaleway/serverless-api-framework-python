@@ -1,3 +1,4 @@
+---
 ci:
   # Can't use a local installation of pylint with pre-commit.ci
   skip: [pylint]
@@ -29,11 +30,7 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        args: [
-            "-rn", # Only display messages
-            "-sn", # Don't display the score
-            "--rcfile=pyproject.toml",
-          ]
+        args: [-rn, -sn, --rcfile=pyproject.toml]
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
@@ -43,4 +40,4 @@ repos:
     rev: v1.0.6
     hooks:
       - id: python-bandit-vulnerability-check
-        args: [--skip, "B101", --recursive, clumper]
+        args: [--skip, B101, --recursive, clumper]
