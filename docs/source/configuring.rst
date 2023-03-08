@@ -20,17 +20,16 @@ When deploying, the `scw-serverless` CLI will look for a Serverless instance in 
       secret={
          "SCW_SECRET_KEY": os.environ["SCW_SECRET_KEY"],
          "MY_SECRET_KEY": os.environ["MY_SECRET_KEY"]
-       },
-      gateway_domains=["app.example.com"]
+      },
    })
 
 .. autoclass:: scw_serverless.app.Serverless
-   :members: func, schedule, get
+   :members: func
 
 Functions
 ---------
 
-To configure your serverless functions, you can provide keyword arguments to the decorators. The Function name that will appear in Scaleway console will be the name of your the function's handler.
+To configure your serverless functions, you can provide keyword arguments to the decorators. The Function name that will appear in Scaleway console will be the name of your function's handler.
 
 .. autoclass:: scw_serverless.config.function.FunctionKwargs
 
@@ -46,19 +45,28 @@ To configure your serverless functions, you can provide keyword arguments to the
       memory_limit= 256,
       timeout= 300,
       description= "Lores Ipsum",
-      http_option= "enabled" #https only
+      http_option= "enabled", # https only
    )
    def handler(event, context):
       # Do Things
-      return {"message": "Hello World"}
+      return {"body": "Hello World"}
 
 Triggers
 --------
 
-By default, Scaleway Functions are given an http endpoint that can be called to execute your function.
-In addition, you can set up additionnal triggers that will run your function on specific occasions.
+By default, Scaleway Functions are given an HTTP endpoint that can be called to execute your function.
+In addition, you can set up additional triggers that will run your function on specific occasions.
 
 Cron triggers
 ^^^^^^^^^^^^^
 
-.. autoclass:: scw_serverless.triggers.cron.CronTrigger
+To create a function that will run periodically, you can use the `schedule` decorator.
+If do not want your function to be publicly available, set the privacy to `private`.
+
+.. code-block:: python
+
+   app.schedule("0 8 * * *", privacy="private")
+   def handler(event, context):
+      ...
+
+.. autofunction:: scw_serverless.app.Serverless.schedule

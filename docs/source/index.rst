@@ -14,6 +14,9 @@ No need for configuration files, the framework makes it possible to configure yo
 :doc:`deploying`
     Instructions to deploy your project with the CLI tool.
 
+:doc:`gateway`
+    Instructions to create an API gateway to manage HTTP routing to functions.
+
 :doc:`examples`
     Examples to get you started.
 
@@ -41,7 +44,7 @@ This includes the environment variables.
 Usage
 ^^^^^
 
-Annotate your Python functions with the func decorator:
+Annotate your Python functions with the `func` decorator:
 
 .. code-block:: python
 
@@ -70,4 +73,5 @@ To learn more about the different configuration options, check out :doc:`configu
 
    configuring
    deploying
+   gateway
    examples

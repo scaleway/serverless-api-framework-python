@@ -7,7 +7,7 @@ To showcase the framework and how it can used to deploy serverless applications,
     Simple function to get you started.
 
 :doc:`../examples/cron`
-    Function that gets triggered periodically.
+    A function that gets triggered periodically.
 
 :doc:`../examples/multiple_modules`
     An application with multiple handlers organized in different modules.
@@ -16,7 +16,7 @@ To showcase the framework and how it can used to deploy serverless applications,
     A GitHub action workflow to deploy your application with `scw_serverless`.
 
 :doc:`../examples/pr_notifier`
-    A Slack bot which alerts on incoming pull requests.
+    A Slack bot that alerts on incoming pull requests.
     It showcases many features of the framework.
 
 .. toctree::
