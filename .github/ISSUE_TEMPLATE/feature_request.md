@@ -1,5 +1,5 @@
 ---
-name: Feature request
+name: 🚀 Feature request
 about: I have a suggestion (and might want to implement it myself 🙂)!
 labels: enhancement
 ---
@@ -14,12 +14,11 @@ labels: enhancement
 
 <!--- Thank you for keeping this note for the community --->
 
-### Description
 
-<!-- describe the problem that you think serverless-api-project might help you with -->
+### Proposal
 
-### How I imagine scw could expose this functionality
+- **What is the proposed change?**
 
-<!-- e.g. @app.resource -->
+- **Who does this proposal help, and why?**
 
-### References
+### Example
