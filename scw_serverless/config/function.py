@@ -43,6 +43,7 @@ class FunctionKwargs(TypedDict, total=False):
     :param http_option: Either "enabled" or "redirected".
                         If "redirected" (default), allow http traffic to your function.
                         Blocked otherwise.
+
     .. seealso::
 
         Scaleway Developers Documentation
