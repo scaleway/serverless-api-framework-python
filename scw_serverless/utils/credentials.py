@@ -18,6 +18,7 @@ def get_scw_client(
     """Attempts to load the profile. Will raise on invalid profiles."""
     client = Client.from_config_file_and_env(profile_name)
     _update_client_from_cli(client, secret_key, project_id, region)
+
     return _validate_client(client)
 
 
@@ -47,3 +48,7 @@ def _update_client_from_cli(
     if not client.default_region:
         get_logger().info(f"No region was configured, using {DEFAULT_REGION}")
         client.default_region = DEFAULT_REGION
+
+    # Not used by the API framework
+    # Can lead to issues if project_id does not belong to organization
+    client.default_organization_id = None
