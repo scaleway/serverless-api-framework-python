@@ -30,19 +30,19 @@ class ScalewayApiBackend(ServerlessBackend):
 
     def _get_or_create_function(self, function: Function, namespace_id: str) -> str:
         self.logger.default(f"Looking for an existing function {function.name}...")
-        created_function = None
         # Checking if a function already exists
-        for func in self.api.list_functions_all(namespace_id=namespace_id):
-            if func.name == function.name:
-                created_function = func
-        if not created_function:
+        functions = self.api.list_functions_all(
+            namespace_id=namespace_id, name=function.name
+        )
+        deployed_function = functions[0] if functions else None
+        if not deployed_function:
             self.logger.default(f"Creating a new function {function.name}...")
             # Creating a new function with the provided args
-            created_function = self.api.create_function(
+            deployed_function = self.api.create_function(
                 namespace_id=namespace_id,
                 runtime=function.runtime,
                 privacy=function.privacy or sdk.FunctionPrivacy.PUBLIC,
-                http_option=sdk.FunctionHttpOption.REDIRECTED,
+                http_option=function.http_option or sdk.FunctionHttpOption.REDIRECTED,
                 name=function.name,
                 environment_variables=function.environment_variables,
                 min_scale=function.min_scale,
@@ -55,11 +55,11 @@ class ScalewayApiBackend(ServerlessBackend):
             )
         else:
             # Updating the function with the provided args
-            created_function = self.api.update_function(
-                function_id=created_function.id,
+            deployed_function = self.api.update_function(
+                function_id=deployed_function.id,
                 runtime=function.runtime,
                 privacy=function.privacy or sdk.FunctionPrivacy.PUBLIC,
-                http_option=sdk.FunctionHttpOption.REDIRECTED,
+                http_option=function.http_option or sdk.FunctionHttpOption.REDIRECTED,
                 environment_variables=function.environment_variables,
                 min_scale=function.min_scale,
                 max_scale=function.max_scale,
@@ -69,7 +69,7 @@ class ScalewayApiBackend(ServerlessBackend):
                 description=function.description,
                 secret_environment_variables=function.secret_environment_variables,
             )
-        return created_function.id
+        return deployed_function.id
 
     def _deploy_function(
         self, function: Function, namespace_id: str, zip_size: int
@@ -173,14 +173,12 @@ class ScalewayApiBackend(ServerlessBackend):
     def _get_or_create_namespace(self) -> str:
         project_id = self.api.client.default_project_id
         namespace_name = self.app_instance.service_name
-        namespace = None
         self.logger.default(
             f"Looking for an existing namespace {namespace_name} in {project_id}..."
         )
         # Search in the user's namespace if one is matching the same name and region
-        for deployed_namespace in self.api.list_namespaces_all():
-            if deployed_namespace.name == self.app_instance.service_name:
-                namespace = deployed_namespace
+        namespaces = self.api.list_namespaces_all(name=namespace_name)
+        namespace = namespaces[0] if len(namespaces) >= 1 else None
         secrets = [
             sdk.Secret(key, value)
             for key, value in (self.app_instance.secret or {}).items()
