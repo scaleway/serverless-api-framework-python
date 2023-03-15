@@ -12,9 +12,9 @@ from scw_serverless.app import Serverless
 from scw_serverless.config import Function
 from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
 from scw_serverless.triggers import CronTrigger
-from tests.utils import SCALEWAY_API_URL
+from tests import constants
 
-FNC_API_URL = SCALEWAY_API_URL + f"functions/v1beta1/regions/{REGION_FR_PAR}"
+FNC_API_URL = constants.SCALEWAY_API_URL + f"functions/v1beta1/regions/{REGION_FR_PAR}"
 
 
 # pylint: disable=redefined-outer-name # fixture
