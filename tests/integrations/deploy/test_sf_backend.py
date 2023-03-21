@@ -50,6 +50,10 @@ def test_integration_deploy_existing_function_serverless_backend(
         app_path=constants.APP_FIXTURES_PATH.joinpath("app_updated.py"),
     )
 
+    import time
+
+    time.sleep(30)
+
     # Check updated message content
     resp = trigger_function(url)
     assert resp.text == app_updated.MESSAGE
