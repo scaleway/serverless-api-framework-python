@@ -52,7 +52,7 @@ def test_integration_deploy_existing_function(scaleway_project: str):  # noqa
 
     import time
 
-    time.sleep(30)
+    time.sleep(60)
 
     # Check updated message content
     resp = trigger_function(url)
