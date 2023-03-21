@@ -31,7 +31,7 @@ def scaleway_project() -> t.Iterator[ProjectID]:
 
 
 def _create_scaleway_project(client: Client) -> ProjectID:
-    name = f"apifw-{COMMIT_SHA[:7]}-{random.randint(0, 9999)}" # nosec # unsafe rng
+    name = f"apifw-{COMMIT_SHA[:7]}-{random.randint(0, 9999)}"  # nosec # unsafe rng
     project = AccountV2API(client).create_project(
         name=name,
         description="Created by the Serverless API Framework integration suite.",
