@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-DEFAULT_REGION = "pl-waw"
+DEFAULT_REGION = "fr-par"
 SCALEWAY_API_URL = "https://api.scaleway.com/"
 
 COLD_START_TIMEOUT = 20
