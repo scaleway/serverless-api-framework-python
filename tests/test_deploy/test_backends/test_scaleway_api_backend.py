@@ -6,15 +6,12 @@ import responses
 import scaleway.function.v1beta1 as sdk
 from responses import matchers
 from scaleway import Client
-from scaleway_core.bridge.region import REGION_FR_PAR
 
 from scw_serverless.app import Serverless
 from scw_serverless.config import Function
 from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
 from scw_serverless.triggers import CronTrigger
 from tests import constants
-
-FNC_API_URL = constants.SCALEWAY_API_URL + f"functions/v1beta1/regions/{REGION_FR_PAR}"
 
 
 # pylint: disable=redefined-outer-name # fixture
@@ -39,7 +36,7 @@ def get_test_backend() -> ScalewayApiBackend:
         access_key="SCWXXXXXXXXXXXXXXXXX",
         # The uuid is validated
         secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",  # nosec # fake data
-        default_region=REGION_FR_PAR,
+        default_region=constants.DEFAULT_REGION,
     )
     backend = ScalewayApiBackend(app, client, True)
 
@@ -63,7 +60,7 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
 
     # Looking for existing namespace
     mocked_responses.get(
-        FNC_API_URL + "/namespaces",
+        constants.SCALEWAY_FNC_API_URL + "/namespaces",
         json={"namespaces": []},
     )
     namespace = {
@@ -72,15 +69,17 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
         "secret_environment_variables": [],  # Otherwise breaks the marshalling
     }
     # Creating namespace
-    mocked_responses.post(FNC_API_URL + "/namespaces", json=namespace)
+    mocked_responses.post(
+        constants.SCALEWAY_FNC_API_URL + "/namespaces", json=namespace
+    )
     # Polling its status
     mocked_responses.get(
-        f'{FNC_API_URL}/namespaces/{namespace["id"]}',
+        f'{ constants.SCALEWAY_FNC_API_URL}/namespaces/{namespace["id"]}',
         json=namespace | {"status": sdk.NamespaceStatus.READY},
     )
     # Looking for existing function
     mocked_responses.get(
-        FNC_API_URL + "/functions",
+        constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
             matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
         ],
@@ -93,7 +92,7 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
         "secret_environment_variables": [],
     }
     mocked_responses.post(
-        FNC_API_URL + "/functions",
+        constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
             matchers.json_params_matcher(
                 {
@@ -109,7 +108,7 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
         ],
         json=mocked_fn,
     )
-    test_fn_api_url = f'{FNC_API_URL}/functions/{mocked_fn["id"]}'
+    test_fn_api_url = f'{constants.SCALEWAY_FNC_API_URL}/functions/{mocked_fn["id"]}'
     mocked_responses.get(
         test_fn_api_url + "/upload-url",
         json={"url": "https://url"},
@@ -146,7 +145,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
 
     # Looking for existing namespace
     mocked_responses.get(
-        FNC_API_URL + "/namespaces",
+        constants.SCALEWAY_FNC_API_URL + "/namespaces",
         json={"namespaces": []},
     )
     namespace = {
@@ -155,15 +154,17 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
         "secret_environment_variables": [],  # Otherwise breaks the marshalling
     }
     # Creating namespace
-    mocked_responses.post(FNC_API_URL + "/namespaces", json=namespace)
+    mocked_responses.post(
+        constants.SCALEWAY_FNC_API_URL + "/namespaces", json=namespace
+    )
     # Polling its status
     mocked_responses.get(
-        f'{FNC_API_URL}/namespaces/{namespace["id"]}',
+        f'{ constants.SCALEWAY_FNC_API_URL}/namespaces/{namespace["id"]}',
         json=namespace | {"status": sdk.NamespaceStatus.READY},
     )
     # Looking for existing function
     mocked_responses.get(
-        FNC_API_URL + "/functions",
+        constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
             matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
         ],
@@ -176,7 +177,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
         "secret_environment_variables": [],
     }
     mocked_responses.post(
-        FNC_API_URL + "/functions",
+        constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
             matchers.json_params_matcher(
                 {
@@ -192,7 +193,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
         ],
         json=mocked_fn,
     )
-    test_fn_api_url = f'{FNC_API_URL}/functions/{mocked_fn["id"]}'
+    test_fn_api_url = f'{ constants.SCALEWAY_FNC_API_URL}/functions/{mocked_fn["id"]}'
     mocked_responses.get(
         test_fn_api_url + "/upload-url",
         json={"url": "https://url"},
@@ -208,7 +209,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     )
     # Looking for existing cron
     mocked_responses.get(
-        FNC_API_URL + "/crons",
+        constants.SCALEWAY_FNC_API_URL + "/crons",
         match=[
             matchers.query_param_matcher({"function_id": mocked_fn["id"], "page": 1})
         ],
@@ -216,7 +217,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     )
     cron = {"id": "cron-id"}
     mocked_responses.post(
-        FNC_API_URL + "/crons",
+        constants.SCALEWAY_FNC_API_URL + "/crons",
         match=[
             matchers.json_params_matcher(
                 {
@@ -231,7 +232,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     )
     # Poll the status
     mocked_responses.get(
-        f'{FNC_API_URL}/crons/{cron["id"]}',
+        f'{ constants.SCALEWAY_FNC_API_URL}/crons/{cron["id"]}',
         json=mocked_fn | {"status": sdk.CronStatus.READY},
     )
     backend.deploy()
