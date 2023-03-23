@@ -65,7 +65,7 @@ class GatewayManager:
         for function in routed_functions:
             if function.name not in created_functions:
                 raise RuntimeError(
-                    f"Could not update route to function {function.name}"
+                    f"Could not update route to function {function.name} "
                     + "because it was not deployed"
                 )
 

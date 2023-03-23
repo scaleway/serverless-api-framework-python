@@ -1,6 +1,7 @@
 import pytest
 import responses
 import scaleway.function.v1beta1 as sdk
+from responses.matchers import header_matcher, json_params_matcher, query_param_matcher
 from scaleway import Client
 
 from scw_serverless.app import Serverless
@@ -31,7 +32,7 @@ def app_gateway_manager() -> GatewayManager:
     client = Client(
         access_key="SCWXXXXXXXXXXXXXXXXX",
         # The uuid is validated
-        secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",
+        secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",  # nosec # false positive
         default_region=constants.DEFAULT_REGION,
     )
     return GatewayManager(app, MOCK_GATEWAY_URL, MOCK_GATEWAY_API_KEY, client)
@@ -60,15 +61,50 @@ def test_gateway_manager_update_routes(
         constants.SCALEWAY_FNC_API_URL + "/namespaces",
         json={"namespaces": [namespace]},
     )
+    # We have to provide a stop gap otherwise list_namepaces_all() will keep
+    # making API calls.
+    mocked_responses.get(
+        constants.SCALEWAY_FNC_API_URL + "/namespaces",
+        json={"namespaces": []},
+    )
 
     mocked_responses.get(
         constants.SCALEWAY_FNC_API_URL + "/functions",
-        match=[
-            responses.matchers.query_param_matcher(
-                {"namespace_id": namespace["id"], "page": 1}
-            )
-        ],
+        match=[query_param_matcher({"namespace_id": namespace["id"], "page": 1})],
+        json={
+            "functions": [
+                {
+                    "name": function.name,
+                    "domain_name": HELLO_WORLD_MOCK_DOMAIN,
+                    "secret_environment_variables": [],
+                }
+            ]
+        },
+    )
+    mocked_responses.get(
+        constants.SCALEWAY_FNC_API_URL + "/functions",
+        match=[query_param_matcher({"namespace_id": namespace["id"], "page": 2})],
         json={"functions": []},
+    )
+
+    # We should attempt to delete the route
+    mocked_responses.delete(
+        MOCK_GATEWAY_URL + "/scw",  # type: ignore
+        match=[
+            header_matcher({"X-Auth-Token": MOCK_GATEWAY_API_KEY}),
+            json_params_matcher(params=function.gateway_route.asdict()),  # type: ignore
+        ],
+    )
+    # We should attempt to create the route
+    mocked_responses.post(
+        MOCK_GATEWAY_URL + "/scw",  # type: ignore
+        match=[
+            header_matcher({"X-Auth-Token": MOCK_GATEWAY_API_KEY}),
+            json_params_matcher(
+                params=function.gateway_route.asdict()  # type: ignore
+                | {"target": "https://" + HELLO_WORLD_MOCK_DOMAIN}
+            ),
+        ],
     )
 
     app_gateway_manager.update_routes()
