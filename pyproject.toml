@@ -87,6 +87,11 @@ exclude = ["**/node_modules", "**/__pycache__", "**/package/**"]
 convention = "google"
 add_ignore = ["D100", "D107"]
 
+[tool.bandit]
+# B603:subprocess_without_shell_equals_true is skipped because of the nature of the wrapper
+# B404:blacklist is skipped to import subprocess
+skips = ["B101", "B603", "B404"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

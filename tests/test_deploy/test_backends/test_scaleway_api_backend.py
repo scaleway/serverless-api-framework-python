@@ -38,7 +38,7 @@ def get_test_backend() -> ScalewayApiBackend:
     client = Client(
         access_key="SCWXXXXXXXXXXXXXXXXX",
         # The uuid is validated
-        secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",
+        secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",  # nosec # fake data
         default_region=REGION_FR_PAR,
     )
     backend = ScalewayApiBackend(app, client, True)
