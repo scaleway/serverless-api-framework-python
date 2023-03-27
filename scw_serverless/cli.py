@@ -98,7 +98,7 @@ def deploy(
     backend: Literal["api", "serverless"],
     single_source: bool,
     gateway_url: Optional[str] = None,
-    gayeway_api_key: Optional[str] = None,
+    gateway_api_key: Optional[str] = None,
     profile_name: Optional[str] = None,
     secret_key: Optional[str] = None,
     project_id: Optional[str] = None,
@@ -143,7 +143,7 @@ def deploy(
         raise RuntimeError(
             "Your application requires an API Gateway but no gateway URL was provided"
         )
-    if not gayeway_api_key:
+    if not gateway_api_key:
         raise RuntimeError(
             "Your application requires an API Gateway but "
             + "no gateway API key was provided to manage routes"
@@ -152,7 +152,7 @@ def deploy(
     manager = GatewayManager(
         app_instance=app_instance,
         gateway_url=gateway_url,
-        gateway_api_key=gayeway_api_key,
+        gateway_api_key=gateway_api_key,
         sdk_client=client,
     )
     manager.update_routes()

@@ -6,13 +6,16 @@ from typing import Literal
 
 from scaleway import Client
 
-from ..utils import run_cli, trigger_function
+from tests.integrations.utils import run_cli, trigger_function
 
 FunctionUrl = str
 
 
 def run_deploy_command(
-    client: Client, app_path: Path, backend: Literal["serverless", "api"] = "api"
+    client: Client,
+    app_path: Path,
+    *args,
+    backend: Literal["serverless", "api"] = "api",
 ) -> list[FunctionUrl]:
     """Run deploy command with a specific backend."""
 
@@ -22,7 +25,9 @@ def run_deploy_command(
     with tempfile.TemporaryDirectory() as directory:
         shutil.copytree(src=app_dir, dst=directory, dirs_exist_ok=True)
 
-        ret = run_cli(client, directory, ["deploy", app_path.name, "-b", backend])
+        cmd = ["deploy", app_path.name, "-b", backend]
+        cmd.extend(args)
+        ret = run_cli(client, directory, cmd)
 
     assert ret.returncode == 0, f"Non-null return code: {ret}"
 

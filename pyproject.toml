@@ -51,6 +51,7 @@ pytest-xdist = "^3.1.0"
 pylint = "^2.15.10"
 pylint-per-file-ignores = "^1.1.0"
 responses = ">=0.22,<0.24"
+boto3 = "^1.26.97"
 
 [tool.poetry.group.doc]
 optional = true
@@ -72,7 +73,7 @@ disable = "missing-module-docstring"
 # Commented Black formatted code.
 max-line-length = 89
 # Short and common names. e is commonly used for exceptions.
-good-names = "i,fp,e"
+good-names = "e,fp,i,s,s3"
 # Classes with a single responsibility are fine.
 min-public-methods = 1
 

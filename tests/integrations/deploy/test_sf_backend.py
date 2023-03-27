@@ -1,10 +1,12 @@
 # pylint: disable=unused-import,redefined-outer-name # fixture
 
+import time
+
 import scaleway.function.v1beta1 as sdk
 
 from tests import constants
 from tests.app_fixtures import app, app_updated
-from tests.integrations.deploy.deploy_wrapper import run_deploy_command
+from tests.integrations.deploy_wrapper import run_deploy_command
 from tests.integrations.project_fixture import scaleway_project  # noqa
 from tests.integrations.utils import create_client, trigger_function
 
@@ -22,6 +24,8 @@ def test_integration_deploy_serverless_backend(scaleway_project: str):  # noqa
     assert resp.text == app.MESSAGE
 
 
+# I think duplication for assertions is fine and more flexible
+# pylint: disable=duplicate-code
 def test_integration_deploy_existing_function_serverless_backend(
     scaleway_project: str,  # noqa
 ):
@@ -47,11 +51,10 @@ def test_integration_deploy_existing_function_serverless_backend(
     # Deploy twice in a row
     url, *_ = run_deploy_command(
         client,
-        app_path=constants.APP_FIXTURES_PATH.joinpath("app_updated.py"),
+        app_path=constants.APP_FIXTURES_PATH / "app_updated.py",
     )
 
-    import time
-
+    # TODO?: delete this. It's a kubernetes side-effect.
     time.sleep(30)
 
     # Check updated message content

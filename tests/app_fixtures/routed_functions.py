@@ -3,18 +3,22 @@ from typing import Any
 from scw_serverless.app import Serverless
 
 NAMESPACE_NAME = "integration-tests-gateway"
+MESSAGES = {
+    "/health": "I'm fine!",
+    "/messages": "Could not find any message",
+}
 
 app = Serverless(NAMESPACE_NAME)
 
 
 @app.get(url="/health")
 def health(_event: dict[str, Any], _context: dict[str, Any]):
-    return "I'm fine!"
+    return MESSAGES["/health"]
 
 
 @app.get(url="/messages")
 def get_messages(_event: dict[str, Any], _context: dict[str, Any]):
-    return "Could not find any message"
+    return MESSAGES["/messages"]
 
 
 @app.post(url="/messages/new")

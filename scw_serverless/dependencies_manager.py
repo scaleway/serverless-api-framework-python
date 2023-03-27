@@ -2,6 +2,7 @@ import os
 import pathlib
 import subprocess
 import sys
+from importlib.metadata import version
 from typing import Optional
 
 from scw_serverless.logger import get_logger
@@ -71,7 +72,8 @@ class DependenciesManager:
             not self.pkg_path.exists()
             or not self.pkg_path.joinpath(__package__).exists()
         ):
-            self._run_pip_install("scw_serverless")
+            # Installs the current version with pip
+            self._run_pip_install(f"{__package__}=={version(__package__)}")
 
     def _run_pip_install(self, *args: str):
         python_path = sys.executable
@@ -84,6 +86,7 @@ class DependenciesManager:
             "--target",
             str(self.pkg_path.resolve()),
         ]
+        print(command)
         try:
             subprocess.run(
                 command,
