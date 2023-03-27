@@ -86,7 +86,7 @@ class DependenciesManager:
             "--target",
             str(self.pkg_path.resolve()),
         ]
-        print(command)
+
         try:
             subprocess.run(
                 command,

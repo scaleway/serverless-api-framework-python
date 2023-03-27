@@ -4,11 +4,6 @@ from scaleway import Client
 from scw_serverless.app import Serverless
 from scw_serverless.gateway.gateway_api_client import GatewayAPIClient
 
-TEMP_DIR = "./.scw"
-DEPLOYMENT_ZIP = f"{TEMP_DIR}/deployment.zip"
-UPLOAD_TIMEOUT = 600  # In seconds
-DEPLOY_TIMEOUT = 600
-
 
 class GatewayManager:
     """Apply the configured routes to an existing API Gateway."""
