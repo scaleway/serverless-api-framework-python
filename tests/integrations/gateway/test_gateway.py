@@ -1,22 +1,19 @@
 # pylint: disable=unused-import,redefined-outer-name # fixture
 import requests
-from scaleway.container.v1beta1 import Container
 
 from tests import constants
 from tests.app_fixtures.routed_functions import MESSAGES
 from tests.integrations.deploy_wrapper import run_deploy_command
-from tests.integrations.gateway_fixtures import api_gateway, auth_key  # noqa
+from tests.integrations.gateway_fixtures import auth_key  # noqa
 from tests.integrations.project_fixture import scaleway_project  # noqa
 from tests.integrations.utils import create_client
 
 
-def test_integration_gateway(
-    scaleway_project: str, api_gateway: Container, auth_key: str  # noqa
-):
+def test_integration_gateway(scaleway_project: str, auth_key: str):  # noqa
     client = create_client()
     client.default_project_id = scaleway_project
 
-    gateway_url = f"https://{api_gateway.domain_name}"
+    gateway_url = f"https://{constants.GATEWAY_HOST}"
 
     run_deploy_command(
         client,
