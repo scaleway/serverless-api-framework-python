@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import time
 
 import requests
 from requests.adapters import HTTPAdapter, Retry
@@ -9,6 +10,7 @@ from scaleway import Client
 from tests import constants
 
 CLI_COMMAND = "scw-serverless"
+RETRY_INTERVAL = 10
 
 
 def create_client() -> Client:
@@ -44,3 +46,16 @@ def trigger_function(url: str, max_retries: int = 5) -> requests.Response:
     req = session.get(url, timeout=constants.COLD_START_TIMEOUT)
     req.raise_for_status()
     return req
+
+
+def wait_for_body_text(url: str, body: str, max_retries: int = 10) -> requests.Response:
+    last_body = None
+    for _ in range(max_retries):
+        resp = trigger_function(url)
+        if resp.text == body:
+            return resp
+        last_body = resp.text
+        time.sleep(RETRY_INTERVAL)
+    raise RuntimeError(
+        f"Max retries {max_retries} for url {url} to match body {body}, got: {last_body}"
+    )

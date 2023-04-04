@@ -1,14 +1,11 @@
 # pylint: disable=unused-import,redefined-outer-name # fixture
-
-import time
-
 import scaleway.function.v1beta1 as sdk
 
 from tests import constants
 from tests.app_fixtures import app, app_updated, multiple_functions
 from tests.integrations.deploy_wrapper import run_deploy_command
 from tests.integrations.project_fixture import scaleway_project  # noqa
-from tests.integrations.utils import create_client, trigger_function
+from tests.integrations.utils import create_client, trigger_function, wait_for_body_text
 
 
 def test_integration_deploy(scaleway_project: str):  # noqa
@@ -52,12 +49,8 @@ def test_integration_deploy_existing_function(scaleway_project: str):  # noqa
         app_path=constants.APP_FIXTURES_PATH / "app_updated.py",
     )
 
-    # TODO?: delete this
-    time.sleep(30)
-
     # Check updated message content
-    resp = trigger_function(url)
-    assert resp.text == app_updated.MESSAGE
+    wait_for_body_text(url, app_updated.MESSAGE)
 
     # Check updated description
     function = api.get_function(function_id=function.id)
