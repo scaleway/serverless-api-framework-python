@@ -29,7 +29,9 @@ jobs:
           path: ${{ env.GATEWAY_CHECKOUT_DIR }}
 
       - name: Install Scaleway CLI
-        uses: ./${{ env.GATEWAY_CHECKOUT_DIR }}/.github/actions/setup-scaleway-cli
+        # Should point to GATEWAY_CHECKOUT_DIR but env is unusable here.
+        # See: https://docs.github.com/en/actions/learn-github-actions/contexts#env-context
+        uses: ./gateway/.github/actions/setup-scaleway-cli
         with:
           scw-version: "2.13.0"
           scw-access-key: ${{ secrets.SCW_ACCESS_KEY }}
