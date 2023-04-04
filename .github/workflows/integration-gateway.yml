@@ -26,6 +26,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: scaleway/serverless-gateway
+          # TODO: remove this
+          ref: "test/add-deployed-gateway-integration-tests"
           path: ${{ env.GATEWAY_CHECKOUT_DIR }}
 
       - name: Install Scaleway CLI
