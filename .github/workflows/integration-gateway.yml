@@ -76,13 +76,14 @@ jobs:
           pushd $GATEWAY_CHECKOUT_DIR
           export GATEWAY_HOST=$(make get-gateway-host -s)
           popd
-          poetry run pytest integrations/gateway -n $(nproc --all)
+          poetry run pytest tests/integrations/gateway -n $(nproc --all)
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           GATEWAY_S3_BUCKET_NAME: ${{ secrets.GATEWAY_S3_BUCKET_NAME }}
 
       - name: Delete S3 bucket
+        working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
         run: make delete-bucket
         env:
           S3_BUCKET_NAME: ${{ secrets.GATEWAY_S3_BUCKET_NAME }}
