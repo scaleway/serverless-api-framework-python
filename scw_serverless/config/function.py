@@ -108,7 +108,7 @@ class Function:
             http_option = sdk.FunctionHttpOption(args_http_option)
         gateway_route = None
         if url := args.get("relative_url"):
-            gateway_route = GatewayRoute(url, http_methods=args.get("methods"))
+            gateway_route = GatewayRoute(url, http_methods=args.get("http_methods"))
 
         return Function(
             name=to_valid_fn_name(handler.__name__),

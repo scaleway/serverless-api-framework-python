@@ -39,12 +39,22 @@ def test_integration_gateway(scaleway_project: str, auth_key: str):  # noqa
     assert resp.text == MESSAGES["/messages"]
 
     # Check a route with a method that is not configured
-    resp = requests.get(
-        url=gateway_url + "/messages/new", timeout=constants.COLD_START_TIMEOUT
+    resp = requests.post(
+        url=gateway_url + "/messages", timeout=constants.COLD_START_TIMEOUT
     )
     assert resp.status_code == 404
 
     resp = requests.post(
-        url=gateway_url + "/messages/new", timeout=constants.COLD_START_TIMEOUT
+        url=gateway_url + "/messages/new",
+        timeout=constants.COLD_START_TIMEOUT,
+        data="welcome",
     )
     assert resp.status_code == 200
+    assert "welcome" in resp.text
+
+    resp = requests.put(
+        url=gateway_url + "/messages/welcome",
+        timeout=constants.COLD_START_TIMEOUT,
+    )
+    assert resp.status_code == 200
+    assert "welcome" in resp.text
