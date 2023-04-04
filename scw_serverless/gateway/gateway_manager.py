@@ -52,7 +52,7 @@ class GatewayManager:
 
         # The Gateway deletes routes based on the relative_url,
         # so we need to cleanup all routes at the start,
-        # otherwise can might accidentely delete a route we previously created.
+        # otherwise we might accidentally delete a route we previously created.
         # If it has the same relative_url but different http methods.
         for function in routed_functions:
             self.gateway_client.delete_route(function.gateway_route)  # type: ignore
