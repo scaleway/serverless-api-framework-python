@@ -90,5 +90,6 @@ jobs:
         if: always()
 
       - name: Delete Gateway namespace and container
+        working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
         run: make delete-namespace
         if: always()
