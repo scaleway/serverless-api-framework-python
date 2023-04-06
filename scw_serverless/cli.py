@@ -4,12 +4,10 @@ from typing import Literal, Optional
 
 import click
 
-from scw_serverless.config.generators.serverless_framework import (
-    ServerlessFrameworkGenerator,
-)
-from scw_serverless.config.generators.terraform import TerraformGenerator
+from scw_serverless.config import generators
 from scw_serverless.dependencies_manager import DependenciesManager
 from scw_serverless.deploy import backends
+from scw_serverless.gateway.gateway_manager import GatewayManager
 from scw_serverless.logger import DEFAULT, get_logger
 from scw_serverless.utils.credentials import DEFAULT_REGION, get_scw_client
 from scw_serverless.utils.loader import get_app_instance
@@ -41,6 +39,34 @@ def cli() -> None:
 @cli.command()
 @CLICK_ARG_FILE
 @click.option(
+    "--backend",
+    "-b",
+    "backend",
+    default="api",
+    type=click.Choice(["api", "serverless"], case_sensitive=False),
+    show_default=True,
+    help="Select the backend used to deploy",
+)
+@click.option(
+    "--no-single-source",
+    "single_source",
+    is_flag=True,
+    default=True,
+    help="Do not remove functions not present in the code being deployed",
+)
+@click.option(
+    "--gateway-url",
+    "gateway_url",
+    default=None,
+    help="URL of a deployed API Gateway.",
+)
+@click.option(
+    "--gateway-api-key",
+    "gateway_api_key",
+    default=None,
+    help="API key used to manage the routes of the API Gateway.",
+)
+@click.option(
     "--profile",
     "-p",
     "profile_name",
@@ -67,26 +93,12 @@ WARNING: Please use environment variables instead""",
     default=None,
     help=f"Region to deploy to. Default: {DEFAULT_REGION}",
 )
-@click.option(
-    "--no-single-source",
-    "single_source",
-    is_flag=True,
-    default=True,
-    help="Do not remove functions not present in the code being deployed",
-)
-@click.option(
-    "--backend",
-    "-b",
-    "backend",
-    default="api",
-    type=click.Choice(["api", "serverless"], case_sensitive=False),
-    show_default=True,
-    help="Select the backend used to deploy",
-)
 def deploy(
     file: Path,
     backend: Literal["api", "serverless"],
     single_source: bool,
+    gateway_url: Optional[str] = None,
+    gateway_api_key: Optional[str] = None,
     profile_name: Optional[str] = None,
     secret_key: Optional[str] = None,
     project_id: Optional[str] = None,
@@ -123,6 +135,28 @@ def deploy(
 
     deploy_backend.deploy()
 
+    needs_gateway = any(function.gateway_route for function in app_instance.functions)
+    if not needs_gateway:
+        return
+
+    if not gateway_url:
+        raise RuntimeError(
+            "Your application requires an API Gateway but no gateway URL was provided"
+        )
+    if not gateway_api_key:
+        raise RuntimeError(
+            "Your application requires an API Gateway but "
+            + "no gateway API key was provided to manage routes"
+        )
+
+    manager = GatewayManager(
+        app_instance=app_instance,
+        gateway_url=gateway_url,
+        gateway_api_key=gateway_api_key,
+        sdk_client=client,
+    )
+    manager.update_routes()
+
 
 @cli.command()
 @CLICK_ARG_FILE
@@ -157,17 +191,18 @@ def generate(file: Path, target: str, save: str) -> None:
     if not os.path.exists(save):
         os.mkdir(save)
 
+    generator = None
     if target == "serverless":
-        serverless_framework_generator = ServerlessFrameworkGenerator(app_instance)
-        serverless_framework_generator.write(save)
+        generator = generators.ServerlessFrameworkGenerator(app_instance)
     elif target == "terraform":
-        terraform_generator = TerraformGenerator(
+        generator = generators.TerraformGenerator(
             app_instance,
             deps_manager=DependenciesManager(
                 file.parent.resolve(), file.parent.resolve()
             ),
         )
-        terraform_generator.write(save)
+    if generator:
+        generator.write(save)
 
     get_logger().success(f"Done! Generated configuration file saved in {save}")
 

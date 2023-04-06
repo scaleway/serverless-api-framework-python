@@ -1,12 +1,11 @@
 # pylint: disable=unused-import,redefined-outer-name # fixture
-
 import scaleway.function.v1beta1 as sdk
 
 from tests import constants
 from tests.app_fixtures import app, app_updated
-from tests.integrations.deploy.deploy_wrapper import run_deploy_command
+from tests.integrations.deploy_wrapper import run_deploy_command
 from tests.integrations.project_fixture import scaleway_project  # noqa
-from tests.integrations.utils import create_client, trigger_function
+from tests.integrations.utils import create_client, trigger_function, wait_for_body_text
 
 
 def test_integration_deploy_serverless_backend(scaleway_project: str):  # noqa
@@ -22,6 +21,8 @@ def test_integration_deploy_serverless_backend(scaleway_project: str):  # noqa
     assert resp.text == app.MESSAGE
 
 
+# I think duplication for assertions is fine and more flexible
+# pylint: disable=duplicate-code
 def test_integration_deploy_existing_function_serverless_backend(
     scaleway_project: str,  # noqa
 ):
@@ -47,16 +48,11 @@ def test_integration_deploy_existing_function_serverless_backend(
     # Deploy twice in a row
     url, *_ = run_deploy_command(
         client,
-        app_path=constants.APP_FIXTURES_PATH.joinpath("app_updated.py"),
+        app_path=constants.APP_FIXTURES_PATH / "app_updated.py",
     )
 
-    import time
-
-    time.sleep(30)
-
     # Check updated message content
-    resp = trigger_function(url)
-    assert resp.text == app_updated.MESSAGE
+    wait_for_body_text(url, app_updated.MESSAGE)
 
     # Check updated description
     function = api.get_function(function_id=function.id)

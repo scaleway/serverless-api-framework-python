@@ -61,8 +61,8 @@ class FunctionKwargs(TypedDict, total=False):
     description: str
     http_option: HTTPOption
     # Parameters for the Gateway
-    url: str
-    methods: list[HTTPMethod]
+    relative_url: str
+    http_methods: list[HTTPMethod]
     # Triggers
     triggers: list[Trigger]
 
@@ -107,8 +107,8 @@ class Function:
         if args_http_option := args.get("http_option"):
             http_option = sdk.FunctionHttpOption(args_http_option)
         gateway_route = None
-        if url := args.get("url"):
-            gateway_route = GatewayRoute(url, methods=args.get("methods"))
+        if url := args.get("relative_url"):
+            gateway_route = GatewayRoute(url, http_methods=args.get("http_methods"))
 
         return Function(
             name=to_valid_fn_name(handler.__name__),

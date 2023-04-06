@@ -19,7 +19,6 @@ class Serverless:
     :param service_name: name of the namespace
     :param env: namespace level environment variables
     :param secret: namespace level secrets
-    :param gateway_domains: domains to be supported by the gateway
     """
 
     def __init__(
@@ -27,11 +26,9 @@ class Serverless:
         service_name: str,
         env: Optional[dict[str, Any]] = None,
         secret: Optional[dict[str, Any]] = None,
-        gateway_domains: Optional[list[str]] = None,
     ):
         self.functions: list[Function] = []
         self.service_name: str = service_name
-        self.gateway_domains: list[str] = gateway_domains if gateway_domains else []
         self.env = env
         self.secret = secret
 
@@ -108,7 +105,7 @@ class Serverless:
 
             Requires an API gateway
         """
-        kwargs |= {"url": url, "methods": [HTTPMethod.GET]}
+        kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.GET]}
         return self.func(**kwargs)
 
     def post(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
@@ -120,7 +117,7 @@ class Serverless:
 
             Requires an API gateway
         """
-        kwargs |= {"url": url, "methods": [HTTPMethod.POST]}
+        kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.POST]}
         return self.func(**kwargs)
 
     def put(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
@@ -132,7 +129,7 @@ class Serverless:
 
             Requires an API gateway
         """
-        kwargs |= {"url": url, "methods": [HTTPMethod.PUT]}
+        kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.PUT]}
         return self.func(**kwargs)
 
     def delete(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
@@ -144,7 +141,7 @@ class Serverless:
 
             Requires an API gateway
         """
-        kwargs |= {"url": url, "methods": [HTTPMethod.DELETE]}
+        kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.DELETE]}
         return self.func(**kwargs)
 
     def patch(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
@@ -156,5 +153,5 @@ class Serverless:
 
             Requires an API gateway
         """
-        kwargs |= {"url": url, "methods": [HTTPMethod.PATCH]}
+        kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.PATCH]}
         return self.func(**kwargs)
