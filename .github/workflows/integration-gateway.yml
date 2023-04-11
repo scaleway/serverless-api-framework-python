@@ -72,7 +72,7 @@ jobs:
       - name: Run integration tests
         run: |
           pushd $GATEWAY_CHECKOUT_DIR
-          export GATEWAY_HOST=$(make get-gateway-endpoint -s)
+          export GATEWAY_HOST=$(make gateway-host -s)
           popd
           poetry run pytest tests/integrations/gateway -n $(nproc --all)
         env:
