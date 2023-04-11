@@ -50,14 +50,6 @@ class GatewayManager:
             if function.gateway_route
         ]
 
-        # The Gateway deletes routes based on the relative_url,
-        # so we need to cleanup all routes at the start,
-        # otherwise we might accidentally delete a route we previously created.
-        # If it has the same relative_url but different http methods.
-        for function in routed_functions:
-            function.gateway_route.target = "https://"
-            self.gateway_client.delete_route(function.gateway_route)  # type: ignore
-
         for function in routed_functions:
             if function.name not in created_functions:
                 raise RuntimeError(
@@ -69,6 +61,4 @@ class GatewayManager:
             function.gateway_route.target = target  # type: ignore
 
         for function in routed_functions:
-            if not function.gateway_route:
-                continue
-            self.gateway_client.create_route(function.gateway_route)
+            self.gateway_client.create_route(function.gateway_route) # type: ignore
