@@ -55,6 +55,7 @@ class GatewayManager:
         # otherwise we might accidentally delete a route we previously created.
         # If it has the same relative_url but different http methods.
         for function in routed_functions:
+            function.gateway_route.target = "https://"
             self.gateway_client.delete_route(function.gateway_route)  # type: ignore
 
         for function in routed_functions:
