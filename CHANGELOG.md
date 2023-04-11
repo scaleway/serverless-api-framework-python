@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug which prevented the use of multiple modules
 - Fixed env vars were being overwritten by config file
 
-## [1.0.0] - 2023-03-07
+## [1.0.0] - 2023-04-11
 
 ### Feature
 
