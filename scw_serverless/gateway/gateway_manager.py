@@ -61,4 +61,4 @@ class GatewayManager:
             function.gateway_route.target = target  # type: ignore
 
         for function in routed_functions:
-            self.gateway_client.create_route(function.gateway_route) # type: ignore
+            self.gateway_client.create_route(function.gateway_route)  # type: ignore

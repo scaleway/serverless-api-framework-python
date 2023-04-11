@@ -63,7 +63,9 @@ def _cleanup_project(client: Client, project_id: ProjectID):
                 raise e
     for registry in registries:
         try:
-            registry_api.wait_for_namespace(namespace_id=registry.id, options=WaitForOptions(timeout=600))
+            registry_api.wait_for_namespace(
+                namespace_id=registry.id, options=WaitForOptions(timeout=600)
+            )
         except ScalewayException as e:
             if e.status_code != 404:
                 raise e
