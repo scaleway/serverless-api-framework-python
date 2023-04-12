@@ -956,14 +956,14 @@ crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
 name = "scaleway"
-version = "0.10.0"
+version = "0.11.0"
 description = "Scaleway SDK for Python"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "scaleway-0.10.0-py3-none-any.whl", hash = "sha256:2a18dccaf955bc184ed9861800ca408a5e87899313470ab07ac6b24eb0146a95"},
-    {file = "scaleway-0.10.0.tar.gz", hash = "sha256:d1bdb64b9dabd2d5233bb5dc05dce20421c80f7527944bb05f1755efc15ad466"},
+    {file = "scaleway-0.11.0-py3-none-any.whl", hash = "sha256:de2bd3d75844777af65891572fb5dcbcdda6b35a1d85fb4b33e9ae810c98d99b"},
+    {file = "scaleway-0.11.0.tar.gz", hash = "sha256:65b44a0e3163ef954426eccd971a816da574a631bf02a76551552a26946284d1"},
 ]
 
 [package.dependencies]
@@ -1383,4 +1383,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "1c00ad55d86008145a2eed716575af4f85571f5b2ec1d9427617b9a724094655"
+content-hash = "0ce84cc3bfcaa0ff97ac81027b9a616973ffbd18776f2b7da8a4d74c78b7f387"
