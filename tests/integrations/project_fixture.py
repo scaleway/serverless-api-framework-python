@@ -9,6 +9,7 @@ from scaleway.account.v2 import AccountV2API
 from scaleway.function.v1beta1 import FunctionV1Beta1API
 from scaleway.registry.v1 import RegistryV1API
 from scaleway_core.api import ScalewayException
+from scaleway_core.utils import WaitForOptions
 
 from .utils import create_client
 
@@ -62,7 +63,9 @@ def _cleanup_project(client: Client, project_id: ProjectID):
                 raise e
     for registry in registries:
         try:
-            registry_api.wait_for_namespace(namespace_id=registry.id)
+            registry_api.wait_for_namespace(
+                namespace_id=registry.id, options=WaitForOptions(timeout=600)
+            )
         except ScalewayException as e:
             if e.status_code != 404:
                 raise e

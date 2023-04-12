@@ -87,14 +87,6 @@ def test_gateway_manager_update_routes(
         json={"functions": []},
     )
 
-    # We should attempt to delete the route
-    mocked_responses.delete(
-        MOCK_GATEWAY_URL + "/scw",  # type: ignore
-        match=[
-            header_matcher({"X-Auth-Token": MOCK_GATEWAY_API_KEY}),
-            json_params_matcher(params=function.gateway_route.asdict()),  # type: ignore
-        ],
-    )
     # We should attempt to create the route
     mocked_responses.post(
         MOCK_GATEWAY_URL + "/scw",  # type: ignore
