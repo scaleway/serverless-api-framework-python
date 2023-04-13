@@ -38,7 +38,7 @@ def get_test_backend() -> ScalewayApiBackend:
         secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",  # nosec # fake data
         default_region=constants.DEFAULT_REGION,
     )
-    backend = ScalewayApiBackend(app, client, True)
+    backend = ScalewayApiBackend(app, client, False)
 
     # This would otherwise create some side effects
     create_zip = MagicMock()
@@ -81,7 +81,9 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
     mocked_responses.get(
         constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
-            matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
+            matchers.query_param_matcher(
+                {"namespace_id": namespace["id"], "page": 1, "name": function.name}
+            )
         ],
         json={"functions": []},
     )
@@ -166,7 +168,9 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     mocked_responses.get(
         constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
-            matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
+            matchers.query_param_matcher(
+                {"namespace_id": namespace["id"], "page": 1, "name": function.name}
+            )
         ],
         json={"functions": []},
     )
