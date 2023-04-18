@@ -104,6 +104,8 @@ class Serverless:
         .. note::
 
             Requires an API gateway
+
+            For more information, please consult the :doc:`gateway` page.
         """
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.GET]}
         return self.func(**kwargs)
@@ -114,8 +116,9 @@ class Serverless:
         :param url: relative url to trigger the function
 
         .. note::
-
             Requires an API gateway
+
+            For more information, please consult the :doc:`gateway` page.
         """
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.POST]}
         return self.func(**kwargs)
@@ -128,6 +131,8 @@ class Serverless:
         .. note::
 
             Requires an API gateway
+
+            For more information, please consult the :doc:`gateway` page.
         """
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.PUT]}
         return self.func(**kwargs)
@@ -140,6 +145,8 @@ class Serverless:
         .. note::
 
             Requires an API gateway
+
+            For more information, please consult the :doc:`gateway` page.
         """
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.DELETE]}
         return self.func(**kwargs)
@@ -152,6 +159,8 @@ class Serverless:
         .. note::
 
             Requires an API gateway
+
+            For more information, please consult the :doc:`gateway` page.
         """
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.PATCH]}
         return self.func(**kwargs)

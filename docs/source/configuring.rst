@@ -24,12 +24,12 @@ When deploying, the `scw-serverless` CLI will look for a Serverless instance in 
    })
 
 .. autoclass:: scw_serverless.app.Serverless
-   :members: func
+   :members: func, get, post, put
 
 Functions
 ---------
 
-To configure your serverless functions, you can provide keyword arguments to the decorators. The Function name that will appear in Scaleway console will be the name of your function's handler.
+To configure your serverless functions, you can provide keyword arguments to the decorators. The Function name that will appear in the Scaleway console will be the name of your function's handler.
 
 .. autoclass:: scw_serverless.config.function.FunctionKwargs
 

@@ -46,8 +46,8 @@ class FunctionKwargs(TypedDict, total=False):
 
     .. seealso::
 
-        Scaleway Developers Documentation
-        https://developers.scaleway.com/en/products/functions/api/#create-a-function
+        `Scaleway Developers Documentation
+        <https://developers.scaleway.com/en/products/functions/api/#create-a-function>`_
     """
 
     env: dict[str, str]

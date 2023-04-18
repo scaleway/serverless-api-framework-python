@@ -18,7 +18,7 @@ Generate
 --------
 
 Generators will generate configuration files to use with other deployment tools.
-Currently, you can generate either a `serverless` or `terraform` configuration file. This can useful to integrate with your existing tooling.
+Currently, you can generate either a `serverless` or `terraform` configuration file. This can be useful to integrate with your existing tooling.
 
 Config file generation is done with the `generate` command:
 
