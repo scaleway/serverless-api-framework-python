@@ -1,4 +1,4 @@
-# [Multiple Modules](https://github.com/scaleway/serverless-api-project/tree/main/examples/multiple_modules)
+# [Multiple Modules](https://github.com/scaleway/serverless-api-framework-python/tree/main/examples/multiple_modules)
 
 An app to upload and query files to S3 Glacier on Scaleway split in multiple modules.
 

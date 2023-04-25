@@ -1,14 +1,17 @@
-# Contribute to `serverless-api-project`
+# Contribute to `serverless-api-framework-python`
 
-`serverless-api-project` is MIT licensed accepts contributions via GitHub. This document will cover how to contribute to the project and report issues.
+`serverless-api-framework-python` is MIT licensed accepts contributions via GitHub. This document will cover how to contribute to the project and report issues.
 
 ## Topics
 
-- [Reporting Security Issues](#reporting-security-issues)
-- [Reporting Issues](#reporting-issues)
-- [Suggesting feature](#suggesting-feature)
-- [Contributing Code](#contributing-code)
-- [Community Guidelines](#community-guidelines)
+- [Contribute to `serverless-api-framework-python`](#contribute-to-serverless-api-framework-python)
+  - [Topics](#topics)
+  - [Reporting security issues](#reporting-security-issues)
+  - [Reporting issues](#reporting-issues)
+  - [Suggesting a feature](#suggesting-a-feature)
+    - [Submit code](#submit-code)
+    - [Pull Request Guidelines](#pull-request-guidelines)
+  - [Community guidelines](#community-guidelines)
 
 ## Reporting security issues
 
@@ -21,7 +24,7 @@ We always appreciate a well-written, thorough bug report, and will thank you for
 Before opening a new issue, we appreciate you reviewing open issues to see if there are any similar requests.
 If there is a match, thumbs up the issue with a 👍 and leave a comment if you have additional information.
 
-When reporting an issue, please include the version of `serverless-api-project`, your os and the version of python you are using.
+When reporting an issue, please include the version of `serverless-api-framework-python`, your os and the version of python you are using.
 
 ## Suggesting a feature
 
@@ -29,7 +32,7 @@ When requesting a feature, some of the questions we want to answer are:
 
 - What value does this feature bring to end users?
 - How urgent is the need (nice to have feature or need to have)?
-- Does this align with the goals of `serverless-api-project`?
+- Does this align with the goals of `serverless-api-framework-python`?
 
 ### Submit code
 
@@ -39,7 +42,7 @@ To submit code:
 - Create a topic branch from where you want to base your work (usually main)
 - Add tests to cover contributed code
 - Push your commit(s) to your topic branch on your fork
-- Open a pull request against `serverless-api-project` `main` branch that follows [PR guidelines](#pull-request-guidelines)
+- Open a pull request against `serverless-api-framework-python` `main` branch that follows [PR guidelines](#pull-request-guidelines)
 
 If you have questions or comments on your code, feel free to correct these in your branch through new commits.
 
