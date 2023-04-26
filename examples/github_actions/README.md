@@ -1,4 +1,4 @@
-# [Deploying using Github Actions](https://github.com/scaleway/serverless-api-project/tree/main/examples/github_actions)
+# [Deploying using Github Actions](https://github.com/scaleway/serverless-api-framework-python/tree/main/examples/github_actions)
 
 This example provides a simple Github Action configuration file to get you started on deploying with `scw_serverless` in your CI/CD pipelines.
 

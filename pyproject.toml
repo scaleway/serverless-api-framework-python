@@ -5,8 +5,8 @@ description = "Framework for writing serverless APIs in Python, using Scaleway f
 authors = ["Scaleway Serverless Team <opensource@scaleway.com>"]
 readme = "README.md"
 license = "MIT"
-repository = "https://github.com/scaleway/serverless-api-project"
-documentation = "https://serverless-api-project.readthedocs.io/en/latest/"
+repository = "https://github.com/scaleway/serverless-api-framework-python-python"
+documentation = "https://serverless-api-framework-python.readthedocs.io/en/latest/"
 keywords = ["serverless", "scaleway", "functions", "cloud", "faas"]
 
 # Should be one of:

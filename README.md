@@ -1,10 +1,10 @@
 # Serverless API Framework
 
 [![PyPI version](https://badge.fury.io/py/scw-serverless.svg)](https://badge.fury.io/py/scw-serverless)
-[![Documentation Status](https://readthedocs.org/projects/serverless-api-project/badge/?version=latest)](https://serverless-api-project.readthedocs.io/en/latest/?badge=latest)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/scaleway/serverless-api-project/main.svg)](https://results.pre-commit.ci/latest/github/scaleway/serverless-api-project/main)
+[![Documentation Status](https://readthedocs.org/projects/serverless-api-framework-python/badge/?version=latest)](https://serverless-api-framework-python.readthedocs.io/en/latest/?badge=latest)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/scaleway/serverless-api-framework-python/main.svg)](https://results.pre-commit.ci/latest/github/scaleway/serverless-api-framework-python/main)
 
-Serverless API Framework is a tool that lets you write and deploy serverless functions in python.
+Serverless API Framework is a tool that lets you write and deploy serverless functions in Python.
 It bridges your code with the deployment configuration to make it a breeze to work with serverless functions.
 
 Starts by defining a simple Python function:
@@ -41,7 +41,7 @@ scw-serverless --help
 
 ### Writing and configuring functions
 
-You can transform your python functions into serverless functions by using decorators:
+You can transform your Python functions into serverless functions by using decorators:
 
 ```python
 import os
@@ -57,7 +57,7 @@ def hello_world(event, context):
 ```
 
 The configuration is done by passing arguments to the decorator.
-To view which arguments are supported, head over to this [documentation](https://serverless-api-project.readthedocs.io/) page.
+To view which arguments are supported, head over to this [documentation](https://serverless-api-framework-python.readthedocs.io/) page.
 
 When you are ready, you can deploy your function with the `scw-serverless` CLI tool:
 
@@ -69,8 +69,10 @@ The tool will use your Scaleway credentials from your environment and config fil
 
 ## What’s Next?
 
-To learn more about the framework, have a look at the [documentation](https://serverless-api-project.readthedocs.io/).
-If you want to see it in action, we provide some [examples](https://github.com/scaleway/serverless-api-project/tree/main/examples) to get you started.
+To learn more about the framework, have a look at the [documentation](https://serverless-api-framework-python.readthedocs.io/).
+If you want to see it in action, we provide some [examples](https://github.com/scaleway/serverless-api-framework-python-python/tree/main/examples) to get you started.
+
+To run your Python functions locally, check out [Scaleway Functions Python](https://github.com/scaleway/serverless-functions-python).
 
 ## Contributing
 
