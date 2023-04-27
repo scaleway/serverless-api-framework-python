@@ -7,9 +7,7 @@ import pytest
 from scaleway import Client
 from scaleway.account.v2 import AccountV2API
 from scaleway.function.v1beta1 import FunctionV1Beta1API
-from scaleway.registry.v1 import RegistryV1API
 from scaleway_core.api import ScalewayException
-from scaleway_core.utils import WaitForOptions
 
 from .utils import create_client
 
@@ -42,30 +40,17 @@ def _create_scaleway_project(client: Client) -> ProjectID:
 
 def _cleanup_project(client: Client, project_id: ProjectID):
     """Delete all Scaleway resources created in the temporary project."""
-    function_api = FunctionV1Beta1API(client)
+    api = FunctionV1Beta1API(client)
 
-    namespaces = function_api.list_namespaces_all(project_id=project_id)
+    namespaces = api.list_namespaces_all(project_id=project_id)
     for namespace in namespaces:
-        function_api.delete_namespace(namespace_id=namespace.id)
-
-    registry_api = RegistryV1API(client)
-    registries = registry_api.list_namespaces_all(project_id=project_id)
-    for registry in registries:
-        registry_api.delete_namespace(namespace_id=registry.id)
+        api.delete_namespace(namespace_id=namespace.id)
 
     # All deletions have been scheduled,
     # we can wait for their completion sequentially
     for namespace in namespaces:
         try:
-            function_api.wait_for_namespace(namespace_id=namespace.id)
-        except ScalewayException as e:
-            if e.status_code != 404:
-                raise e
-    for registry in registries:
-        try:
-            registry_api.wait_for_namespace(
-                namespace_id=registry.id, options=WaitForOptions(timeout=600)
-            )
+            api.wait_for_namespace(namespace_id=namespace.id)
         except ScalewayException as e:
             if e.status_code != 404:
                 raise e
