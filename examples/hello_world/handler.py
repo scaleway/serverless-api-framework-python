@@ -13,4 +13,4 @@ def handle(_event: dict[str, Any], _content: dict[str, Any]) -> dict[str, Any]:
         context (dict): function call metadata
     """
 
-    return {"message": "Hello from Scaleway functions using Serverless API Framework"}
+    return {"body": "Hello from Scaleway functions using Serverless API Framework"}

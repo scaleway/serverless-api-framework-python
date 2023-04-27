@@ -1,7 +1,30 @@
 Deploying
 =========
 
-After writing your functions, the included CLI tool `scw-serverless` helps deploy your application on Scaleway.
+After writing your functions, the included CLI tool `scw-serverless` helps test and deploy your application on Scaleway.
+
+Running locally
+---------------
+
+You can test your functions locally before deploying with the `dev` command:
+
+.. code-block:: console
+
+    scw-serverless dev app.py
+
+This will start a local Flask server with your functions that will behave similarly to Scaleway Functions.
+
+By default, functions are served by `/name` on port 8080 with the name being the name of the Python function.
+
+You can then use your favorite tools to query the functions:
+
+.. code-block:: console
+
+    # For a function named def handle()...
+    curl http://localhost:8080/handle
+
+This command allows you to test your code, but as this test environment is not quite the same as Scaleway Functions,
+there might be slight differences when deploying.
 
 Deploy
 ------

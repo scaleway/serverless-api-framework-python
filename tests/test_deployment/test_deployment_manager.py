@@ -53,7 +53,8 @@ def get_test_backend() -> DeploymentManager:
 def test_scaleway_api_backend_deploy_function(mocked_responses: responses.RequestsMock):
     function = Function(
         name="test-function",
-        handler="handler",
+        handler_path="handler",
+        handler=lambda event, context: "test",
     )
     backend = get_test_backend()
     backend.app_instance.functions = [function]
@@ -137,7 +138,8 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     trigger = CronTrigger(schedule="* * * * * *", name="test-cron", args={"foo": "bar"})
     function = Function(
         name="test-function-with-trigger",
-        handler="handler",
+        handler_path="handler",
+        handler=lambda event, context: "test",
         triggers=[trigger],
     )
 

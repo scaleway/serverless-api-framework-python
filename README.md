@@ -59,6 +59,12 @@ def hello_world(event, context):
 The configuration is done by passing arguments to the decorator.
 To view which arguments are supported, head over to this [documentation](https://serverless-api-framework-python.readthedocs.io/) page.
 
+Before deploying, you can run your function locally with the dev command:
+
+```console
+scw-serverless dev app.py
+```
+
 When you are ready, you can deploy your function with the `scw-serverless` CLI tool:
 
 ```console
