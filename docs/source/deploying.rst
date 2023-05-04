@@ -14,27 +14,8 @@ The `deploy` command will deploy your functions directly.
 
 The command will wait until all functions are deployed and ready to be called. It will also deploy the corresponding triggers.
 
-Generate
---------
-
-Generators will generate configuration files to use with other deployment tools.
-Currently, you can generate either a `serverless` or `terraform` configuration file. This can be useful to integrate with your existing tooling.
-
-Config file generation is done with the `generate` command:
-
-.. code-block:: console
-
-    scw-serverless generate -t serverless
-
-Serverless Generator
-^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: scw_serverless.config.generators.ServerlessFrameworkGenerator
-
-Terraform Generator
-^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: scw_serverless.config.generators.TerraformGenerator
+If you have routed functions, the deploy command will also call your Serverless Gateway to update the routes to your function.
+For more information on the Gateway integration, check out :doc:`gateway`.
 
 Dependencies
 ------------
