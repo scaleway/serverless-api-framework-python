@@ -39,6 +39,9 @@ jobs:
           default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
           save-config: true
 
+      - name: Install jq
+        run: apt-get update && apt-get install -y jq
+
       - name: Create Gateway namespace
         working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
         run: |
