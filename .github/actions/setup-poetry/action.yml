@@ -19,7 +19,7 @@ runs:
     - name: Install poetry dependencies
       shell: bash
       run: poetry install --no-interaction --no-root --with=dev
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      if: steps.cache-poetry-deps.outputs.cache-hit != 'true'
 
     - name: Install scw_serverless
       shell: bash
