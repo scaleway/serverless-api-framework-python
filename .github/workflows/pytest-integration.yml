@@ -13,16 +13,9 @@ permissions:
 jobs:
   test:
     runs-on: self-hosted
-    container: nikolaik/python-nodejs:python3.10-nodejs18
+    container: python:3.11-slim-bullseye
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_wrapper: false
-
-      - uses: ./.github/actions/setup-serverless-framework
 
       - uses: ./.github/actions/setup-poetry
 

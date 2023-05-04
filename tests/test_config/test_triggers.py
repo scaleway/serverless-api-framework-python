@@ -1,6 +1,6 @@
 import pytest
 
-from scw_serverless.triggers import CronTrigger
+from scw_serverless.config.triggers import CronTrigger
 
 
 @pytest.mark.parametrize(

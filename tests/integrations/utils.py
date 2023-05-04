@@ -1,45 +1,61 @@
 import os
 import shutil
-import subprocess
 import time
+from pathlib import Path
+from types import ModuleType
+from typing import Optional
 
 import requests
+import scaleway.function.v1beta1 as sdk
+from click.testing import CliRunner, Result
 from requests.adapters import HTTPAdapter, Retry
 from scaleway import Client
 
+from scw_serverless.app import Serverless
+from scw_serverless.cli import deploy
 from tests import constants
 
-CLI_COMMAND = "scw-serverless"
 RETRY_INTERVAL = 10
 
 
-def create_client() -> Client:
+def create_client(project_id: Optional[str] = None) -> Client:
     client = Client.from_config_file_and_env()
     if not client.default_region:
         client.default_region = constants.DEFAULT_REGION
     client.validate()
+    if project_id:
+        client.default_project_id = project_id
     return client
 
 
-def run_cli(client: Client, directory: str, args: list[str]):
-    cli = shutil.which(CLI_COMMAND)
-    assert cli
-    return subprocess.run(
-        [cli] + args,
-        env={
-            "SCW_SECRET_KEY": client.secret_key,
-            "SCW_ACCESS_KEY": client.access_key,
-            "SCW_DEFAULT_PROJECT_ID": client.default_project_id,
-            "SCW_DEFAULT_REGION": client.default_region,
-            "PATH": os.environ["PATH"],
-        },  # type: ignore // client already validated
-        capture_output=True,
-        cwd=directory,
-        check=False,  # Checked in the tests
+def run_deploy_command(
+    cli_runner: CliRunner, app: ModuleType, args: Optional[list[str]] = None
+) -> Result:
+    assert app.__file__
+    app_path = Path(app.__file__)
+    cwd = Path(os.getcwd())
+    shutil.copytree(
+        src=app_path.parent,
+        dst=cwd,
+        dirs_exist_ok=True,
+    )
+    return cli_runner.invoke(
+        deploy,
+        args=(args or []) + [str(cwd / app_path.name)],
+        catch_exceptions=False,
     )
 
 
-def trigger_function(url: str, max_retries: int = 5) -> requests.Response:
+def get_deployed_functions_by_name(client: Client, app_instance: Serverless):
+    api = sdk.FunctionV1Beta1API(client)
+    namespaces = api.list_namespaces_all(name=app_instance.service_name)
+    assert namespaces
+    deployed_functions = api.list_functions_all(namespace_id=namespaces[0].id)
+    return {function.name: function for function in deployed_functions}
+
+
+def trigger_function(domain_name: str, max_retries: int = 5) -> requests.Response:
+    url = f"https://{domain_name}"
     session = requests.Session()
     retries = Retry(total=max_retries, backoff_factor=0.1)
     session.mount("https://", HTTPAdapter(max_retries=retries))
@@ -48,14 +64,16 @@ def trigger_function(url: str, max_retries: int = 5) -> requests.Response:
     return req
 
 
-def wait_for_body_text(url: str, body: str, max_retries: int = 10) -> requests.Response:
+def wait_for_body_text(
+    domain_name: str, body: str, max_retries: int = 10
+) -> requests.Response:
     last_body = None
     for _ in range(max_retries):
-        resp = trigger_function(url)
+        resp = trigger_function(domain_name)
         if resp.text == body:
             return resp
         last_body = resp.text
         time.sleep(RETRY_INTERVAL)
     raise RuntimeError(
-        f"Max retries {max_retries} for url {url} to match body {body}, got: {last_body}"
+        f"Max retries {max_retries} for {domain_name} to match {body}, got: {last_body}"
     )

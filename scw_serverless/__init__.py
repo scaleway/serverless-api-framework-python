@@ -1,3 +1,1 @@
-from .app import Serverless
-
-__all__ = ["Serverless"]
+from .app import Serverless as Serverless

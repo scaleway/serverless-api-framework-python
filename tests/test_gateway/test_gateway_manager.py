@@ -1,6 +1,5 @@
 import pytest
 import responses
-import scaleway.function.v1beta1 as sdk
 from responses.matchers import header_matcher, json_params_matcher, query_param_matcher
 from scaleway import Client
 
@@ -44,7 +43,6 @@ def test_gateway_manager_update_routes(
     function = Function(
         name="test-function",
         handler="handler",
-        runtime=sdk.FunctionRuntime.PYTHON311,
         gateway_route=GatewayRoute(
             relative_url="/hello", http_methods=[HTTPMethod.GET]
         ),

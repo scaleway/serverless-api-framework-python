@@ -9,9 +9,11 @@ from scaleway import Client
 
 from scw_serverless.app import Serverless
 from scw_serverless.config import Function
-from scw_serverless.deploy.backends.scaleway_api_backend import ScalewayApiBackend
-from scw_serverless.triggers import CronTrigger
+from scw_serverless.config.triggers import CronTrigger
+from scw_serverless.deployment import DeploymentManager
 from tests import constants
+
+RUNTIME = sdk.FunctionRuntime.PYTHON311
 
 
 # pylint: disable=redefined-outer-name # fixture
@@ -30,7 +32,7 @@ def mocked_pool_starmap(monkeypatch: Any):
     )
 
 
-def get_test_backend() -> ScalewayApiBackend:
+def get_test_backend() -> DeploymentManager:
     app = Serverless("test-namespace")
     client = Client(
         access_key="SCWXXXXXXXXXXXXXXXXX",
@@ -38,8 +40,7 @@ def get_test_backend() -> ScalewayApiBackend:
         secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",  # nosec # fake data
         default_region=constants.DEFAULT_REGION,
     )
-    backend = ScalewayApiBackend(app, client, True)
-
+    backend = DeploymentManager(app, client, False, runtime_override=RUNTIME)
     # This would otherwise create some side effects
     create_zip = MagicMock()
     create_zip.return_value = 300
@@ -53,7 +54,6 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
     function = Function(
         name="test-function",
         handler="handler",
-        runtime=sdk.FunctionRuntime.PYTHON311,
     )
     backend = get_test_backend()
     backend.app_instance.functions = [function]
@@ -81,7 +81,9 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
     mocked_responses.get(
         constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
-            matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
+            matchers.query_param_matcher(
+                {"namespace_id": namespace["id"], "page": 1, "name": function.name}
+            ),
         ],
         json={"functions": []},
     )
@@ -136,7 +138,6 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     function = Function(
         name="test-function-with-trigger",
         handler="handler",
-        runtime=sdk.FunctionRuntime.PYTHON311,
         triggers=[trigger],
     )
 
@@ -166,7 +167,9 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     mocked_responses.get(
         constants.SCALEWAY_FNC_API_URL + "/functions",
         match=[
-            matchers.query_param_matcher({"namespace_id": namespace["id"], "page": 1})
+            matchers.query_param_matcher(
+                {"namespace_id": namespace["id"], "page": 1, "name": function.name}
+            ),
         ],
         json={"functions": []},
     )
@@ -185,7 +188,7 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
                     "privacy": sdk.FunctionPrivacy.PUBLIC,
                     "http_option": sdk.FunctionHttpOption.REDIRECTED,
                     "handler": "handler",
-                    "runtime": sdk.FunctionRuntime.PYTHON311,
+                    "runtime": RUNTIME,
                 },
                 # Ignore None values which will be dropped by the marshalling
                 strict_match=False,

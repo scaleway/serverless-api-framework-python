@@ -6,9 +6,9 @@ except ImportError:
     from typing_extensions import Unpack
 # pylint: disable=wrong-import-position # Conditional import considered a statement
 
+from scw_serverless.config import triggers
 from scw_serverless.config.function import Function, FunctionKwargs
 from scw_serverless.config.route import HTTPMethod
-from scw_serverless.triggers import CronTrigger
 
 
 class Serverless:
@@ -65,7 +65,7 @@ class Serverless:
 
     def schedule(
         self,
-        schedule: Union[str, CronTrigger],
+        schedule: Union[str, triggers.CronTrigger],
         inputs: Optional[dict[str, Any]] = None,
         **kwargs: Unpack[FunctionKwargs],
     ) -> Callable:
@@ -84,7 +84,7 @@ class Serverless:
                 ...
         """
         if isinstance(schedule, str):
-            schedule = CronTrigger(schedule, inputs)
+            schedule = triggers.CronTrigger(schedule, inputs)
         elif inputs:
             schedule.args = (schedule.args or {}) | inputs
         if "triggers" in kwargs and kwargs["triggers"]:
