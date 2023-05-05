@@ -40,8 +40,9 @@ def scaleway_project() -> t.Iterator[str]:
         yield project_id
     finally:
         if project_id:
-            _cleanup_project(client, project_id)
-            _delete_scaleway_project(client, project_id)
+            # _cleanup_project(client, project_id)
+            # _delete_scaleway_project(client, project_id)
+            pass
 
 
 def _create_scaleway_project(client: Client) -> str:
