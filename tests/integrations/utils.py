@@ -54,7 +54,7 @@ def get_deployed_functions_by_name(client: Client, app_instance: Serverless):
     return {function.name: function for function in deployed_functions}
 
 
-def trigger_function(domain_name: str, max_retries: int = 20) -> requests.Response:
+def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Response:
     url = f"https://{domain_name}"
     session = requests.Session()
     retries = Retry(
