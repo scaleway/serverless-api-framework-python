@@ -15,7 +15,7 @@ The `deploy` command will deploy your functions directly.
 The command will wait until all functions are deployed and ready to be called. It will also deploy the corresponding triggers.
 
 If you have routed functions, the deploy command will also call your Serverless Gateway to update the routes to your function.
-For more information on the Gateway integration, check out :doc:`gateway`.
+For more information on the Gateway integration, see also :doc:`gateway`.
 
 Dependencies
 ------------

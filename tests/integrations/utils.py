@@ -57,7 +57,13 @@ def get_deployed_functions_by_name(client: Client, app_instance: Serverless):
 def trigger_function(domain_name: str, max_retries: int = 5) -> requests.Response:
     url = f"https://{domain_name}"
     session = requests.Session()
-    retries = Retry(total=max_retries, backoff_factor=0.1)
+    retries = Retry(
+        total=max_retries,
+        backoff_factor=1,
+        status=10,  # Status max retries
+        status_forcelist=[500, 404],
+        raise_on_status=False,  # Raise for status called after
+    )
     session.mount("https://", HTTPAdapter(max_retries=retries))
     req = session.get(url, timeout=constants.COLD_START_TIMEOUT)
     req.raise_for_status()
