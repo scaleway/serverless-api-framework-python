@@ -73,7 +73,7 @@ class DependenciesManager:
             or not self.pkg_path.joinpath(__package__).exists()
         ):
             # Installs the current version with pip
-            self._run_pip_install(f"{__package__}=={version(__package__)}")
+            self._run_pip_install(f"{__package__}~={version(__package__)}")
 
     def _run_pip_install(self, *args: str):
         python_path = sys.executable
