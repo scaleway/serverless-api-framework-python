@@ -39,9 +39,14 @@ def run_deploy_command(
         dst=cwd,
         dirs_exist_ok=True,
     )
+
     return cli_runner.invoke(
         deploy,
         args=(args or []) + [str(cwd / app_path.name)],
+        # When vendoring scw-serverless to install it on Scaleway Functions,
+        # we use the version being tested. This is achieved by passing the absolute path
+        # to the project in the requirements.txt file.
+        env={"SCW_SERVERLESS_FOLDER": str(constants.PROJECT_DIR)},
         catch_exceptions=False,
     )
 

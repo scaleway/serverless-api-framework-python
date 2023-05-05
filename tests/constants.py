@@ -18,6 +18,7 @@ GATEWAY_S3_BUCKET_ENDPOINT = os.getenv(
 GATEWAY_S3_BUCKET_NAME = os.getenv("GATEWAY_S3_BUCKET_NAME")
 
 TESTS_DIR = os.path.realpath(os.path.dirname(__file__))
+PROJECT_DIR = Path(TESTS_DIR).parent
 
 APP_FIXTURES_PATH = Path(TESTS_DIR, "app_fixtures")
 
