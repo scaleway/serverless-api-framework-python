@@ -119,14 +119,22 @@ def deploy(
 
     client = deployment.get_scw_client(profile, secret_key, project_id, region)
 
+    if not runtime:
+        runtime = deployment.get_current_runtime()
+
     logging.info("Packaging dependencies...")
-    DependenciesManager(file.parent, Path("./")).generate_package_folder()
+    deps = DependenciesManager(
+        file.parent,
+        Path("./"),
+        runtime=runtime,
+    )
+    deps.generate_package_folder()
 
     try:
         deployment.DeploymentManager(
             app_instance=app_instance,
             sdk_client=client,
-            runtime_override=runtime,
+            runtime=runtime,
             single_source=single_source,
         ).deploy()
     except ScalewayException as e:

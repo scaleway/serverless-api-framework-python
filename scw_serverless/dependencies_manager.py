@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+import re
 import subprocess
 import sys
 from importlib.metadata import version
@@ -25,9 +26,15 @@ class DependenciesManager:
         <https://developers.scaleway.com/en/products/functions/api/#python-additional-dependencies>
     """
 
-    def __init__(self, in_path: pathlib.Path, out_path: pathlib.Path) -> None:
+    def __init__(
+        self, in_path: pathlib.Path, out_path: pathlib.Path, runtime: str
+    ) -> None:
         self.in_path = in_path
         self.out_path = out_path
+        self.runtime_version = "310"
+        version_pattern = r"python(\d+)"
+        if match := re.search(version_pattern, runtime):
+            self.runtime_version = str(match.group(1))
 
     @property
     def pkg_path(self) -> pathlib.Path:
@@ -65,7 +72,13 @@ class DependenciesManager:
         if not self.out_path.is_dir():
             raise ValueError(f"Out_path: {self.out_path.absolute} is not a directory")
         logging.debug("Install dependencies from requirements to %s", self.pkg_path)
-        self._run_pip_install("-r", str(requirements_path.resolve()))
+        self._run_pip_install(
+            "-r",
+            str(requirements_path.resolve()),
+            "--python-version",
+            self.runtime_version,
+            "--only-binary=:all:",
+        )
 
     def _check_for_scw_serverless(self):
         """Checks for scw_serverless after vendoring the dependencies."""
@@ -75,7 +88,12 @@ class DependenciesManager:
         ):
             # Installs the current version with pip
             logging.debug("Installing %s from pip to %s", __package__, self.pkg_path)
-            self._run_pip_install(f"{__package__}~={version(__package__)}")
+            self._run_pip_install(
+                f"{__package__}~={version(__package__)}",
+                "--python-version",
+                self.runtime_version,
+                "--only-binary=:all:",
+            )
 
     def _run_pip_install(self, *args: str):
         python_path = sys.executable

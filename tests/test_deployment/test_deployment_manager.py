@@ -40,7 +40,7 @@ def get_test_backend() -> DeploymentManager:
         secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",  # nosec # fake data
         default_region=constants.DEFAULT_REGION,
     )
-    backend = DeploymentManager(app, client, False, runtime_override=RUNTIME)
+    backend = DeploymentManager(app, client, False, runtime=RUNTIME)
     # This would otherwise create some side effects
     create_zip = MagicMock()
     create_zip.return_value = 300

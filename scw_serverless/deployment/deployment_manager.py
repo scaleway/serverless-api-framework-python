@@ -1,7 +1,6 @@
 import logging
 import multiprocessing
 import os
-from typing import Optional
 
 import click
 import requests
@@ -12,7 +11,6 @@ from scw_serverless.app import Serverless
 from scw_serverless.config.function import Function
 from scw_serverless.config.triggers import CronTrigger
 from scw_serverless.deployment.api_wrapper import FunctionAPIWrapper
-from scw_serverless.deployment.runtime import get_current_runtime
 from scw_serverless.utils.files import create_zip_file
 
 TEMP_DIR = "./.scw"
@@ -28,17 +26,14 @@ class DeploymentManager:
         app_instance: Serverless,
         sdk_client: Client,
         single_source: bool,
-        runtime_override: Optional[str] = None,
+        runtime: str,
     ):
         self.api = FunctionAPIWrapper(api=sdk.FunctionV1Beta1API(sdk_client))
         self.app_instance = app_instance
         self.sdk_client = sdk_client
         # Behavior configuration
         self.single_source = single_source
-        if runtime_override:
-            self.runtime = sdk.FunctionRuntime(runtime_override)
-        else:
-            self.runtime = get_current_runtime()
+        self.runtime = sdk.FunctionRuntime(runtime)
 
     def _get_or_create_function(self, function: Function, namespace_id: str) -> str:
         logging.info("Looking for an existing function %s...", function.name)
