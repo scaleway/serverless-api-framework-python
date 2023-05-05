@@ -59,10 +59,7 @@ class Serverless:
                 )
             )
 
-            def _inner(*args, **kwargs):
-                return handler(*args, **kwargs)
-
-            return _inner
+            return handler
 
         return _decorator
 
