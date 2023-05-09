@@ -80,8 +80,6 @@ jobs:
         run: |
           pushd $GATEWAY_CHECKOUT_DIR
           export GATEWAY_HOST=$(make gateway-host -s)
-          make generate-token
-          export GATEWAY_AUTH_KEY=$(make get-token)
           popd
           poetry run pytest tests/integrations/gateway -n $(nproc --all)
         env:
