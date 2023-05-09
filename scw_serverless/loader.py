@@ -1,5 +1,6 @@
 import importlib.util
 import inspect
+import logging
 import sys
 from pathlib import Path
 
@@ -15,10 +16,11 @@ def get_module_name(file: Path) -> str:
     )
 
 
-def get_app_instance(file: Path) -> Serverless:
+def load_app_instance(file: Path) -> Serverless:
     """Load the app instance from the client module."""
 
     module_name = get_module_name(file)
+    logging.debug("Loading the Serverless instance from module %s", module_name)
     parent_directory = str(file.parent.resolve())
 
     spec = importlib.util.spec_from_file_location(

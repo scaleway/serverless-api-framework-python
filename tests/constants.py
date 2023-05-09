@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 
-from scaleway_core.bridge.region import REGION_FR_PAR
+from scaleway_core.bridge import region
 
-DEFAULT_REGION = REGION_FR_PAR
+DEFAULT_REGION = region.REGION_PL_WAW
 SCALEWAY_API_URL = "https://api.scaleway.com/"
 SCALEWAY_FNC_API_URL = SCALEWAY_API_URL + f"functions/v1beta1/regions/{DEFAULT_REGION}"
 
@@ -17,6 +17,7 @@ GATEWAY_S3_BUCKET_ENDPOINT = os.getenv(
 GATEWAY_S3_BUCKET_NAME = os.getenv("GATEWAY_S3_BUCKET_NAME")
 
 TESTS_DIR = os.path.realpath(os.path.dirname(__file__))
+PROJECT_DIR = Path(TESTS_DIR).parent
 
 APP_FIXTURES_PATH = Path(TESTS_DIR, "app_fixtures")
 

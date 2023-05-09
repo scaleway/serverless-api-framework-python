@@ -69,4 +69,4 @@ If do not want your function to be publicly available, set the privacy to `priva
    def handler(event, context):
       ...
 
-.. autofunction:: scw_serverless.app.Serverless.schedule
+.. autoclass:: scw_serverless.config.triggers.CronTrigger

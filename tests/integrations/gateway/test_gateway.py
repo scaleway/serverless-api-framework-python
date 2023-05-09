@@ -1,42 +1,41 @@
-# pylint: disable=unused-import,redefined-outer-name # fixture
 import requests
+from click.testing import CliRunner
 
 from tests import constants
-from tests.app_fixtures.routed_functions import MESSAGES
-from tests.integrations.deploy_wrapper import run_deploy_command
-from tests.integrations.gateway_fixtures import auth_key  # noqa
-from tests.integrations.project_fixture import scaleway_project  # noqa
-from tests.integrations.utils import create_client
+from tests.app_fixtures import routed_functions
+from tests.integrations import utils
 
 
-def test_integration_gateway(scaleway_project: str, auth_key: str):  # noqa
-    client = create_client()
-    client.default_project_id = scaleway_project
-
+def test_integration_gateway(cli_runner: CliRunner, gateway_auth_key: str):
     gateway_url = f"https://{constants.GATEWAY_HOST}"
+    messages = routed_functions.MESSAGES
 
-    run_deploy_command(
-        client,
-        constants.APP_FIXTURES_PATH / "routed_functions.py",
-        "--gateway-url",
-        gateway_url,
-        "--gateway-api-key",
-        auth_key,
+    res = utils.run_deploy_command(
+        cli_runner,
+        app=routed_functions,
+        args=[
+            "--gateway-url",
+            gateway_url,
+            "--gateway-api-key",
+            gateway_auth_key,
+        ],
     )
+
+    assert res.exit_code == 0, res.output
 
     # Check general routing configuration
     resp = requests.get(
         url=gateway_url + "/health", timeout=constants.COLD_START_TIMEOUT
     )
     assert resp.status_code == 200
-    assert resp.text == MESSAGES["/health"]
+    assert resp.text == messages["/health"]
 
     # Test with common prefix with configured routes
     resp = requests.get(
         url=gateway_url + "/messages", timeout=constants.COLD_START_TIMEOUT
     )
     assert resp.status_code == 200
-    assert resp.text == MESSAGES["/messages"]
+    assert resp.text == messages["/messages"]
 
     # Check a route with a method that is not configured
     resp = requests.post(

@@ -1,10 +1,9 @@
+import logging
 from importlib.metadata import version
 from typing import Optional
 
 from scaleway import Client
 from scaleway_core.bridge.region import REGION_FR_PAR
-
-from scw_serverless.logger import get_logger
 
 DEFAULT_REGION: str = REGION_FR_PAR
 
@@ -46,7 +45,7 @@ def _update_client_from_cli(
     client.default_project_id = project_id or client.default_project_id
     client.default_region = region or client.default_region
     if not client.default_region:
-        get_logger().info(f"No region was configured, using {DEFAULT_REGION}")
+        logging.info("No region was configured, using %s", DEFAULT_REGION)
         client.default_region = DEFAULT_REGION
 
     # Not used by the API framework

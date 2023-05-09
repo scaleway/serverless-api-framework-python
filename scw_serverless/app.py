@@ -1,14 +1,15 @@
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
-try:
-    from typing import Unpack
-except ImportError:
-    from typing_extensions import Unpack
-# pylint: disable=wrong-import-position # Conditional import considered a statement
+if TYPE_CHECKING:
+    try:
+        from typing import Unpack
+    except ImportError:
+        from typing_extensions import Unpack
+    # pylint: disable=wrong-import-position # Conditional import considered a statement
 
+from scw_serverless.config import triggers
 from scw_serverless.config.function import Function, FunctionKwargs
 from scw_serverless.config.route import HTTPMethod
-from scw_serverless.triggers import CronTrigger
 
 
 class Serverless:
@@ -34,7 +35,7 @@ class Serverless:
 
     def func(
         self,
-        **kwargs: Unpack[FunctionKwargs],
+        **kwargs: "Unpack[FunctionKwargs]",
     ) -> Callable:
         """Define a Serverless handler and its parameters from the keyword arguments.
 
@@ -65,9 +66,9 @@ class Serverless:
 
     def schedule(
         self,
-        schedule: Union[str, CronTrigger],
+        schedule: Union[str, triggers.CronTrigger],
         inputs: Optional[dict[str, Any]] = None,
-        **kwargs: Unpack[FunctionKwargs],
+        **kwargs: "Unpack[FunctionKwargs]",
     ) -> Callable:
         """Define a scheduled handler with Cron, passing inputs as parameters.
 
@@ -84,7 +85,7 @@ class Serverless:
                 ...
         """
         if isinstance(schedule, str):
-            schedule = CronTrigger(schedule, inputs)
+            schedule = triggers.CronTrigger(schedule, inputs)
         elif inputs:
             schedule.args = (schedule.args or {}) | inputs
         if "triggers" in kwargs and kwargs["triggers"]:
@@ -93,7 +94,7 @@ class Serverless:
             kwargs["triggers"] = [schedule]
         return self.func(**kwargs)
 
-    def get(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
+    def get(self, url: str, **kwargs: "Unpack[FunctionKwargs]") -> Callable:
         """Define a routed handler which will respond to GET requests.
 
         :param url: relative url to trigger the function
@@ -107,7 +108,7 @@ class Serverless:
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.GET]}
         return self.func(**kwargs)
 
-    def post(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
+    def post(self, url: str, **kwargs: "Unpack[FunctionKwargs]") -> Callable:
         """Define a routed handler which will respond to POST requests.
 
         :param url: relative url to trigger the function
@@ -120,7 +121,7 @@ class Serverless:
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.POST]}
         return self.func(**kwargs)
 
-    def put(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
+    def put(self, url: str, **kwargs: "Unpack[FunctionKwargs]") -> Callable:
         """Define a routed handler which will respond to PUT requests.
 
         :param url: relative url to trigger the function
@@ -134,7 +135,7 @@ class Serverless:
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.PUT]}
         return self.func(**kwargs)
 
-    def delete(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
+    def delete(self, url: str, **kwargs: "Unpack[FunctionKwargs]") -> Callable:
         """Define a routed handler which will respond to DELETE requests.
 
         :param url: relative url to trigger the function
@@ -148,7 +149,7 @@ class Serverless:
         kwargs |= {"relative_url": url, "http_methods": [HTTPMethod.DELETE]}
         return self.func(**kwargs)
 
-    def patch(self, url: str, **kwargs: Unpack[FunctionKwargs]) -> Callable:
+    def patch(self, url: str, **kwargs: "Unpack[FunctionKwargs]") -> Callable:
         """Define a routed handler which will respond to PATCH requests.
 
         :param url: relative url to trigger the function

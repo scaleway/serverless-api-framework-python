@@ -15,9 +15,14 @@ env:
   S3_ENDPOINT: "https://s3.fr-par.scw.cloud"
   S3_REGION: "fr-par"
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test-deployed-gateway:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container: python:3.11-bullseye
     steps:
       - uses: actions/checkout@v3
 
@@ -37,6 +42,9 @@ jobs:
           default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
           save-config: true
+
+      - name: Install jq
+        run: apt-get update && apt-get install -y jq
 
       - name: Create Gateway namespace
         working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
