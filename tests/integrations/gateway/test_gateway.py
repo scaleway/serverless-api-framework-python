@@ -6,9 +6,7 @@ from tests.app_fixtures import routed_functions
 from tests.integrations import utils
 
 
-def test_integration_gateway(cli_runner: CliRunner):
-    assert constants.GATEWAY_AUTH_KEY, "Gateway auth key must be provided"
-
+def test_integration_gateway(cli_runner: CliRunner, gateway_auth_key: str):
     gateway_url = f"https://{constants.GATEWAY_HOST}"
     messages = routed_functions.MESSAGES
 
@@ -19,7 +17,7 @@ def test_integration_gateway(cli_runner: CliRunner):
             "--gateway-url",
             gateway_url,
             "--gateway-api-key",
-            constants.GATEWAY_AUTH_KEY,
+            gateway_auth_key,
         ],
     )
 

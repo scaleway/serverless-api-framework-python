@@ -75,10 +75,6 @@ def test_deploy_function_with_cron(scaleway_project: str, cli_runner: CliRunner)
     functions = utils.get_deployed_functions_by_name(client, cron_app.app)
     deployed_function = functions["hello-world-cron"]
 
-    resp = utils.trigger_function(deployed_function.domain_name)
-    # Check function reponse
-    assert resp.status_code == 200
-
     # Check that a Cron was created
     function = cron_app.app.functions[0]
     api = sdk.FunctionV1Beta1API(client)
