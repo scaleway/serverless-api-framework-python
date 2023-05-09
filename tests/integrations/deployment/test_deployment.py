@@ -6,7 +6,7 @@ from tests.integrations import utils
 
 
 def test_deploy(scaleway_project: str, cli_runner: CliRunner):
-    runtime = "python311"
+    runtime = "python310"
     res = utils.run_deploy_command(cli_runner, app=app, args=["--runtime", runtime])
 
     assert res.exit_code == 0, res.output

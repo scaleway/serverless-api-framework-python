@@ -21,7 +21,7 @@ def test_dependencies_manager_generate_package_folder(pkg_folder: Path):
     with open(req_path, mode="w", encoding="utf-8") as fp:
         fp.write("PyYAML==6.0\n" + "scw_serverless==0.0.1b")
 
-    manager = DependenciesManager(pkg_folder, pkg_folder, runtime="python311")
+    manager = DependenciesManager(pkg_folder, pkg_folder)
     manager.generate_package_folder()
 
     assert "package" in os.listdir(pkg_folder)
@@ -36,7 +36,7 @@ def test_dependencies_manager_install_scw_from_local(pkg_folder: Path):
     with open(req_path, mode="w", encoding="utf-8") as fp:
         fp.write("PyYAML==6.0")
 
-    manager = DependenciesManager(pkg_folder, pkg_folder, runtime="python311")
+    manager = DependenciesManager(pkg_folder, pkg_folder)
     manager.generate_package_folder()
 
     assert "package" in os.listdir(pkg_folder)

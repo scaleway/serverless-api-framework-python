@@ -123,11 +123,7 @@ def deploy(
         runtime = deployment.get_current_runtime()
 
     logging.info("Packaging dependencies...")
-    deps = DependenciesManager(
-        file.parent,
-        Path("./"),
-        runtime=runtime,
-    )
+    deps = DependenciesManager(file.parent, Path.cwd())
     deps.generate_package_folder()
 
     try:
