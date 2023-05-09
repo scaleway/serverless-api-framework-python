@@ -15,7 +15,7 @@ from scw_serverless.utils.files import create_zip_file
 
 TEMP_DIR = "./.scw"
 DEPLOYMENT_ZIP = f"{TEMP_DIR}/deployment.zip"
-UPLOAD_TIMEOUT = 600  # In seconds
+UPLOAD_TIMEOUT_SECONDS = 600
 
 
 class DeploymentManager:
@@ -117,7 +117,7 @@ class DeploymentManager:
                     "Content-Type": "application/octet-stream",
                     "Content-Length": str(zip_size),
                 },
-                timeout=UPLOAD_TIMEOUT,
+                timeout=UPLOAD_TIMEOUT_SECONDS,
             )
             if req.status_code != 200:
                 raise RuntimeError("Unable to upload function code... Aborting...")

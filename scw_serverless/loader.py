@@ -19,9 +19,6 @@ def get_module_name(file: Path) -> str:
 def load_app_instance(file: Path) -> Serverless:
     """Load the app instance from the client module."""
 
-    if not file.suffix == ".py":
-        logging.warning("Loading")
-
     module_name = get_module_name(file)
     logging.debug("Loading the Serverless instance from module %s", module_name)
     parent_directory = str(file.parent.resolve())
