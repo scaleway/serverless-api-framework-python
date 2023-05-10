@@ -54,7 +54,6 @@ def test_scaleway_api_backend_deploy_function(mocked_responses: responses.Reques
     function = Function(
         name="test-function",
         handler_path="handler",
-        handler=lambda event, context: "test",
     )
     backend = get_test_backend()
     backend.app_instance.functions = [function]
@@ -139,7 +138,6 @@ def test_scaleway_api_backend_deploy_function_with_trigger(
     function = Function(
         name="test-function-with-trigger",
         handler_path="handler",
-        handler=lambda event, context: "test",
         triggers=[trigger],
     )
 

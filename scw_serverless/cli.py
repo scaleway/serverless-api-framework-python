@@ -4,9 +4,9 @@ from typing import Optional, cast
 
 import click
 from scaleway import ScalewayException
-from scaleway_functions_python import local
 
-from scw_serverless import deployment, loader, logger
+import scw_serverless
+from scw_serverless import app, deployment, loader, local_app, logger
 from scw_serverless.dependencies_manager import DependenciesManager
 from scw_serverless.gateway.gateway_manager import GatewayManager
 
@@ -167,23 +167,10 @@ def deploy(
     help="Run Flask in debug mode.",
 )
 def dev(file: Path, port: int, debug: bool) -> None:
-    """Run functions locally with Serverless Offline."""
-
-    app_instance = loader.load_app_instance(file.resolve())
-
-    server = local.LocalFunctionServer()
-
-    for function in app_instance.functions:
-        relative_url, http_methods = None, None
-        if function.gateway_route:
-            relative_url = function.gateway_route.relative_url
-            http_methods = [
-                method.value for method in function.gateway_route.http_methods or []
-            ]
-        path = relative_url or ("/" + function.name)
-        logging.info("Serving function %s on %s", function.name, path)
-        server.add_handler(
-            function.handler, relative_url=relative_url, http_methods=http_methods
-        )
-
-    server.serve(port=port, debug=debug)
+    """Run functions locally with Serverless Local Testing."""
+    app.Serverless = local_app.ServerlessLocal
+    scw_serverless.Serverless = local_app.ServerlessLocal
+    app_instance = cast(
+        local_app.ServerlessLocal, loader.load_app_instance(file.resolve())
+    )
+    app_instance.local_server.serve(port=port, debug=debug)

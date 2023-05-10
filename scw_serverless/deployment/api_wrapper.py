@@ -89,7 +89,7 @@ class FunctionAPIWrapper:
             max_scale=function.max_scale,
             memory_limit=function.memory_limit,
             timeout=function.timeout,
-            handler=function.handler,
+            handler=function.handler_path,
             description=function.description,
             secret_environment_variables=self._get_secrets_from_dict(
                 function.secret_environment_variables
@@ -110,7 +110,7 @@ class FunctionAPIWrapper:
             max_scale=function.max_scale,
             memory_limit=function.memory_limit,
             timeout=function.timeout,
-            handler=function.handler,
+            handler=function.handler_path,
             description=function.description,
             secret_environment_variables=self._get_secrets_from_dict(
                 function.secret_environment_variables
