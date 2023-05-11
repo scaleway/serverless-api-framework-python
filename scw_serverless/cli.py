@@ -159,8 +159,7 @@ def deploy(
     help="Set port to listen on.",
 )
 @click.option(
-    "--debug",
-    "-d",
+    "--debug/--no-debug",
     "debug",
     default=True,
     show_default=True,
