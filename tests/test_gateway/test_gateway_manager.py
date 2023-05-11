@@ -42,7 +42,7 @@ def test_gateway_manager_update_routes(
 ):
     function = Function(
         name="test-function",
-        handler="handler",
+        handler_path="handler",
         gateway_route=GatewayRoute(
             relative_url="/hello", http_methods=[HTTPMethod.GET]
         ),

@@ -57,7 +57,7 @@ class Function:
     """Representation of a Scaleway function."""
 
     name: str
-    handler: str  # Path to the handler
+    handler_path: str
     environment_variables: Optional[dict[str, str]] = None
     min_scale: Optional[int] = None
     max_scale: Optional[int] = None
@@ -85,7 +85,7 @@ class Function:
             gateway_route = GatewayRoute(url, http_methods=args.get("http_methods"))
         return Function(
             name=to_valid_function_name(handler.__name__),
-            handler=module_to_path(handler.__module__) + "." + handler.__name__,
+            handler_path=module_to_path(handler.__module__) + "." + handler.__name__,
             environment_variables=args.get("env"),
             min_scale=args.get("min_scale"),
             max_scale=args.get("max_scale"),

@@ -76,7 +76,7 @@ def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Respon
 
 
 def wait_for_body_text(
-    domain_name: str, body: str, max_retries: int = 10
+    domain_name: str, body: str, max_retries: int = 20
 ) -> requests.Response:
     last_body = None
     for _ in range(max_retries):

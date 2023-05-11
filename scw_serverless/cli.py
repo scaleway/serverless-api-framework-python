@@ -5,7 +5,8 @@ from typing import Optional, cast
 import click
 from scaleway import ScalewayException
 
-from scw_serverless import deployment, loader, logger
+import scw_serverless
+from scw_serverless import app, deployment, loader, local_app, logger
 from scw_serverless.dependencies_manager import DependenciesManager
 from scw_serverless.gateway.gateway_manager import GatewayManager
 
@@ -145,3 +146,30 @@ def deploy(
             sdk_client=client,
         )
         manager.update_routes()
+
+
+@cli.command()
+@CLICK_ARG_FILE
+@click.option(
+    "--port",
+    "-p",
+    "port",
+    default=8080,
+    show_default=True,
+    help="Set port to listen on.",
+)
+@click.option(
+    "--debug/--no-debug",
+    "debug",
+    default=True,
+    show_default=True,
+    help="Run Flask in debug mode.",
+)
+def dev(file: Path, port: int, debug: bool) -> None:
+    """Run functions locally with Serverless Local Testing."""
+    app.Serverless = local_app.ServerlessLocal
+    scw_serverless.Serverless = local_app.ServerlessLocal
+    app_instance = cast(
+        local_app.ServerlessLocal, loader.load_app_instance(file.resolve())
+    )
+    app_instance.local_server.serve(port=port, debug=debug)

@@ -59,6 +59,20 @@ def hello_world(event, context):
 The configuration is done by passing arguments to the decorator.
 To view which arguments are supported, head over to this [documentation](https://serverless-api-framework-python.readthedocs.io/) page.
 
+### Local testing
+
+Before deploying, you can run your functions locally with the dev command:
+
+```console
+scw-serverless dev app.py
+```
+
+This runs a local Flask server with your Serverless handlers. If no `relative_url` is defined for a function, it will be served on `/name` with `name` being the name of your Python function.
+
+By default, this runs Flask in debug mode which includes hot-reloading. You can disable this behavior by passing the `--no-debug` flag.
+
+### Deploying
+
 When you are ready, you can deploy your function with the `scw-serverless` CLI tool:
 
 ```console
