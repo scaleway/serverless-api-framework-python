@@ -11,7 +11,7 @@ permissions:
 jobs:
   deploy:
     runs-on: self-hosted
-    container: python:3.11-slim-bullseye
+    container: python:3.11-bullseye
     steps:
       - uses: actions/checkout@v3
 
