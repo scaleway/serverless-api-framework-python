@@ -1,5 +1,7 @@
 import os
+import re
 import shutil
+import subprocess
 import time
 from pathlib import Path
 from types import ModuleType
@@ -59,6 +61,19 @@ def get_deployed_functions_by_name(client: Client, app_instance: Serverless):
     return {function.name: function for function in deployed_functions}
 
 
+def get_gateway_endpoint() -> str:
+    cmd = subprocess.run(
+        args=["scwgw", "get-endpoint"],
+        check=True,
+        capture_output=True,
+    )
+    output = cmd.stdout.decode().strip()
+    match = re.search(r"(.*.functions.fnc.fr-par.scw.cloud)", output)
+    assert match, f"Could not find gateway endpoint in output: {output}"
+
+    return match.group(1)
+
+
 def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Response:
     url = f"https://{domain_name}"
     session = requests.Session()
@@ -66,7 +81,7 @@ def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Respon
         total=max_retries,
         backoff_factor=2,
         status=max_retries,  # Status max retries
-        status_forcelist=[500, 404],
+        status_forcelist=[500, 503, 404],
         raise_on_status=False,  # Raise for status called after
     )
     session.mount("https://", HTTPAdapter(max_retries=retries))
@@ -76,7 +91,7 @@ def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Respon
 
 
 def wait_for_body_text(
-    domain_name: str, body: str, max_retries: int = 20
+    domain_name: str, body: str, max_retries: int = 30
 ) -> requests.Response:
     last_body = None
     for _ in range(max_retries):

@@ -6,29 +6,25 @@ from tests.app_fixtures import routed_functions
 from tests.integrations import utils
 
 
-def test_integration_gateway(cli_runner: CliRunner, gateway_auth_key: str):
-    gateway_url = f"https://{constants.GATEWAY_HOST}"
+def test_integration_gateway(cli_runner: CliRunner):
     messages = routed_functions.MESSAGES
+
+    gateway_domain = utils.get_gateway_endpoint()
+    gateway_url = "https://" + gateway_domain
 
     res = utils.run_deploy_command(
         cli_runner,
         app=routed_functions,
-        args=[
-            "--gateway-url",
-            gateway_url,
-            "--gateway-api-key",
-            gateway_auth_key,
-        ],
     )
 
     assert res.exit_code == 0, res.output
 
     # Check general routing configuration
-    resp = requests.get(
-        url=gateway_url + "/health", timeout=constants.COLD_START_TIMEOUT
+    # Wait as the gateway is not immediately available
+    resp = utils.wait_for_body_text(
+        domain_name=gateway_domain + "/health", body=messages["/health"]
     )
     assert resp.status_code == 200
-    assert resp.text == messages["/health"]
 
     # Test with common prefix with configured routes
     resp = requests.get(

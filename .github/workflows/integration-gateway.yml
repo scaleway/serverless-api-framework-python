@@ -1,4 +1,5 @@
-name: API Gateway integration tests with Pytest
+---
+name: API Gateway integration tests
 
 on:
   push:
@@ -10,91 +11,62 @@ on:
 permissions:
   contents: read
 
-env:
-  GATEWAY_CHECKOUT_DIR: "gateway"
-  S3_ENDPOINT: "https://s3.fr-par.scw.cloud"
-  S3_REGION: "fr-par"
-
-defaults:
-  run:
-    shell: bash
-
 jobs:
-  test-deployed-gateway:
+  setup-gateway:
     runs-on: self-hosted
-    container: python:3.11-bullseye
+    container: python:3.11-bookworm
     steps:
       - uses: actions/checkout@v3
 
       - uses: ./.github/actions/setup-poetry
 
-      - uses: actions/checkout@v3
-        with:
-          repository: scaleway/serverless-gateway
-          path: ${{ env.GATEWAY_CHECKOUT_DIR }}
-
-      - name: Install CLI and create config file
-        uses: scaleway/action-scw@v0.0.1
-        with:
-          version: v2.14.0
-          access-key: ${{ secrets.SCW_ACCESS_KEY }}
-          secret-key: ${{ secrets.SCW_SECRET_KEY }}
-          default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-          default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
-          save-config: true
-
-      - name: Install jq
-        run: apt-get update && apt-get install -y jq
-
-      - name: Create Gateway namespace
-        working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
-        run: |
-          make create-namespace
-          until [ $(make check-namespace -s) == ready ]; do sleep 10; done
-
-      - name: Create Gateway container
-        working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
-        # We need to truncate gateway.env as it will override our env vars
-        run: |
-          truncate -s 0 gateway.env
-          make create-container
-          make deploy-container
-          until [ $(make check-container -s) == ready ]; do sleep 10; done
+      - name: Deploy Serverless Gateway
+        run: poetry run scwgw deploy
         env:
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          S3_BUCKET_NAME: ${{ secrets.GATEWAY_S3_BUCKET_NAME }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
 
-      - name: Install s3cmd
-        run: pip install s3cmd
+  run-tests:
+    needs:
+      - setup-gateway
+    runs-on: self-hosted
+    container: python:3.11-bookworm
+    steps:
+      - uses: actions/checkout@v3
 
-      - name: Create S3 bucket
-        working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
-        run: |
-          make set-up-s3-cli
-          make create-s3-bucket
-        env:
-          S3_BUCKET_NAME: ${{ secrets.GATEWAY_S3_BUCKET_NAME }}
+      - uses: ./.github/actions/setup-poetry
 
       - name: Run integration tests
+        working-directory: tests
         run: |
-          pushd $GATEWAY_CHECKOUT_DIR
-          export GATEWAY_HOST=$(make gateway-host -s)
-          popd
-          poetry run pytest tests/integrations/gateway -n $(nproc --all)
+          poetry run scwgw remote-config
+          poetry run pytest integrations/gateway -n $(nproc --all)
         env:
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          GATEWAY_S3_BUCKET_NAME: ${{ secrets.GATEWAY_S3_BUCKET_NAME }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
 
-      - name: Delete S3 bucket
-        working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
-        run: make delete-bucket
+  teardown-gateway:
+    runs-on: self-hosted
+    container: python:3.11-bookworm
+    needs:
+      - run-tests
+
+    # Tolerate errors if no resources found to clean up
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-poetry
+
+      - name: Delete Serverless Gateway
+        run: poetry run scwgw delete
         env:
-          S3_BUCKET_NAME: ${{ secrets.GATEWAY_S3_BUCKET_NAME }}
-        if: always()
-
-      - name: Delete Gateway namespace and container
-        working-directory: ${{ env.GATEWAY_CHECKOUT_DIR }}
-        run: make delete-namespace
-        if: always()
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}

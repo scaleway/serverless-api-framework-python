@@ -8,7 +8,7 @@ from scaleway import ScalewayException
 import scw_serverless
 from scw_serverless import app, deployment, loader, local_app, logger
 from scw_serverless.dependencies_manager import DependenciesManager
-from scw_serverless.gateway.gateway_manager import GatewayManager
+from scw_serverless.gateway import GatewayManager, ServerlessGateway
 
 CLICK_ARG_FILE = click.argument(
     "file",
@@ -44,16 +44,6 @@ def cli(verbose: bool, log_level: str) -> None:
 @cli.command()
 @CLICK_ARG_FILE
 @click.option(
-    "--gateway-url",
-    default=None,
-    help="URL of a deployed API Gateway.",
-)
-@click.option(
-    "--gateway-api-key",
-    default=None,
-    help="API key used to manage the routes of the API Gateway.",
-)
-@click.option(
     "--runtime",
     default=None,
     help="Python runtime to deploy with. Uses your Python version by default.",
@@ -84,8 +74,6 @@ WARNING: Please use environment variables instead""",
 # pylint: disable=too-many-arguments
 def deploy(
     file: Path,
-    gateway_url: Optional[str],
-    gateway_api_key: Optional[str],
     runtime: Optional[str],
     single_source: bool,
     profile: Optional[str] = None,
@@ -105,18 +93,10 @@ def deploy(
 
     # Check if the application requires a Gateway
     needs_gateway = any(function.gateway_route for function in app_instance.functions)
-    if needs_gateway and not gateway_url:
-        logging.debug("Prompting for Serverless Gateway URL...")
-        gateway_url = click.prompt(
-            "Please enter the URL of your Serverless Gateway", type=str
-        )
-    if needs_gateway and not gateway_api_key:
-        logging.debug("Prompting for Serverless Gateway API key...")
-        gateway_url = click.prompt(
-            "Please enter the API key to your Serverless Gateway",
-            hide_input=True,
-            type=str,
-        )
+    gateway = None
+    if needs_gateway:
+        logging.debug("Checking for Gateway CLI")
+        gateway = ServerlessGateway()
 
     client = deployment.get_scw_client(profile, secret_key, project_id, region)
 
@@ -139,10 +119,11 @@ def deploy(
         deployment.log_scaleway_exception(e)
 
     if needs_gateway:
+        assert gateway
+
         manager = GatewayManager(
             app_instance=app_instance,
-            gateway_url=cast(str, gateway_url),
-            gateway_api_key=cast(str, gateway_api_key),
+            gateway=gateway,
             sdk_client=client,
         )
         manager.update_routes()

@@ -1,8 +1,17 @@
+from typing import Protocol
+
 import scaleway.function.v1beta1 as sdk
 from scaleway import Client
 
 from scw_serverless.app import Serverless
-from scw_serverless.gateway.gateway_api_client import GatewayAPIClient
+from scw_serverless.config.route import GatewayRoute
+
+
+class Gateway(Protocol):
+    """Generic Gateway Implementation."""
+
+    def add_route(self, route: GatewayRoute) -> None:
+        """Add a route to the Gateway."""
 
 
 class GatewayManager:
@@ -11,15 +20,12 @@ class GatewayManager:
     def __init__(
         self,
         app_instance: Serverless,
-        gateway_url: str,
-        gateway_api_key: str,
+        gateway: Gateway,
         sdk_client: Client,
     ):
         self.app_instance = app_instance
         self.api = sdk.FunctionV1Beta1API(sdk_client)
-        self.gateway_client = GatewayAPIClient(
-            gateway_url=gateway_url, gateway_api_key=gateway_api_key
-        )
+        self.gateway = gateway
 
     def _list_created_functions(self) -> dict[str, sdk.Function]:
         """Get the list of created functions."""
@@ -61,4 +67,4 @@ class GatewayManager:
             function.gateway_route.target = target  # type: ignore
 
         for function in routed_functions:
-            self.gateway_client.create_route(function.gateway_route)  # type: ignore
+            self.gateway.add_route(function.gateway_route)  # type: ignore
