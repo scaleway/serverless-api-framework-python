@@ -66,6 +66,7 @@ def get_gateway_endpoint() -> str:
         args=["scwgw", "get-endpoint"],
         check=True,
         capture_output=True,
+        env=os.environ,
     )
     output = cmd.stdout.decode().strip()
     match = re.search(r"(.*.functions.fnc.fr-par.scw.cloud)", output)
