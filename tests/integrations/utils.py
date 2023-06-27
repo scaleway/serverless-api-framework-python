@@ -74,8 +74,7 @@ def get_gateway_endpoint() -> str:
     return match.group(1)
 
 
-def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Response:
-    url = f"https://{domain_name}"
+def get_retry_session(max_retries: int = 10) -> requests.Session:
     session = requests.Session()
     retries = Retry(
         total=max_retries,
@@ -85,6 +84,12 @@ def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Respon
         raise_on_status=False,  # Raise for status called after
     )
     session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
+
+
+def trigger_function(domain_name: str, max_retries: int = 10) -> requests.Response:
+    url = f"https://{domain_name}"
+    session = get_retry_session(max_retries=max_retries)
     req = session.get(url, timeout=constants.COLD_START_TIMEOUT)
     req.raise_for_status()
     return req
