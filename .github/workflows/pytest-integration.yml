@@ -13,7 +13,7 @@ permissions:
 jobs:
   test:
     runs-on: self-hosted
-    container: python:3.11-bullseye
+    container: python:3.11-bookworm
     steps:
       - uses: actions/checkout@v3
 

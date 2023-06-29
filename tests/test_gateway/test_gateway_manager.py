@@ -1,6 +1,8 @@
+from unittest.mock import MagicMock
+
 import pytest
 import responses
-from responses.matchers import header_matcher, json_params_matcher, query_param_matcher
+from responses.matchers import query_param_matcher
 from scaleway import Client
 
 from scw_serverless.app import Serverless
@@ -12,10 +14,6 @@ from tests import constants
 HELLO_WORLD_MOCK_DOMAIN = (
     "helloworldfunctionnawns8i8vo-hello-world.functions.fnc.fr-par.scw.cloud"
 )
-MOCK_GATEWAY_URL = "https://my-gateway-domain.com"
-MOCK_GATEWAY_API_KEY = "7tfxBRB^vJbBcR5s#*RE"
-MOCK_UUID = "xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx"
-PROJECT_ID = "projecti-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx"
 
 
 # pylint: disable=redefined-outer-name # fixture
@@ -34,18 +32,17 @@ def app_gateway_manager() -> GatewayManager:
         secret_key="498cce73-2a07-4e8c-b8ef-8f988e3c6929",  # nosec # false positive
         default_region=constants.DEFAULT_REGION,
     )
-    return GatewayManager(app, MOCK_GATEWAY_URL, MOCK_GATEWAY_API_KEY, client)
+    return GatewayManager(app_instance=app, gateway=MagicMock(), sdk_client=client)
 
 
 def test_gateway_manager_update_routes(
     app_gateway_manager: GatewayManager, mocked_responses: responses.RequestsMock
 ):
+    gateway_route = GatewayRoute(relative_url="/hello", http_methods=[HTTPMethod.GET])
     function = Function(
         name="test-function",
         handler_path="handler",
-        gateway_route=GatewayRoute(
-            relative_url="/hello", http_methods=[HTTPMethod.GET]
-        ),
+        gateway_route=gateway_route,
     )
     app_gateway_manager.app_instance.functions = [function]
 
@@ -85,16 +82,12 @@ def test_gateway_manager_update_routes(
         json={"functions": []},
     )
 
-    # We should attempt to create the route
-    mocked_responses.post(
-        MOCK_GATEWAY_URL + "/scw",  # type: ignore
-        match=[
-            header_matcher({"X-Auth-Token": MOCK_GATEWAY_API_KEY}),
-            json_params_matcher(
-                params=function.gateway_route.asdict()  # type: ignore
-                | {"target": "https://" + HELLO_WORLD_MOCK_DOMAIN}
-            ),
-        ],
-    )
-
     app_gateway_manager.update_routes()
+
+    # Update the route with the domain name
+    gateway_route.target = HELLO_WORLD_MOCK_DOMAIN
+
+    gateway_mock = app_gateway_manager.gateway
+    gateway_mock.add_route.assert_called_once_with(
+        gateway_route,
+    )

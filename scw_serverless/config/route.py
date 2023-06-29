@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Optional
 
 
 class HTTPMethod(Enum):
@@ -33,12 +33,3 @@ class GatewayRoute:
         for method in self.http_methods or []:
             if method not in HTTPMethod:
                 raise RuntimeError(f"Route contains invalid method {method.value}")
-
-    def asdict(self) -> dict[str, Any]:
-        """Return a dict representation of a route."""
-        serialized: dict[str, Any] = {"relative_url": self.relative_url}
-        if self.http_methods:
-            serialized["http_methods"] = [method.value for method in self.http_methods]
-        if self.target:
-            serialized["target"] = self.target
-        return serialized
