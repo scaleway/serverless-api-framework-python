@@ -43,4 +43,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Feature
 
-- Changed the gateway integration to work with latest relase of the Serverless Gateway
+- Changed the gateway integration to work with latest release of the Serverless Gateway project
