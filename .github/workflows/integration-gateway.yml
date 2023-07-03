@@ -21,7 +21,7 @@ jobs:
       - uses: ./.github/actions/setup-poetry
 
       - name: Deploy Serverless Gateway
-        run: poetry run scwgw deploy
+        run: poetry run scwgw infra deploy
         env:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
@@ -41,7 +41,7 @@ jobs:
       - name: Run integration tests
         working-directory: tests
         run: |
-          poetry run scwgw remote-config
+          poetry run scwgw infra config
           poetry run pytest integrations/gateway -n $(nproc --all)
         env:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
@@ -64,7 +64,7 @@ jobs:
       - uses: ./.github/actions/setup-poetry
 
       - name: Delete Serverless Gateway
-        run: poetry run scwgw delete -y
+        run: poetry run scwgw infra delete -y
         env:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
