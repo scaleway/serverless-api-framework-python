@@ -6,6 +6,7 @@ import click
 from scw_serverless.config.route import GatewayRoute
 
 GATEWAY_CLI = "scwgw"
+GATEWAY_PYPI = "scw-gateway"
 
 
 class ServerlessGateway:
@@ -18,11 +19,12 @@ class ServerlessGateway:
 
         if not cli:
             click.secho(
-                "scwgw was not found in $PATH, "
-                + "you can install scwgw by running: pip install scwgw",
+                f"{GATEWAY_CLI} was not found in $PATH, "
+                + f"you can install {GATEWAY_CLI} by running:\n"
+                + f"pip install {GATEWAY_PYPI}",
                 fg="red",
             )
-            raise RuntimeError("scwgw is not installed")
+            raise RuntimeError(f"{GATEWAY_CLI} is not installed")
 
         self.cli = cli
 
@@ -41,7 +43,7 @@ class ServerlessGateway:
         if not route.target:
             raise RuntimeError(f"route {route.relative_url} is missing upstream target")
 
-        cli_args = ["add-route", route.relative_url, route.target]
+        cli_args = ["route", "add", route.relative_url, route.target]
         for method in route.http_methods or []:
             cli_args += ["--http-methods", method.value]
 
