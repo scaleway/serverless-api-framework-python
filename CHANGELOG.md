@@ -38,3 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Removed generating Terraform and Serverless Framework configuration files as those features were mostly unused. This does not break the `scw-serverless` library but it removes a command from the CLI. We think those changes will help improve the overall quality of the tool.
+
+## [1.2.0] - 2023-07-03
+
+### Feature
+
+- Changed the gateway integration to work with latest release of the Serverless Gateway project

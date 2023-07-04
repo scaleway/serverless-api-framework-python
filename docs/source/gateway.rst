@@ -1,8 +1,8 @@
 API Gateway
 ===========
 
-The framework provides support for routed functions via a Gateway container that can be deployed separately.
-For more information, please consult the documentation on the `Serverless Gateway repository`_
+The framework provides support for routed functions via the Serverless Gateway project that can be deployed separately.
+For more information, please consult the `Serverless Gateway Documentation`_ or the `Serverless Gateway Repository`_.
 
 Quickstart
 ^^^^^^^^^^
@@ -15,31 +15,36 @@ Quickstart
 
    app = Serverless("example")
 
-   app.get("/hello-gateway", memory_limit= 256)
+   # You can use the get, post, put, and delete decorators
+   @app.get("/hello-gateway", memory_limit= 256)
    def handler(event, context):
       return {"body": "Hello from Gateway!"}
 
-* Clone the `Serverless Gateway repository`_
-* Follow the steps in README to deploy your API Gateway
-* Create an API token for the Gateway. In the gateway repository, you can use a make command:
+* Install the `scwgw` helper tool
 
 .. code-block:: console
 
-    make generate-token
-    export TOKEN=$(make get-token)
-    export GATEWAY_HOST=$(make gateway-host)
+    pip install scw-gateway
 
-* Finally, use `scw-serverless` to deploy your function and set up the route on your Gateway:
+* Deploy your API Gateway
 
 .. code-block:: console
 
-    scw-serverless deploy app.py --gateway-url https://${GATEWAY_HOST} --gateway-api-key ${TOKEN}
+    scwgw infra deploy
+
+* Finally, use `scw-serverless` to deploy your function and set up the route on your gateway:
+
+.. code-block:: console
+
+    scw-serverless deploy app.py
 
 * You can now call your function via your Gateway!
 
 .. code-block:: console
 
-    $ curl https://${GATEWAY_HOST}/hello-gateway
+    $ GATEWAY_ENDPOINT=$(scwgw infra endpoint)
+    $ curl https://${GATEWAY_ENDPOINT}/hello-gateway
     > Hello from Gateway!
 
 .. _Serverless Gateway Repository: https://github.com/scaleway/serverless-gateway
+.. _Serverless Gateway Documentation: https://serverless-gateway.readthedocs.io/en/latest/

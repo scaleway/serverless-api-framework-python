@@ -63,7 +63,7 @@ def get_deployed_functions_by_name(client: Client, app_instance: Serverless):
 
 def get_gateway_endpoint() -> str:
     cmd = subprocess.run(
-        args=["scwgw", "get-endpoint"],
+        args=["scwgw", "infra", "endpoint"],
         check=True,
         capture_output=True,
         env=os.environ,
