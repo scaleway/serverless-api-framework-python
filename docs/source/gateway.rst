@@ -2,7 +2,7 @@ API Gateway
 ===========
 
 The framework provides support for routed functions via the Serverless Gateway project that can be deployed separately.
-For more information, please consult the documentation on the `Serverless Gateway repository`_
+For more information, please consult the `Serverless Gateway Documentation`_ or the `Serverless Gateway Repository`_.
 
 Quickstart
 ^^^^^^^^^^
@@ -47,3 +47,4 @@ Quickstart
     > Hello from Gateway!
 
 .. _Serverless Gateway Repository: https://github.com/scaleway/serverless-gateway
+.. _Serverless Gateway Documentation: https://serverless-gateway.readthedocs.io/en/latest/
