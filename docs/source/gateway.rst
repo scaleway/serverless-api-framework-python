@@ -43,7 +43,7 @@ Quickstart
 .. code-block:: console
 
     $ GATEWAY_ENDPOINT=$(scwgw infra endpoint)
-    $ curl https://${GATEWAY_HOST}/hello-gateway
+    $ curl https://${GATEWAY_ENDPOINT}/hello-gateway
     > Hello from Gateway!
 
 .. _Serverless Gateway Repository: https://github.com/scaleway/serverless-gateway
