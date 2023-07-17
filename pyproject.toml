@@ -47,7 +47,7 @@ pytest-xdist = "^3.1.0"
 pylint = "^2.15.10"
 pylint-per-file-ignores = "^1.1.0"
 responses = ">=0.22,<0.24"
-scw-gateway = "^0.4.0"
+scw-gateway = ">=0.4,<0.7"
 
 [tool.poetry.group.doc]
 optional = true
