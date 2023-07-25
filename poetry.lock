@@ -865,6 +865,24 @@ urllib3 = ">=1.25.10"
 tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "tomli", "tomli-w", "types-requests"]
 
 [[package]]
+name = "rich"
+version = "13.4.2"
+description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
+optional = false
+python-versions = ">=3.7.0"
+files = [
+    {file = "rich-13.4.2-py3-none-any.whl", hash = "sha256:8f87bc7ee54675732fa66a05ebfe489e27264caeeff3728c945d25971b6485ec"},
+    {file = "rich-13.4.2.tar.gz", hash = "sha256:d653d6bccede5844304c605d5aac802c7cf9621efd700b46c7ec2b51ea914898"},
+]
+
+[package.dependencies]
+markdown-it-py = ">=2.2.0"
+pygments = ">=2.13.0,<3.0.0"
+
+[package.extras]
+jupyter = ["ipywidgets (>=7.5.1,<9)"]
+
+[[package]]
 name = "scaleway"
 version = "0.12.0"
 description = "Scaleway SDK for Python"
@@ -911,13 +929,13 @@ typing-extensions = {version = ">=4.4.0,<5.0.0", markers = "python_version < \"3
 
 [[package]]
 name = "scw-gateway"
-version = "0.4.0"
+version = "0.6.1"
 description = "CLI to deploy and manage a self-hosted Kong gateway on Scaleway Serverless Ecosystem"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "scw_gateway-0.4.0-py3-none-any.whl", hash = "sha256:f27db78976e8561f95ac351983c38d254145187429375a1bfdf898f8819ceaa5"},
-    {file = "scw_gateway-0.4.0.tar.gz", hash = "sha256:ff19e3a0a147895cf2b9e676dc716f83183f484ed5a88c78b92f21cddb6c11e9"},
+    {file = "scw_gateway-0.6.1-py3-none-any.whl", hash = "sha256:0973952ba8a1599ff85a85d616b83f178fe0996b174d82e50830f34a2589fb10"},
+    {file = "scw_gateway-0.6.1.tar.gz", hash = "sha256:9781763d4c33fbe89ef315daff4115aad329da023183e6d87e39214306584f16"},
 ]
 
 [package.dependencies]
@@ -925,6 +943,7 @@ click = ">=8.1.3,<9.0.0"
 loguru = "0.6.0"
 pyyaml = ">=6.0,<7.0"
 requests = ">=2.28.2,<3.0.0"
+rich = ">=13.4.2,<14.0.0"
 scaleway = ">=0.12.0,<0.13.0"
 
 [[package]]
@@ -1320,4 +1339,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "7145ae663e79e8f0117273da297ed37eb0467c1b10615208942991a2fd6c7f2a"
+content-hash = "9c92b2adfe6112159cc7f89914e7cd063346aa7cc98b35697d50000e18ef5976"
