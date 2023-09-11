@@ -16,7 +16,7 @@ jobs:
     runs-on: self-hosted
     container: python:3.11-bookworm
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-poetry
 
@@ -34,7 +34,7 @@ jobs:
     runs-on: self-hosted
     container: python:3.11-bookworm
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-poetry
 
@@ -59,7 +59,7 @@ jobs:
     continue-on-error: true
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-poetry
 
