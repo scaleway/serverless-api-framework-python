@@ -59,13 +59,19 @@ class Developer(JSONWizard):
     """Generic representation of a user from GitHub/GitLab."""
 
     name: str
-    avatar_url: str | None
+    display_name: str | None = None
+    avatar_url: str | None = None
     email: str | None = None
 
     @staticmethod
     def from_github(user: dict[str, Any]):
         """Creates from a GitHub user"""
-        return Developer(name=user["login"], email=None, avatar_url=user["avatar_url"])
+        return Developer(
+            name=user["login"],
+            email=None,
+            avatar_url=user["avatar_url"],
+            display_name=user["name"],
+        )
 
     @staticmethod
     def from_gitlab(user: dict[str, Any]):
@@ -77,19 +83,22 @@ class Developer(JSONWizard):
         if not email:
             logging.error("Email not found for user: %s", user["username"])
         return Developer(
-            name=user["username"], email=email, avatar_url=user["avatar_url"]
+            name=user["username"],
+            email=email,
+            avatar_url=user["avatar_url"],
+            display_name=user["name"],
         )
 
     def get_slack_username(self) -> str:
         """Gets the name that should be used on Slack."""
         if not self.email:
-            return self.name
+            return self.display_name or self.name
 
         try:
             response = client.users_lookupByEmail(email=self.email)
         except SlackApiError as e:
             logging.error("Getting slack id for %s: %s", self.name, e.response["error"])
-            return self.name
+            return self.display_name or self.name
 
         return f'<@{response["user"]["id"]}>'  # type: ignore
 
@@ -253,7 +262,7 @@ class PullRequest(JSONWizard):
 
     def on_draft(self) -> None:
         """Saves a PR marked as a draft to notify when it's ready."""
-        save_pr_to_bucket(self, "")
+        save_to_bucket(self, "")
 
     def on_created(self) -> None:
         """Sends a notification for a newly created PR."""
@@ -271,7 +280,7 @@ class PullRequest(JSONWizard):
             raise e
 
         timestamp = str(response["ts"])
-        save_pr_to_bucket(self, timestamp)
+        save_to_bucket(self, timestamp)
 
     def on_updated(self) -> None:
         """Performs the necessary changes when a PR is updated."""
@@ -294,7 +303,7 @@ class PullRequest(JSONWizard):
         self.owner = pull.owner
         self.reviews = pull.reviews.copy()
 
-        save_pr_to_bucket(self, timestamp)
+        save_to_bucket(self, timestamp)
 
         try:
             client.chat_update(
@@ -353,7 +362,7 @@ class PullRequest(JSONWizard):
             )
             return
 
-        save_pr_to_bucket(self, timestamp)
+        save_to_bucket(self, timestamp)
 
         try:
             client.chat_update(
@@ -393,7 +402,7 @@ class PullRequest(JSONWizard):
                     e.response["error"],
                 )
 
-        delete_pr_from_bucket(self.bucket_path)
+        delete_from_bucket(self.bucket_path)
 
     def _as_slack_notification(self) -> list[blks.Block]:
         return [
@@ -466,15 +475,133 @@ class PullRequest(JSONWizard):
         )
 
 
-def delete_pr_from_bucket(bucket_path: str) -> None:
+@dataclass
+class Issue(JSONWizard):
+    """Generic representation of a GitHub/Gitlab issue."""
+
+    number: int
+    repository: Repository
+    url: str
+    reporter: Developer
+    title: str
+    labels: list[str]
+    number_of_comments: int = 0
+
+    @property
+    def bucket_path(self) -> str:
+        """Get the path to store this PR in."""
+        return f"issue/{self.repository.full_name}/{self.number}.json"
+
+    @staticmethod
+    def from_github(repository: dict[str, Any], issue: dict[str, Any]):
+        """Creates from a GitHub issue.
+
+        .. seealso::
+
+            GitHub Documentation
+            https://docs.github.com/en/rest/issues#list-repository-issues
+        """
+        return Issue(
+            number=issue["number"],
+            repository=Repository.from_github(repository),
+            url=issue["html_url"],
+            reporter=Developer.from_github(issue["user"]),
+            title=issue["title"],
+            labels=[label["name"] for label in issue["labels"]],
+            number_of_comments=issue["comments"],
+        )
+
+    @staticmethod
+    def from_gitlab(project: dict[str, Any], issue: dict[str, Any]):
+        """Creates from a GitLab issue."""
+        return Issue(
+            number=issue["iid"],
+            repository=Repository.from_gitlab(project),
+            url=issue["web_url"],
+            reporter=Developer.from_gitlab(issue["author"]),
+            title=issue["title"],
+            labels=issue["labels"],
+            number_of_comments=issue["user_notes_count"],
+        )
+
+    def _as_slack_notification(self) -> list[blks.Block]:
+        return [
+            blks.HeaderBlock(text=f"New Issue on {self.repository.name}: {self.title}"),
+            blks.DividerBlock(),
+            blks.ContextBlock(
+                elements=[
+                    blks.MarkdownTextObject(text="Submitted by"),
+                    blks.ImageElement(
+                        image_url=self.reporter.avatar_url,
+                        alt_text=f"avatar of {self.reporter.name}",
+                    ),
+                    blks.MarkdownTextObject(
+                        text=self.reporter.display_name or self.reporter.name
+                    ),
+                ]
+            ),
+            blks.SectionBlock(
+                fields=[self._get_details_slack_blk()],
+                accessory=blks.ButtonElement(text="View", url=self.url),
+            ),
+        ]
+
+    def _get_details_slack_blk(self) -> blks.MarkdownTextObject:
+        txt = "*Details*\n"
+        txt += f"Labels: *{', '.join(self.labels)}*\n"
+        if self.number_of_comments > 0:
+            txt += f"Comments: *{self.number_of_comments}*\n"
+        return blks.MarkdownTextObject(text=txt)
+
+    def on_created(self) -> None:
+        """Sends a notification for a newly created PR."""
+        try:
+            response = client.chat_postMessage(
+                channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
+            )
+        except SlackApiError as e:
+            logging.error(
+                "Sending created message for issue #%s in %s: %s",
+                self.number,
+                self.repository,
+                e.response["error"],
+            )
+            raise e
+
+        timestamp = str(response["ts"])
+        save_to_bucket(self, timestamp)
+
+    def on_deleted(self) -> None:
+        """Sends a message in the thread when the issue is closed."""
+        timestamp, _issue = load_issue_from_bucket(self.bucket_path)
+        try:
+            client.chat_postMessage(
+                channel=SLACK_CHANNEL,
+                thread_ts=timestamp,
+                text="Issue was closed! :tada:",
+            )
+        except SlackApiError as e:
+            logging.error(
+                "Sending issue closed notification for #%s in %s: %s",
+                self.number,
+                self.repository.full_name,
+                e.response["error"],
+            )
+
+        delete_from_bucket(self.bucket_path)
+
+
+def delete_from_bucket(bucket_path: str) -> None:
     """Deletes a PR."""
     s3.Object(S3_BUCKET, bucket_path).delete()
 
 
-def save_pr_to_bucket(pull: PullRequest, timestamp: str) -> None:
+# TODO?: refactor to use a generic type. Maybe use a protocol?
+def save_to_bucket(model: PullRequest | Issue, timestamp: str) -> None:
     """Saves a PR associated with a Slack timestamp."""
-    s3.Object(S3_BUCKET, pull.bucket_path).put(
-        Body=json.dumps({"ts": timestamp, "pull_request": pull.to_dict()})
+    key = "pull_request" if isinstance(model, PullRequest) else "issue"
+    s3.Object(S3_BUCKET, model.bucket_path).put(
+        Body=json.dumps({"ts": timestamp, key: model.to_dict()})
     )
 
 
@@ -484,6 +611,14 @@ def load_pr_from_bucket(bucket_path: str) -> Tuple[str, PullRequest]:
         s3.Object(S3_BUCKET, bucket_path).get()["Body"].read().decode("utf-8")
     )
     return (saved["ts"], PullRequest.from_dict(saved["pull_request"]))
+
+
+def load_issue_from_bucket(bucket_path: str) -> Tuple[str, Issue]:
+    """Loads a PR and the Slack timestamp of its notification."""
+    saved = json.loads(
+        s3.Object(S3_BUCKET, bucket_path).get()["Body"].read().decode("utf-8")
+    )
+    return (saved["ts"], Issue.from_dict(saved["issue"]))
 
 
 @app.func(description="GitHub webhook to notify on new PRs")
@@ -539,6 +674,20 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
         }:
             pull = PullRequest.from_github(repository, pull_request)
             pull.on_closed()
+        case {
+            "action": "created",
+            "issue": issue,
+            "repository": repository,
+        }:
+            issue = Issue.from_github(repository, issue)
+            issue.on_created()
+        case {
+            "action": "closed" | "deleted" | "locked",
+            "issue": issue,
+            "repository": repository,
+        }:
+            issue = Issue.from_github(repository, issue)
+            issue.on_deleted()
         case _:
             logging.warning("Action %s is not supported", body.get("action"))
             return {"statusCode": HTTPStatus.BAD_REQUEST}
@@ -608,6 +757,24 @@ def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
         }:
             pull = PullRequest.from_gitlab(project, pull_request, user, [])
             pull.on_reviewed(Review.from_gitlab_note(), pull.owner)
+        case {
+            "event_type": "issue",
+            "user": user,
+            "project": project,
+            "object_attributes": {"action": "open" | "reopen"},
+        }:
+            issue = body["object_attributes"]
+            issue = Issue.from_gitlab(project, issue)
+            issue.on_created()
+        case {
+            "event_type": "issue",
+            "user": user,
+            "project": project,
+            "object_attributes": {"action": "close" | "delete" | "lock"},
+        }:
+            issue = body["object_attributes"]
+            issue = Issue.from_gitlab(project, issue)
+            issue.on_deleted()
         case _:
             logging.warning("Event %s is not supported", body.get("event_type"))
     return {"statusCode": HTTPStatus.OK}
