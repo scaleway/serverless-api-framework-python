@@ -268,7 +268,9 @@ class PullRequest(JSONWizard):
         """Sends a notification for a newly created PR."""
         try:
             response = client.chat_postMessage(
-                channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
+                channel=SLACK_CHANNEL,
+                blocks=self._as_slack_notification(),
+                text=f"New PR on {self.repository.name}: {self.title}",
             )
         except SlackApiError as e:
             logging.error(
@@ -405,8 +407,14 @@ class PullRequest(JSONWizard):
         delete_from_bucket(self.bucket_path)
 
     def _as_slack_notification(self) -> list[blks.Block]:
+        # Long headers will show be hard to read on Slack
+        header_content = "New PR: {self.title}"
+        header = blks.HeaderBlock(text=header_content)
+        if len(self.header_content) > 100:
+            # Use a text block instead, with smaller font
+            header = blks.MarkdownTextObject(text=header_content)
         return [
-            blks.HeaderBlock(text=f"New PR on {self.repository.name}: {self.title}"),
+            header,
             blks.DividerBlock(),
             blks.ContextBlock(
                 elements=[
@@ -416,6 +424,7 @@ class PullRequest(JSONWizard):
                         alt_text=f"avatar of {self.owner.name}",
                     ),
                     blks.MarkdownTextObject(text=self.owner.get_slack_username()),
+                    blks.MarkdownTextObject(text=f"Repository: {self.repository.name}"),
                 ]
             ),
             blks.SectionBlock(
@@ -527,8 +536,13 @@ class Issue(JSONWizard):
         )
 
     def _as_slack_notification(self) -> list[blks.Block]:
+        header_content = ":warning: New Issue: {self.title}"
+        header = blks.HeaderBlock(text=header_content)
+        if len(self.header_content) > 100:
+            # Use a text block instead, with smaller font
+            header = blks.MarkdownTextObject(text=header_content)
         return [
-            blks.HeaderBlock(text=f"New Issue on {self.repository.name}: {self.title}"),
+            header,
             blks.DividerBlock(),
             blks.ContextBlock(
                 elements=[
@@ -538,7 +552,7 @@ class Issue(JSONWizard):
                         alt_text=f"avatar of {self.reporter.name}",
                     ),
                     blks.MarkdownTextObject(
-                        text=self.reporter.display_name or self.reporter.name
+                        text=self.reporter.get_slack_username(),
                     ),
                 ]
             ),
@@ -550,7 +564,8 @@ class Issue(JSONWizard):
 
     def _get_details_slack_blk(self) -> blks.MarkdownTextObject:
         txt = "*Details*\n"
-        txt += f"Labels: *{', '.join(self.labels)}*\n"
+        if self.labels:
+            txt += f"Labels: *{', '.join(self.labels)}*\n"
         if self.number_of_comments > 0:
             txt += f"Comments: *{self.number_of_comments}*\n"
         return blks.MarkdownTextObject(text=txt)
@@ -593,6 +608,27 @@ class Issue(JSONWizard):
             )
 
         delete_from_bucket(self.bucket_path)
+
+    def on_updated(self) -> None:
+        """Performs the necessary changes when an issue is updated."""
+        timestamp, issue = load_issue_from_bucket(self.bucket_path)
+        self.reporter = issue.reporter
+
+        save_to_bucket(self, timestamp)
+
+        try:
+            client.chat_update(
+                channel=SLACK_CHANNEL,
+                ts=timestamp,
+                blocks=self._as_slack_notification(),
+            )
+        except SlackApiError as e:
+            logging.warning(
+                "Updating message for issue #%s in %s: %s",
+                self.number,
+                self.repository.full_name,
+                e.response["error"],
+            )
 
 
 def delete_from_bucket(bucket_path: str) -> None:
@@ -686,6 +722,13 @@ def handle_github(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
             issue = Issue.from_github(repository, issue)
             issue.on_created()
         case {
+            "action": "edited",
+            "issue": issue,
+            "repository": repository,
+        }:
+            issue = Issue.from_github(repository, issue)
+            issue.on_updated()
+        case {
             "action": "closed" | "deleted" | "locked",
             "issue": issue,
             "repository": repository,
@@ -765,11 +808,14 @@ def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
             "event_type": "issue",
             "user": user,
             "project": project,
-            "object_attributes": {"action": "open" | "reopen"},
+            "object_attributes": {"action": "open" | "reopen" | "update"},
         }:
-            issue = body["object_attributes"]
-            issue = Issue.from_gitlab(project, issue, user)
-            issue.on_created()
+            issue_data = body["object_attributes"]
+            issue = Issue.from_gitlab(project, issue_data, user)
+            if issue_data["action"] == "update":
+                issue.on_updated()
+            else:
+                issue.on_created()
         case {
             "event_type": "issue",
             "user": user,
