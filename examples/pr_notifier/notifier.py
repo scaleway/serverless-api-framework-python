@@ -512,16 +512,18 @@ class Issue(JSONWizard):
         )
 
     @staticmethod
-    def from_gitlab(project: dict[str, Any], issue: dict[str, Any]):
+    def from_gitlab(
+        project: dict[str, Any], issue: dict[str, Any], user: dict[str, Any]
+    ):
         """Creates from a GitLab issue."""
         return Issue(
             number=issue["iid"],
             repository=Repository.from_gitlab(project),
-            url=issue["web_url"],
-            reporter=Developer.from_gitlab(issue["author"]),
+            url=issue["url"],
+            reporter=Developer.from_gitlab(user),
             title=issue["title"],
-            labels=issue["labels"],
-            number_of_comments=issue["user_notes_count"],
+            labels=[label["title"] for label in issue["labels"]],
+            number_of_comments=issue.get("user_notes_count", 0),
         )
 
     def _as_slack_notification(self) -> list[blks.Block]:
@@ -557,7 +559,9 @@ class Issue(JSONWizard):
         """Sends a notification for a newly created PR."""
         try:
             response = client.chat_postMessage(
-                channel=SLACK_CHANNEL, blocks=self._as_slack_notification()
+                channel=SLACK_CHANNEL,
+                blocks=self._as_slack_notification(),
+                text=f"New issue on {self.repository.name}: {self.title}",
             )
         except SlackApiError as e:
             logging.error(
@@ -764,16 +768,16 @@ def handle_gitlab(event: dict[str, Any], _content: dict[str, Any]) -> dict[str, 
             "object_attributes": {"action": "open" | "reopen"},
         }:
             issue = body["object_attributes"]
-            issue = Issue.from_gitlab(project, issue)
+            issue = Issue.from_gitlab(project, issue, user)
             issue.on_created()
         case {
             "event_type": "issue",
             "user": user,
             "project": project,
-            "object_attributes": {"action": "close" | "delete" | "lock"},
+            "object_attributes": {"action": "close"},
         }:
             issue = body["object_attributes"]
-            issue = Issue.from_gitlab(project, issue)
+            issue = Issue.from_gitlab(project, issue, user)
             issue.on_deleted()
         case _:
             logging.warning("Event %s is not supported", body.get("event_type"))
