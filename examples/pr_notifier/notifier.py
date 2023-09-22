@@ -385,7 +385,11 @@ class PullRequest(JSONWizard):
             client.chat_postMessage(
                 channel=SLACK_CHANNEL,
                 thread_ts=timestamp,
-                text=f"{review.slack_emoji} {reviewer.name} {review.slack_message}",
+                text=review.slack_emoji
+                + " "
+                + (reviewer.display_name or reviewer.name)
+                + " "
+                + review.slack_message,
             )
         except SlackApiError as e:
             logging.warning(
