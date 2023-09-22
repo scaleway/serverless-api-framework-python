@@ -542,7 +542,7 @@ class Issue(JSONWizard):
         )
 
     def _as_slack_notification(self) -> list[blks.Block]:
-        header_content = f"New PR: {self.title}"
+        header_content = f":warning: New issue: {self.title}"
         header = blks.HeaderBlock(text=header_content)
         if len(header_content) > MAX_HEADER_LENGTH:
             # Use a text block instead, with smaller font
