@@ -171,7 +171,7 @@ class Repository(JSONWizard):
 
     name: str
     full_name: str
-    url: str
+    url: str | None = None
 
     @staticmethod
     def from_github(repository: dict[str, Any]):
@@ -437,6 +437,8 @@ class PullRequest(JSONWizard):
                     blks.MarkdownTextObject(text=self.owner.get_slack_username()),
                     blks.MarkdownTextObject(
                         text=f"on: <{self.repository.url}|{self.repository.name}>"
+                        if self.repository.url
+                        else f"on {self.repository.name}"
                     ),
                 ]
             ),
@@ -571,6 +573,8 @@ class Issue(JSONWizard):
                     ),
                     blks.MarkdownTextObject(
                         text=f"on: <{self.repository.url}|{self.repository.name}>"
+                        if self.repository.url
+                        else f"on {self.repository.name}"
                     ),
                 ]
             ),
