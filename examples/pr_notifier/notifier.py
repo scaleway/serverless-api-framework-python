@@ -408,9 +408,9 @@ class PullRequest(JSONWizard):
 
     def _as_slack_notification(self) -> list[blks.Block]:
         # Long headers will show be hard to read on Slack
-        header_content = "New PR: {self.title}"
+        header_content = f"New PR: {self.title}"
         header = blks.HeaderBlock(text=header_content)
-        if len(self.header_content) > 100:
+        if len(header_content) > 100:
             # Use a text block instead, with smaller font
             header = blks.MarkdownTextObject(text=header_content)
         return [
@@ -424,7 +424,9 @@ class PullRequest(JSONWizard):
                         alt_text=f"avatar of {self.owner.name}",
                     ),
                     blks.MarkdownTextObject(text=self.owner.get_slack_username()),
-                    blks.MarkdownTextObject(text=f"Repository: {self.repository.name}"),
+                    blks.MarkdownTextObject(
+                        text=f"on repository: {self.repository.name}"
+                    ),
                 ]
             ),
             blks.SectionBlock(
@@ -536,9 +538,9 @@ class Issue(JSONWizard):
         )
 
     def _as_slack_notification(self) -> list[blks.Block]:
-        header_content = ":warning: New Issue: {self.title}"
+        header_content = f"New PR: {self.title}"
         header = blks.HeaderBlock(text=header_content)
-        if len(self.header_content) > 100:
+        if len(header_content) > 100:
             # Use a text block instead, with smaller font
             header = blks.MarkdownTextObject(text=header_content)
         return [
@@ -553,6 +555,9 @@ class Issue(JSONWizard):
                     ),
                     blks.MarkdownTextObject(
                         text=self.reporter.get_slack_username(),
+                    ),
+                    blks.MarkdownTextObject(
+                        text=f"on repository: {self.repository.name}"
                     ),
                 ]
             ),
