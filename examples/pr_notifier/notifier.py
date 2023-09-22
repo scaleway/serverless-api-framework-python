@@ -22,6 +22,8 @@ SLACK_CHANNEL = os.environ["SLACK_CHANNEL"]
 GITLAB_EMAIL_DOMAIN = os.getenv("GITLAB_EMAIL_DOMAIN")
 REMINDER_SCHEDULE = os.getenv("REMINDER_SCHEDULE", "0 9 * * 1-5")
 
+MAX_HEADER_LENGTH = 200
+
 app = Serverless(
     "slack-bots",
     env={
@@ -410,9 +412,11 @@ class PullRequest(JSONWizard):
         # Long headers will show be hard to read on Slack
         header_content = f"New PR: {self.title}"
         header = blks.HeaderBlock(text=header_content)
-        if len(header_content) > 100:
+        if len(header_content) > MAX_HEADER_LENGTH:
             # Use a text block instead, with smaller font
-            header = blks.MarkdownTextObject(text=header_content)
+            header = blks.SectionBlock(
+                text=blks.MarkdownTextObject(text=header_content),
+            )
         return [
             header,
             blks.DividerBlock(),
@@ -540,9 +544,11 @@ class Issue(JSONWizard):
     def _as_slack_notification(self) -> list[blks.Block]:
         header_content = f"New PR: {self.title}"
         header = blks.HeaderBlock(text=header_content)
-        if len(header_content) > 100:
+        if len(header_content) > MAX_HEADER_LENGTH:
             # Use a text block instead, with smaller font
-            header = blks.MarkdownTextObject(text=header_content)
+            header = blks.SectionBlock(
+                text=blks.MarkdownTextObject(text=header_content),
+            )
         return [
             header,
             blks.DividerBlock(),
