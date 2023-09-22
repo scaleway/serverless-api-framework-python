@@ -171,17 +171,24 @@ class Repository(JSONWizard):
 
     name: str
     full_name: str
+    url: str
 
     @staticmethod
     def from_github(repository: dict[str, Any]):
         """Creates from a GitHub repository."""
-        return Repository(name=repository["name"], full_name=repository["full_name"])
+        return Repository(
+            name=repository["name"],
+            full_name=repository["full_name"],
+            url=repository["html_url"],
+        )
 
     @staticmethod
     def from_gitlab(repository: dict[str, Any]):
         """Creates from a GitLab project."""
         return Repository(
-            name=repository["name"], full_name=repository["path_with_namespace"]
+            name=repository["name"],
+            full_name=repository["path_with_namespace"],
+            url=repository["web_url"],
         )
 
 
@@ -429,7 +436,7 @@ class PullRequest(JSONWizard):
                     ),
                     blks.MarkdownTextObject(text=self.owner.get_slack_username()),
                     blks.MarkdownTextObject(
-                        text=f"on repository: {self.repository.name}"
+                        text=f"on: <{self.repository.url}|{self.repository.name}>"
                     ),
                 ]
             ),
@@ -554,7 +561,7 @@ class Issue(JSONWizard):
             blks.DividerBlock(),
             blks.ContextBlock(
                 elements=[
-                    blks.MarkdownTextObject(text="Submitted by"),
+                    blks.MarkdownTextObject(text="Reported by"),
                     blks.ImageElement(
                         image_url=self.reporter.avatar_url,
                         alt_text=f"avatar of {self.reporter.name}",
@@ -563,7 +570,7 @@ class Issue(JSONWizard):
                         text=self.reporter.get_slack_username(),
                     ),
                     blks.MarkdownTextObject(
-                        text=f"on repository: {self.repository.name}"
+                        text=f"on: <{self.repository.url}|{self.repository.name}>"
                     ),
                 ]
             ),
