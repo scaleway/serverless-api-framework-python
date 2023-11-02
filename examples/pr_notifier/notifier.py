@@ -863,6 +863,11 @@ def pull_request_reminder(
     """Daily reminder to review opened pull-requests."""
     blocks = [blks.HeaderBlock(text="PRs awaiting for review: "), blks.DividerBlock()]
     for opened_pr in s3.Bucket(S3_BUCKET).objects.all():
+        # Only remind about PRs
+        if not opened_pr.key.startswith("pull_requests/"):
+            logging.info("Ignoring %s", opened_pr.key)
+            continue
+
         _, pull = load_pr_from_bucket(opened_pr.key)
         if message := pull.reminder_message():
             logging.info(
