@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     container: python:3.11-bookworm
     steps:
       - uses: actions/checkout@v4
