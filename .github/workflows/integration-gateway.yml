@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   setup-gateway:
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     container: python:3.11-bookworm
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
   run-tests:
     needs:
       - setup-gateway
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     container: python:3.11-bookworm
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
 
   teardown-gateway:
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     container: python:3.11-bookworm
     needs:
       - run-tests
