@@ -57,7 +57,7 @@ def hello_world(event, context):
 ```
 
 The configuration is done by passing arguments to the decorator.
-To view which arguments are supported, head over to this [documentation](https://serverless-api-framework-python.readthedocs.io/) page.
+To view which arguments are supported, head over to this [documentation](https://serverless-api-project.readthedocs.io) page.
 
 ### Local testing
 
