@@ -46,9 +46,7 @@ def load_app_instance(file: Path) -> Serverless:
             app_instance = member[1]
 
     if not app_instance:  # No variable with type "Serverless" found
-        raise RuntimeError(
-            f"""Unable to locate an instance of serverless App
-            in the provided file: {file}."""
-        )
+        raise RuntimeError(f"""Unable to locate an instance of serverless App
+            in the provided file: {file}.""")
 
     return app_instance
